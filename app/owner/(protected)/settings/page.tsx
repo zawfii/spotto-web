@@ -95,7 +95,7 @@ export default function SettingsPage() {
     if (!venue) return;
     setSaving(true);
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
+    if (!user) { setSaving(false); return; }
 
     await supabase.from('venue_details').upsert(
       { owner_id: user.id, place_id: venue.place_id, description, phone, address, instagram, menu_url: menuUrl, hours },
@@ -112,7 +112,7 @@ export default function SettingsPage() {
     setUploadingPhoto(true);
 
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
+    if (!user) { setUploadingPhoto(false); return; }
 
     const ext = file.name.split('.').pop()?.toLowerCase() ?? 'jpg';
     const storagePath = `${user.id}/${Date.now()}.${ext}`;
