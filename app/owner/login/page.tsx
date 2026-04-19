@@ -5,6 +5,50 @@ import { createBrowserClient } from '@supabase/ssr';
 import { useMemo, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 
+const GREEN = '#1A3C34';
+const ORANGE = '#F5621C';
+const BG = '#F5F2E8';
+
+function SpootLogo({ size = 40 }: { size?: number }) {
+  // Two overlapping circles — left filled orange, right dark green ring
+  // Creates the crescent / "oo" in spoot logotype
+  const r = size / 2;
+  const gap = size * 0.28;
+  const totalW = size * 2 - gap;
+  return (
+    <svg width={totalW} height={size} viewBox={`0 0 ${totalW} ${size}`} fill="none">
+      {/* Left circle — orange filled */}
+      <circle cx={r} cy={r} r={r} fill={ORANGE} />
+      {/* Right circle — green ring, clips the orange where they overlap */}
+      <circle cx={size * 2 - gap - r} cy={r} r={r} fill="white" />
+      <circle cx={size * 2 - gap - r} cy={r} r={r} fill="none" stroke={GREEN} strokeWidth={size * 0.12} />
+      {/* Re-draw left circle clipping the white fill of right */}
+      <circle cx={r} cy={r} r={r} fill={ORANGE} />
+      {/* Right circle ring on top */}
+      <circle cx={size * 2 - gap - r} cy={r} r={r} fill="none" stroke={GREEN} strokeWidth={size * 0.12} />
+    </svg>
+  );
+}
+
+function SpootWordmark({ height = 32 }: { height?: number }) {
+  return (
+    <svg height={height} viewBox="0 0 260 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+      {/* "sp" letters */}
+      <text x="0" y="68" fontFamily="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" fontSize="80" fontWeight="800" fill={GREEN}>sp</text>
+      {/* left "o" — orange */}
+      <circle cx="152" cy="42" r="30" fill={ORANGE} />
+      {/* right "o" — green ring, overlaps */}
+      <circle cx="186" cy="42" r="30" fill="white" />
+      <circle cx="186" cy="42" r="30" fill="none" stroke={GREEN} strokeWidth="9" />
+      {/* Re-paint left orange on top of white */}
+      <circle cx="152" cy="42" r="30" fill={ORANGE} />
+      <circle cx="186" cy="42" r="30" fill="none" stroke={GREEN} strokeWidth="9" />
+      {/* "t" letter */}
+      <text x="213" y="68" fontFamily="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" fontSize="80" fontWeight="800" fill={GREEN}>t</text>
+    </svg>
+  );
+}
+
 export default function OwnerLoginPage() {
   const searchParams = useSearchParams();
   const linkExpired = searchParams.get('error') === '1';
@@ -13,6 +57,7 @@ export default function OwnerLoginPage() {
   const [sent, setSent] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [focused, setFocused] = useState(false);
 
   const supabase = useMemo(
     () => createBrowserClient(
@@ -28,9 +73,7 @@ export default function OwnerLoginPage() {
     setError('');
     const { error } = await supabase.auth.signInWithOtp({
       email,
-      options: {
-        emailRedirectTo: `${window.location.origin}/auth/callback`,
-      },
+      options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
     });
     setLoading(false);
     if (error) {
@@ -41,166 +84,156 @@ export default function OwnerLoginPage() {
   }
 
   return (
-    <div
-      className="min-h-screen flex"
-      style={{ color: '#1a1a1a' }}
-    >
-      {/* Lewa strona — brand panel */}
-      <div
-        className="hidden lg:flex lg:w-1/2 flex-col justify-between p-12"
-        style={{ backgroundColor: '#1a1a1a' }}
-      >
+    <div style={{
+      minHeight: '100vh',
+      backgroundColor: BG,
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
+      color: GREEN,
+    }}>
+      <div style={{
+        width: 480,
+        backgroundColor: 'white',
+        borderRadius: 24,
+        padding: '52px 48px',
+        boxShadow: '0 4px 40px rgba(26,60,52,0.10)',
+      }}>
+
         {/* Logo */}
-        <div className="flex items-center gap-3">
-          <div
-            className="w-10 h-10 rounded-xl flex items-center justify-center text-white font-bold text-lg"
-            style={{ backgroundColor: '#D4892A' }}
-          >
-            S
+        <div style={{ marginBottom: 40 }}>
+          <SpootWordmark height={36} />
+        </div>
+
+        {/* Heading */}
+        <h1 style={{ fontSize: 26, fontWeight: 800, color: GREEN, marginBottom: 6, lineHeight: 1.2 }}>
+          Panel właściciela
+        </h1>
+        <p style={{ fontSize: 14, color: '#6B7C79', marginBottom: 32, lineHeight: 1.5 }}>
+          Wpisz adres email — wyślemy link do logowania.<br />Bez hasła, jednym kliknięciem.
+        </p>
+
+        {/* Error banner */}
+        {linkExpired && (
+          <div style={{
+            backgroundColor: '#FEF2F2',
+            border: '1px solid #FECACA',
+            borderRadius: 12,
+            padding: '12px 16px',
+            marginBottom: 20,
+            fontSize: 13,
+            color: '#DC2626',
+          }}>
+            Link logowania wygasł lub jest nieprawidłowy. Wyślij nowy poniżej.
           </div>
-          <span className="text-white font-bold text-xl tracking-tight">Spoot</span>
-        </div>
+        )}
 
-        {/* Środkowy content */}
-        <div>
-          <h2 className="text-white text-4xl font-bold leading-tight mb-4">
-            Zarządzaj swoim<br />lokalem z dowolnego<br />miejsca.
-          </h2>
-          <p className="text-white/50 text-sm leading-relaxed">
-            Panel właściciela Spoot — menu, godziny, zdjęcia,<br />statystyki i opinie w jednym miejscu.
-          </p>
-        </div>
-
-        {/* Stats row */}
-        <div className="flex gap-6">
-          {[
-            { value: '2 400+', label: 'lokali w Spoot' },
-            { value: '18 tys.', label: 'aktywnych użytkowników' },
-            { value: '4.8★', label: 'średnia ocena aplikacji' },
-          ].map(s => (
-            <div key={s.label}>
-              <div className="text-white font-bold text-lg">{s.value}</div>
-              <div className="text-white/40 text-xs mt-0.5">{s.label}</div>
+        {sent ? (
+          /* Success state */
+          <div style={{ textAlign: 'center', padding: '24px 0' }}>
+            <div style={{
+              width: 64,
+              height: 64,
+              borderRadius: 20,
+              backgroundColor: '#FFF0E8',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              margin: '0 auto 20px',
+              fontSize: 28,
+            }}>
+              📬
             </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Prawa strona — formularz */}
-      <div
-        className="flex-1 flex flex-col items-center justify-center p-6 lg:p-16"
-        style={{ backgroundColor: '#f7f7f5' }}
-      >
-        {/* Mobile logo */}
-        <div className="flex items-center gap-2 mb-10 lg:hidden">
-          <div
-            className="w-8 h-8 rounded-lg flex items-center justify-center text-white font-bold"
-            style={{ backgroundColor: '#D4892A' }}
-          >
-            S
-          </div>
-          <span className="font-bold text-lg" style={{ color: '#1a1a1a' }}>Spoot</span>
-        </div>
-
-        <div className="w-full max-w-sm">
-          <h1 className="text-2xl font-bold mb-1" style={{ color: '#1a1a1a' }}>
-            Zaloguj się
-          </h1>
-          <p className="text-sm mb-8" style={{ color: '#888' }}>
-            Wyślemy Ci link logowania na email — bez hasła.
-          </p>
-
-          {linkExpired && (
-            <div
-              className="rounded-xl px-4 py-3 mb-5 text-sm"
-              style={{ backgroundColor: '#FEF2F2', color: '#DC2626', border: '1px solid #FECACA' }}
+            <p style={{ fontWeight: 700, fontSize: 18, color: GREEN, marginBottom: 8 }}>
+              Sprawdź skrzynkę
+            </p>
+            <p style={{ fontSize: 14, color: '#6B7C79', lineHeight: 1.5 }}>
+              Link logowania wysłany na<br />
+              <strong style={{ color: GREEN }}>{email}</strong>
+            </p>
+            <button
+              onClick={() => { setSent(false); setEmail(''); }}
+              style={{
+                marginTop: 24,
+                fontSize: 13,
+                color: '#6B7C79',
+                textDecoration: 'underline',
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+              }}
             >
-              Link logowania wygasł lub jest nieprawidłowy. Wyślij nowy link poniżej.
-            </div>
-          )}
+              Wyślij na inny adres
+            </button>
+          </div>
+        ) : (
+          <form onSubmit={handleSubmit}>
+            {/* Email input */}
+            <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: '#6B7C79', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>
+              Adres email
+            </label>
+            <input
+              type="email"
+              value={email}
+              onChange={e => setEmail(e.target.value)}
+              required
+              placeholder="jan@restauracja.pl"
+              onFocus={() => setFocused(true)}
+              onBlur={() => setFocused(false)}
+              style={{
+                width: '100%',
+                padding: '14px 16px',
+                borderRadius: 14,
+                border: `2px solid ${focused ? ORANGE : '#E8E5DC'}`,
+                backgroundColor: focused ? '#FFFAF7' : '#FAFAF8',
+                fontSize: 15,
+                color: GREEN,
+                outline: 'none',
+                transition: 'border-color 0.15s, background 0.15s',
+                boxSizing: 'border-box',
+              }}
+            />
 
-          {sent ? (
-            <div className="text-center py-8">
-              <div
-                className="w-16 h-16 rounded-2xl flex items-center justify-center text-3xl mx-auto mb-5"
-                style={{ backgroundColor: '#D4892A1A' }}
-              >
-                📬
-              </div>
-              <h3 className="font-bold text-lg mb-2" style={{ color: '#1a1a1a' }}>Sprawdź skrzynkę</h3>
-              <p className="text-sm" style={{ color: '#888' }}>
-                Link logowania wysłany na
-              </p>
-              <p className="text-sm font-semibold mt-1" style={{ color: '#1a1a1a' }}>{email}</p>
-              <button
-                onClick={() => { setSent(false); setEmail(''); }}
-                className="mt-6 text-xs underline"
-                style={{ color: '#888' }}
-              >
-                Wyślij na inny adres
-              </button>
-            </div>
-          ) : (
-            <form onSubmit={handleSubmit} className="space-y-3">
-              <div>
-                <label
-                  className="block text-xs font-semibold uppercase tracking-wider mb-2"
-                  style={{ color: '#888' }}
-                >
-                  Adres email
-                </label>
-                <input
-                  type="email"
-                  value={email}
-                  onChange={e => setEmail(e.target.value)}
-                  required
-                  placeholder="jan@restauracja.pl"
-                  style={{
-                    width: '100%',
-                    padding: '14px 16px',
-                    borderRadius: '14px',
-                    border: '1.5px solid #E5E5E5',
-                    background: '#fff',
-                    fontSize: '14px',
-                    color: '#1a1a1a',
-                    outline: 'none',
-                    transition: 'border-color 0.15s',
-                  }}
-                  onFocus={e => (e.target.style.borderColor = '#D4892A')}
-                  onBlur={e => (e.target.style.borderColor = '#E5E5E5')}
-                />
-              </div>
+            {error && (
+              <p style={{ fontSize: 13, color: '#DC2626', marginTop: 8 }}>{error}</p>
+            )}
 
-              {error && (
-                <p className="text-xs" style={{ color: '#DC2626' }}>{error}</p>
-              )}
+            {/* Submit button */}
+            <button
+              type="submit"
+              disabled={loading || !email}
+              style={{
+                width: '100%',
+                padding: '15px',
+                borderRadius: 14,
+                backgroundColor: loading || !email ? '#C5C0B8' : GREEN,
+                color: 'white',
+                fontWeight: 700,
+                fontSize: 15,
+                cursor: loading || !email ? 'not-allowed' : 'pointer',
+                transition: 'background 0.15s',
+                marginTop: 12,
+                border: 'none',
+                letterSpacing: '0.01em',
+              }}
+            >
+              {loading ? 'Wysyłanie...' : 'Wyślij link logowania →'}
+            </button>
+          </form>
+        )}
 
-              <button
-                type="submit"
-                disabled={loading || !email}
-                style={{
-                  width: '100%',
-                  padding: '15px',
-                  borderRadius: '14px',
-                  background: loading || !email ? '#ccc' : '#1a1a1a',
-                  color: '#fff',
-                  fontWeight: '600',
-                  fontSize: '14px',
-                  cursor: loading || !email ? 'not-allowed' : 'pointer',
-                  transition: 'background 0.15s',
-                  marginTop: '8px',
-                }}
-              >
-                {loading ? 'Wysyłanie...' : 'Wyślij link logowania →'}
-              </button>
-            </form>
-          )}
-
-          <p className="text-center text-xs mt-8" style={{ color: '#bbb' }}>
-            Dostęp tylko dla zweryfikowanych właścicieli lokali.<br />
-            Pierwsze zgłoszenie przez aplikację mobilną Spoot.
-          </p>
-        </div>
+        {/* Footer note */}
+        <p style={{
+          textAlign: 'center',
+          fontSize: 12,
+          color: '#9CA8A5',
+          marginTop: 36,
+          lineHeight: 1.6,
+        }}>
+          Dostęp tylko dla zweryfikowanych właścicieli lokali.<br />
+          Pierwsze zgłoszenie przez aplikację mobilną Spoot.
+        </p>
       </div>
     </div>
   );
