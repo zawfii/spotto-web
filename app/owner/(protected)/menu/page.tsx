@@ -27,27 +27,30 @@ export default function MenuPage() {
   }>({ open: false, editId: null, sectionId: '', name: '', price: '', description: '', is_vege: false, spice_level: 0, is_available: true });
 
   const load = useCallback(async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
 
-    const { data: vd } = await supabase.from('venue_details').select('place_id').eq('owner_id', user.id).maybeSingle();
-    if (!vd) return;
+      const { data: vd } = await supabase.from('venue_details').select('place_id').eq('owner_id', user.id).maybeSingle();
+      if (!vd) return;
 
-    setPlaceId(vd.place_id);
+      setPlaceId(vd.place_id);
 
-    const { data: sectionRows } = await supabase
-      .from('menu_sections')
-      .select('id, name, position, menu_items(id, section_id, name, price, description, is_vege, spice_level, is_available, position)')
-      .eq('place_id', vd.place_id)
-      .order('position', { ascending: true });
+      const { data: sectionRows } = await supabase
+        .from('menu_sections')
+        .select('id, name, position, menu_items(id, section_id, name, price, description, is_vege, spice_level, is_available, position)')
+        .eq('place_id', vd.place_id)
+        .order('position', { ascending: true });
 
-    setSections(
-      (sectionRows ?? []).map(s => ({
-        ...s,
-        menu_items: ((s.menu_items as MenuItem[]) ?? []).sort((a, b) => a.position - b.position),
-      }))
-    );
-    setLoading(false);
+      setSections(
+        (sectionRows ?? []).map(s => ({
+          ...s,
+          menu_items: ((s.menu_items as MenuItem[]) ?? []).sort((a, b) => a.position - b.position),
+        }))
+      );
+    } finally {
+      setLoading(false);
+    }
   }, [supabase]);
 
   useEffect(() => { load(); }, [load]);
@@ -61,14 +64,16 @@ export default function MenuPage() {
     if (!user) return;
 
     if (sectionModal.editId) {
-      await supabase.from('menu_sections').update({ name }).eq('id', sectionModal.editId);
+      const { error } = await supabase.from('menu_sections').update({ name }).eq('id', sectionModal.editId);
+      if (error) { alert('Błąd zapisu: ' + error.message); return; }
       setSections(prev => prev.map(s => s.id === sectionModal.editId ? { ...s, name } : s));
     } else {
       const pos = sections.length;
-      const { data } = await supabase.from('menu_sections')
+      const { data, error } = await supabase.from('menu_sections')
         .insert({ place_id: placeId, owner_id: user.id, name, position: pos })
         .select('id, name, position')
         .single();
+      if (error) { alert('Błąd zapisu: ' + error.message); return; }
       if (data) setSections(prev => [...prev, { ...data, menu_items: [] }]);
     }
     setSectionModal({ open: false, editId: null, name: '' });
@@ -97,7 +102,8 @@ export default function MenuPage() {
     };
 
     if (itemModal.editId) {
-      await supabase.from('menu_items').update(payload).eq('id', itemModal.editId);
+      const { error } = await supabase.from('menu_items').update(payload).eq('id', itemModal.editId);
+      if (error) { alert('Błąd zapisu: ' + error.message); return; }
       setSections(prev => prev.map(s => ({
         ...s,
         menu_items: s.menu_items.map(item =>
@@ -107,10 +113,11 @@ export default function MenuPage() {
     } else {
       const section = sections.find(s => s.id === itemModal.sectionId);
       const pos = section?.menu_items.length ?? 0;
-      const { data } = await supabase.from('menu_items')
+      const { data, error } = await supabase.from('menu_items')
         .insert({ section_id: itemModal.sectionId, ...payload, position: pos })
         .select()
         .single();
+      if (error) { alert('Błąd zapisu: ' + error.message); return; }
       if (data) {
         setSections(prev => prev.map(s =>
           s.id === itemModal.sectionId
