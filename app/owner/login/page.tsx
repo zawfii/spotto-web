@@ -3,8 +3,12 @@
 
 import { createBrowserClient } from '@supabase/ssr';
 import { useMemo, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 
 export default function OwnerLoginPage() {
+  const searchParams = useSearchParams();
+  const linkExpired = searchParams.get('error') === '1';
+
   const [email, setEmail] = useState('');
   const [sent, setSent] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -46,6 +50,12 @@ export default function OwnerLoginPage() {
           </div>
           <span className="ml-3 text-xl font-bold text-[#1a1a1a]">Spoot</span>
         </div>
+
+        {linkExpired && (
+          <div className="bg-red-50 border border-red-100 rounded-xl px-4 py-3 mb-4 text-sm text-red-600">
+            Link logowania wygasł lub jest nieprawidłowy. Wyślij nowy link poniżej.
+          </div>
+        )}
 
         <div className="bg-white rounded-2xl p-8 shadow-sm border border-gray-100">
           <h1 className="text-xl font-bold text-[#1a1a1a] mb-1">Panel właściciela</h1>
