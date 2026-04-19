@@ -1,6 +1,7 @@
 // app/owner/login/page.tsx
 'use client';
 
+import Image from 'next/image';
 import { createBrowserClient } from '@supabase/ssr';
 import { useMemo, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
@@ -8,46 +9,6 @@ import { useSearchParams } from 'next/navigation';
 const GREEN = '#1A3C34';
 const ORANGE = '#F5621C';
 const BG = '#F5F2E8';
-
-function SpootLogo({ size = 40 }: { size?: number }) {
-  // Two overlapping circles — left filled orange, right dark green ring
-  // Creates the crescent / "oo" in spoot logotype
-  const r = size / 2;
-  const gap = size * 0.28;
-  const totalW = size * 2 - gap;
-  return (
-    <svg width={totalW} height={size} viewBox={`0 0 ${totalW} ${size}`} fill="none">
-      {/* Left circle — orange filled */}
-      <circle cx={r} cy={r} r={r} fill={ORANGE} />
-      {/* Right circle — green ring, clips the orange where they overlap */}
-      <circle cx={size * 2 - gap - r} cy={r} r={r} fill="white" />
-      <circle cx={size * 2 - gap - r} cy={r} r={r} fill="none" stroke={GREEN} strokeWidth={size * 0.12} />
-      {/* Re-draw left circle clipping the white fill of right */}
-      <circle cx={r} cy={r} r={r} fill={ORANGE} />
-      {/* Right circle ring on top */}
-      <circle cx={size * 2 - gap - r} cy={r} r={r} fill="none" stroke={GREEN} strokeWidth={size * 0.12} />
-    </svg>
-  );
-}
-
-function SpootWordmark({ height = 32 }: { height?: number }) {
-  return (
-    <svg height={height} viewBox="0 0 260 80" fill="none" xmlns="http://www.w3.org/2000/svg">
-      {/* "sp" letters */}
-      <text x="0" y="68" fontFamily="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" fontSize="80" fontWeight="800" fill={GREEN}>sp</text>
-      {/* left "o" — orange */}
-      <circle cx="152" cy="42" r="30" fill={ORANGE} />
-      {/* right "o" — green ring, overlaps */}
-      <circle cx="186" cy="42" r="30" fill="white" />
-      <circle cx="186" cy="42" r="30" fill="none" stroke={GREEN} strokeWidth="9" />
-      {/* Re-paint left orange on top of white */}
-      <circle cx="152" cy="42" r="30" fill={ORANGE} />
-      <circle cx="186" cy="42" r="30" fill="none" stroke={GREEN} strokeWidth="9" />
-      {/* "t" letter */}
-      <text x="213" y="68" fontFamily="-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" fontSize="80" fontWeight="800" fill={GREEN}>t</text>
-    </svg>
-  );
-}
 
 export default function OwnerLoginPage() {
   const searchParams = useSearchParams();
@@ -103,7 +64,13 @@ export default function OwnerLoginPage() {
 
         {/* Logo */}
         <div style={{ marginBottom: 40 }}>
-          <SpootWordmark height={36} />
+          <Image
+            src="/logo_spoot_zielony.png"
+            alt="Spoot"
+            width={120}
+            height={40}
+            style={{ objectFit: 'contain', objectPosition: 'left' }}
+          />
         </div>
 
         {/* Heading */}
@@ -130,13 +97,12 @@ export default function OwnerLoginPage() {
         )}
 
         {sent ? (
-          /* Success state */
           <div style={{ textAlign: 'center', padding: '24px 0' }}>
             <div style={{
               width: 64,
               height: 64,
               borderRadius: 20,
-              backgroundColor: '#FFF0E8',
+              backgroundColor: '#FFF4EE',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
@@ -169,8 +135,15 @@ export default function OwnerLoginPage() {
           </div>
         ) : (
           <form onSubmit={handleSubmit}>
-            {/* Email input */}
-            <label style={{ display: 'block', fontSize: 12, fontWeight: 700, color: '#6B7C79', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>
+            <label style={{
+              display: 'block',
+              fontSize: 12,
+              fontWeight: 700,
+              color: '#6B7C79',
+              textTransform: 'uppercase',
+              letterSpacing: '0.08em',
+              marginBottom: 8,
+            }}>
               Adres email
             </label>
             <input
@@ -199,7 +172,6 @@ export default function OwnerLoginPage() {
               <p style={{ fontSize: 13, color: '#DC2626', marginTop: 8 }}>{error}</p>
             )}
 
-            {/* Submit button */}
             <button
               type="submit"
               disabled={loading || !email}
@@ -223,7 +195,6 @@ export default function OwnerLoginPage() {
           </form>
         )}
 
-        {/* Footer note */}
         <p style={{
           textAlign: 'center',
           fontSize: 12,
