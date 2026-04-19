@@ -1,4 +1,5 @@
 // app/owner/(protected)/page.tsx
+import Link from 'next/link';
 import { createSupabaseServerClient } from '@/lib/supabase-server';
 import { getOwnerVenue, fetchStats, fetchAnalytics, fetchReviews } from '@/lib/owner';
 import { redirect } from 'next/navigation';
@@ -72,7 +73,7 @@ export default async function DashboardPage() {
               {recentReviews.map(r => (
                 <div key={r.id} className="flex gap-3 px-4 py-3">
                   <div className="w-8 h-8 rounded-full bg-[#D4892A] flex items-center justify-center text-white text-xs font-bold flex-shrink-0">
-                    {r.display_name[0].toUpperCase()}
+                    {(r.display_name?.[0] ?? '?').toUpperCase()}
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center justify-between">
@@ -130,14 +131,14 @@ export default async function DashboardPage() {
             { icon: '📸', label: 'Zdjęcia', href: '/owner/settings' },
             { icon: '📊', label: 'Statystyki', href: '/owner/stats' },
           ].map(a => (
-            <a
+            <Link
               key={a.label}
               href={a.href}
               className="flex flex-col items-center gap-1.5 bg-[#f7f7f5] rounded-xl p-3 hover:bg-gray-100 transition-colors"
             >
               <span className="text-xl">{a.icon}</span>
               <span className="text-[10px] text-gray-500 font-medium text-center leading-tight">{a.label}</span>
-            </a>
+            </Link>
           ))}
         </div>
       </div>
