@@ -14,7 +14,7 @@ export default function OwnerShell({ venue, userEmail, children }: Props) {
   const initial = userEmail?.[0]?.toUpperCase() ?? 'O';
 
   return (
-    <div className="flex h-screen overflow-hidden bg-[#f7f7f5]">
+    <div className="flex h-screen overflow-hidden bg-[#f7f7f5]" style={{ color: '#1a1a1a' }}>
       <Sidebar ownerInitial={initial} />
       <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
         <TopBar

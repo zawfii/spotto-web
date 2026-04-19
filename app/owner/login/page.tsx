@@ -41,41 +41,113 @@ export default function OwnerLoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#f7f7f5] flex items-center justify-center p-4">
-      <div className="w-full max-w-sm">
+    <div
+      className="min-h-screen flex"
+      style={{ color: '#1a1a1a' }}
+    >
+      {/* Lewa strona — brand panel */}
+      <div
+        className="hidden lg:flex lg:w-1/2 flex-col justify-between p-12"
+        style={{ backgroundColor: '#1a1a1a' }}
+      >
         {/* Logo */}
-        <div className="flex items-center justify-center mb-8">
-          <div className="w-10 h-10 bg-[#D4892A] rounded-xl flex items-center justify-center text-white font-bold text-lg">
+        <div className="flex items-center gap-3">
+          <div
+            className="w-10 h-10 rounded-xl flex items-center justify-center text-white font-bold text-lg"
+            style={{ backgroundColor: '#D4892A' }}
+          >
             S
           </div>
-          <span className="ml-3 text-xl font-bold text-[#1a1a1a]">Spoot</span>
+          <span className="text-white font-bold text-xl tracking-tight">Spoot</span>
         </div>
 
-        {linkExpired && (
-          <div className="bg-red-50 border border-red-100 rounded-xl px-4 py-3 mb-4 text-sm text-red-600">
-            Link logowania wygasł lub jest nieprawidłowy. Wyślij nowy link poniżej.
-          </div>
-        )}
+        {/* Środkowy content */}
+        <div>
+          <h2 className="text-white text-4xl font-bold leading-tight mb-4">
+            Zarządzaj swoim<br />lokalem z dowolnego<br />miejsca.
+          </h2>
+          <p className="text-white/50 text-sm leading-relaxed">
+            Panel właściciela Spoot — menu, godziny, zdjęcia,<br />statystyki i opinie w jednym miejscu.
+          </p>
+        </div>
 
-        <div className="bg-white rounded-2xl p-8 shadow-sm border border-gray-100">
-          <h1 className="text-xl font-bold text-[#1a1a1a] mb-1">Panel właściciela</h1>
-          <p className="text-sm text-gray-500 mb-6">
-            Wpisz adres email — wyślemy Ci link do logowania.
+        {/* Stats row */}
+        <div className="flex gap-6">
+          {[
+            { value: '2 400+', label: 'lokali w Spoot' },
+            { value: '18 tys.', label: 'aktywnych użytkowników' },
+            { value: '4.8★', label: 'średnia ocena aplikacji' },
+          ].map(s => (
+            <div key={s.label}>
+              <div className="text-white font-bold text-lg">{s.value}</div>
+              <div className="text-white/40 text-xs mt-0.5">{s.label}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Prawa strona — formularz */}
+      <div
+        className="flex-1 flex flex-col items-center justify-center p-6 lg:p-16"
+        style={{ backgroundColor: '#f7f7f5' }}
+      >
+        {/* Mobile logo */}
+        <div className="flex items-center gap-2 mb-10 lg:hidden">
+          <div
+            className="w-8 h-8 rounded-lg flex items-center justify-center text-white font-bold"
+            style={{ backgroundColor: '#D4892A' }}
+          >
+            S
+          </div>
+          <span className="font-bold text-lg" style={{ color: '#1a1a1a' }}>Spoot</span>
+        </div>
+
+        <div className="w-full max-w-sm">
+          <h1 className="text-2xl font-bold mb-1" style={{ color: '#1a1a1a' }}>
+            Zaloguj się
+          </h1>
+          <p className="text-sm mb-8" style={{ color: '#888' }}>
+            Wyślemy Ci link logowania na email — bez hasła.
           </p>
 
+          {linkExpired && (
+            <div
+              className="rounded-xl px-4 py-3 mb-5 text-sm"
+              style={{ backgroundColor: '#FEF2F2', color: '#DC2626', border: '1px solid #FECACA' }}
+            >
+              Link logowania wygasł lub jest nieprawidłowy. Wyślij nowy link poniżej.
+            </div>
+          )}
+
           {sent ? (
-            <div className="text-center py-4">
-              <div className="text-3xl mb-3">📬</div>
-              <p className="font-semibold text-[#1a1a1a]">Sprawdź skrzynkę</p>
-              <p className="text-sm text-gray-500 mt-1">
-                Link do logowania wysłany na <strong>{email}</strong>
+            <div className="text-center py-8">
+              <div
+                className="w-16 h-16 rounded-2xl flex items-center justify-center text-3xl mx-auto mb-5"
+                style={{ backgroundColor: '#D4892A1A' }}
+              >
+                📬
+              </div>
+              <h3 className="font-bold text-lg mb-2" style={{ color: '#1a1a1a' }}>Sprawdź skrzynkę</h3>
+              <p className="text-sm" style={{ color: '#888' }}>
+                Link logowania wysłany na
               </p>
+              <p className="text-sm font-semibold mt-1" style={{ color: '#1a1a1a' }}>{email}</p>
+              <button
+                onClick={() => { setSent(false); setEmail(''); }}
+                className="mt-6 text-xs underline"
+                style={{ color: '#888' }}
+              >
+                Wyślij na inny adres
+              </button>
             </div>
           ) : (
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={handleSubmit} className="space-y-3">
               <div>
-                <label className="block text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">
-                  Email
+                <label
+                  className="block text-xs font-semibold uppercase tracking-wider mb-2"
+                  style={{ color: '#888' }}
+                >
+                  Adres email
                 </label>
                 <input
                   type="email"
@@ -83,26 +155,52 @@ export default function OwnerLoginPage() {
                   onChange={e => setEmail(e.target.value)}
                   required
                   placeholder="jan@restauracja.pl"
-                  className="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#D4892A] focus:border-transparent"
+                  style={{
+                    width: '100%',
+                    padding: '14px 16px',
+                    borderRadius: '14px',
+                    border: '1.5px solid #E5E5E5',
+                    background: '#fff',
+                    fontSize: '14px',
+                    color: '#1a1a1a',
+                    outline: 'none',
+                    transition: 'border-color 0.15s',
+                  }}
+                  onFocus={e => (e.target.style.borderColor = '#D4892A')}
+                  onBlur={e => (e.target.style.borderColor = '#E5E5E5')}
                 />
               </div>
+
               {error && (
-                <p className="text-sm text-red-500">{error}</p>
+                <p className="text-xs" style={{ color: '#DC2626' }}>{error}</p>
               )}
+
               <button
                 type="submit"
                 disabled={loading || !email}
-                className="w-full py-3 bg-[#1a1a1a] text-white rounded-xl font-semibold text-sm disabled:opacity-50 hover:bg-[#333] transition-colors"
+                style={{
+                  width: '100%',
+                  padding: '15px',
+                  borderRadius: '14px',
+                  background: loading || !email ? '#ccc' : '#1a1a1a',
+                  color: '#fff',
+                  fontWeight: '600',
+                  fontSize: '14px',
+                  cursor: loading || !email ? 'not-allowed' : 'pointer',
+                  transition: 'background 0.15s',
+                  marginTop: '8px',
+                }}
               >
-                {loading ? 'Wysyłanie...' : 'Wyślij link logowania'}
+                {loading ? 'Wysyłanie...' : 'Wyślij link logowania →'}
               </button>
             </form>
           )}
-        </div>
 
-        <p className="text-center text-xs text-gray-400 mt-6">
-          Dostęp tylko dla zweryfikowanych właścicieli lokali
-        </p>
+          <p className="text-center text-xs mt-8" style={{ color: '#bbb' }}>
+            Dostęp tylko dla zweryfikowanych właścicieli lokali.<br />
+            Pierwsze zgłoszenie przez aplikację mobilną Spoot.
+          </p>
+        </div>
       </div>
     </div>
   );
