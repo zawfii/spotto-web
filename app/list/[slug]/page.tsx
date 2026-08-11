@@ -1,6 +1,10 @@
 import { Metadata } from 'next';
+import { Manrope } from 'next/font/google';
 import { supabase } from '@/lib/supabase';
 import Link from 'next/link';
+import Image from 'next/image';
+
+const manrope = Manrope({ subsets: ['latin', 'latin-ext'], weight: ['400', '500', '600', '700', '800'] });
 
 interface ListPageProps {
   params: { slug: string };
@@ -9,33 +13,22 @@ interface ListPageProps {
 async function getListData(slug: string) {
   try {
     const { data, error } = await supabase.rpc('get_public_list_by_slug', { p_slug: slug });
-    if (error || !data || data.length === 0) {
-      return null;
-    }
+    if (error || !data || data.length === 0) return null;
     return data[0];
-  } catch (err) {
-    console.error('Error fetching list:', err);
+  } catch {
     return null;
   }
 }
 
-export async function generateMetadata({
-  params,
-}: ListPageProps): Promise<Metadata> {
+export async function generateMetadata({ params }: ListPageProps): Promise<Metadata> {
   const list = await getListData(params.slug);
-
-  if (!list) {
-    return {
-      title: 'List not found - Spotto',
-    };
-  }
-
+  if (!list) return { title: 'Lista nie znaleziona - Spoot' };
   return {
-    title: `${list.name} - Spotto`,
-    description: `Check out ${list.username}'s "${list.name}" list on Spotto`,
+    title: `${list.name} - Spoot`,
+    description: `Lista miejsc "${list.name}" polecana przez ${list.username} na Spoot`,
     openGraph: {
-      title: `${list.name} - Spotto`,
-      description: `Check out ${list.username}'s "${list.name}" list on Spotto`,
+      title: `${list.name} - Spoot`,
+      description: `Lista miejsc polecana przez ${list.username}`,
       type: 'website',
     },
   };
@@ -43,264 +36,103 @@ export async function generateMetadata({
 
 export default async function ListPage({ params }: ListPageProps) {
   const list = await getListData(params.slug);
-
-  if (!list) {
-    return (
-      <main style={styles.container}>
-        <div style={styles.errorContainer}>
-          <h1 style={styles.errorTitle}>List not found</h1>
-          <p style={styles.errorDesc}>
-            This list might not exist or is not accessible.
-          </p>
-          <Link href="/" style={styles.backLink}>
-            ← Back to home
-          </Link>
-        </div>
-      </main>
-    );
-  }
-
-  const places = (list.places || []).filter((p: any) => p.id);
+  const places = list ? (list.places || []).filter((p: any) => p.id) : [];
 
   return (
-    <main style={styles.container}>
-      <header style={styles.header}>
-        <Link href="/" style={styles.backLink}>
-          ← Back
+    <main className={manrope.className} style={{ minHeight: '100vh', backgroundColor: '#fbfaeb', color: '#03271a' }}>
+      {/* Topbar */}
+      <div style={{
+        position: 'sticky', top: 0, zIndex: 10,
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        padding: '0 20px', height: '60px',
+        backgroundColor: '#fbfaeb',
+        borderBottom: '1px solid #D0CCC6',
+      }}>
+        <Link href="/" style={{ display: 'flex', alignItems: 'center' }}>
+          <Image src="/logo_spoot_zielony.png" alt="Spoot" width={90} height={36} style={{ objectFit: 'contain' }} />
         </Link>
-        <h1 style={styles.title}>{list.name}</h1>
-      </header>
-
-      <div style={styles.content}>
-        {/* Owner info */}
-        <div style={styles.ownerCard}>
-          {list.avatar_url && (
-            <img
-              src={list.avatar_url}
-              alt={list.username}
-              style={styles.avatar}
-            />
-          )}
-          {!list.avatar_url && (
-            <div style={styles.avatarPlaceholder}>👤</div>
-          )}
-          <div>
-            <p style={styles.ownerName}>{list.username || 'Anonymous'}</p>
-            <p style={styles.placeCount}>
-              {places.length} place{places.length !== 1 ? 's' : ''}
-            </p>
-          </div>
-        </div>
-
-        {/* Places */}
-        {places.length === 0 && (
-          <div style={styles.emptyState}>
-            <p>This list is empty</p>
-          </div>
-        )}
-
-        <div style={styles.placesList}>
-          {places.map((place: any) => (
-            <div key={place.id} style={styles.placeCard}>
-              {place.image && (
-                <img
-                  src={place.image}
-                  alt={place.name}
-                  style={styles.placeImage}
-                />
-              )}
-              {!place.image && (
-                <div style={styles.placeImagePlaceholder}>🍽️</div>
-              )}
-              <div style={styles.placeInfo}>
-                <h3 style={styles.placeName}>{place.name}</h3>
-                <p style={styles.placeCategory}>{place.category}</p>
-                {place.rating && (
-                  <p style={styles.rating}>⭐ {place.rating}</p>
-                )}
-                {place.review && (
-                  <p style={styles.review}>{place.review}</p>
-                )}
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {/* CTA */}
-        <div style={styles.ctaSection}>
-          <a href="https://apps.apple.com" style={styles.ctaButton}>
-            Download Spotto
-          </a>
-          <p style={styles.ctaText}>Create and share your own food lists</p>
-        </div>
+        <a
+          href="https://apps.apple.com"
+          style={{
+            position: 'absolute', right: '20px',
+            backgroundColor: '#03271a', color: '#fbfaeb',
+            padding: '6px 14px', borderRadius: '20px',
+            fontSize: '13px', fontWeight: 600,
+          }}
+        >
+          Pobierz ↗
+        </a>
       </div>
+
+      {!list && (
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '60vh', gap: '12px' }}>
+          <p style={{ fontSize: '18px', fontWeight: 600 }}>Lista nie znaleziona</p>
+          <Link href="/" style={{ fontSize: '14px', color: '#03271a', opacity: 0.6 }}>← Strona główna</Link>
+        </div>
+      )}
+
+      {list && (
+        <div style={{ maxWidth: '600px', margin: '0 auto', padding: '24px 20px 48px' }}>
+          {/* Owner + list name */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
+            {list.avatar_url
+              ? <img src={list.avatar_url} alt={list.username} style={{ width: 44, height: 44, borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
+              : <div style={{ width: 44, height: 44, borderRadius: '50%', backgroundColor: '#D0CCC6', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '20px', flexShrink: 0 }}>👤</div>
+            }
+            <div>
+              <p style={{ fontSize: '13px', color: '#03271a', opacity: 0.6, fontWeight: 500 }}>{list.username || 'Użytkownik Spoot'}</p>
+              <p style={{ fontSize: '20px', fontWeight: 700, lineHeight: 1.2 }}>{list.name}</p>
+              <p style={{ fontSize: '12px', color: '#03271a', opacity: 0.5, marginTop: '2px' }}>{places.length} {places.length === 1 ? 'miejsce' : places.length < 5 ? 'miejsca' : 'miejsc'}</p>
+            </div>
+          </div>
+
+          {/* Places */}
+          {places.length === 0 && (
+            <p style={{ textAlign: 'center', padding: '40px 0', color: '#03271a', opacity: 0.4 }}>Lista jest pusta</p>
+          )}
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '40px' }}>
+            {places.map((place: any) => (
+              <div key={place.id} style={{
+                display: 'flex', gap: '12px', alignItems: 'flex-start',
+                backgroundColor: '#fff', borderRadius: '12px', padding: '12px',
+                boxShadow: '0 1px 4px rgba(3,39,26,0.07)',
+              }}>
+                {place.image
+                  ? <img src={place.image} alt={place.name} style={{ width: 80, height: 80, borderRadius: '8px', objectFit: 'cover', flexShrink: 0 }} />
+                  : <div style={{ width: 80, height: 80, borderRadius: '8px', backgroundColor: '#D0CCC6', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '28px', flexShrink: 0 }}>🍽️</div>
+                }
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <p style={{ fontWeight: 700, fontSize: '15px', marginBottom: '2px' }}>{place.name}</p>
+                  <p style={{ fontSize: '12px', color: '#03271a', opacity: 0.5 }}>{place.category}</p>
+                  {place.rating && <p style={{ fontSize: '13px', color: '#ff751f', fontWeight: 600, marginTop: '4px' }}>⭐ {place.rating}</p>}
+                  {place.review && <p style={{ fontSize: '13px', color: '#03271a', opacity: 0.65, marginTop: '4px', fontStyle: 'italic', overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' as any }}>{place.review}</p>}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* CTA */}
+          <div style={{
+            backgroundColor: '#03271a', borderRadius: '16px',
+            padding: '24px', textAlign: 'center', color: '#fbfaeb',
+          }}>
+            <p style={{ fontWeight: 700, fontSize: '18px', marginBottom: '8px' }}>Dołącz do Spoot</p>
+            <p style={{ fontSize: '14px', opacity: 0.7, marginBottom: '20px' }}>Twórz własne listy i odkrywaj miejsca polecane przez znajomych</p>
+            <a
+              href="https://apps.apple.com"
+              style={{
+                display: 'inline-block',
+                backgroundColor: '#fbfaeb', color: '#03271a',
+                padding: '12px 28px', borderRadius: '24px',
+                fontWeight: 700, fontSize: '14px',
+              }}
+            >
+              Pobierz na iPhone
+            </a>
+          </div>
+        </div>
+      )}
     </main>
   );
 }
-
-const styles: Record<string, React.CSSProperties> = {
-  container: {
-    minHeight: '100vh',
-    backgroundColor: '#fbfaeb',
-    fontFamily: 'system-ui, -apple-system, sans-serif',
-    color: '#03271a',
-  },
-  header: {
-    padding: '16px 20px',
-    borderBottom: '1px solid #D0CCC6',
-    display: 'flex',
-    alignItems: 'center',
-    gap: '16px',
-  },
-  backLink: {
-    color: '#03271a',
-    textDecoration: 'none',
-    fontSize: '14px',
-    fontWeight: '500',
-  },
-  title: {
-    flex: 1,
-    fontSize: '20px',
-    fontWeight: '600',
-    margin: 0,
-  },
-  content: {
-    maxWidth: '600px',
-    margin: '0 auto',
-    padding: '20px',
-  },
-  ownerCard: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '12px',
-    backgroundColor: 'rgba(3, 39, 26, 0.05)',
-    borderRadius: '12px',
-    padding: '16px',
-    marginBottom: '24px',
-  },
-  avatar: {
-    width: '48px',
-    height: '48px',
-    borderRadius: '24px',
-    objectFit: 'cover',
-  },
-  avatarPlaceholder: {
-    width: '48px',
-    height: '48px',
-    borderRadius: '24px',
-    backgroundColor: '#D0CCC6',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    fontSize: '24px',
-    flexShrink: 0,
-  },
-  ownerName: {
-    fontSize: '14px',
-    fontWeight: '600',
-    margin: 0,
-  },
-  placeCount: {
-    fontSize: '12px',
-    color: '#666',
-    margin: '4px 0 0 0',
-  },
-  placesList: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '12px',
-  },
-  placeCard: {
-    display: 'flex',
-    gap: '12px',
-    backgroundColor: 'white',
-    borderRadius: '8px',
-    overflow: 'hidden',
-    padding: '12px',
-    boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-  },
-  placeImage: {
-    width: '72px',
-    height: '72px',
-    borderRadius: '8px',
-    objectFit: 'cover',
-    flexShrink: 0,
-  },
-  placeImagePlaceholder: {
-    width: '72px',
-    height: '72px',
-    borderRadius: '8px',
-    backgroundColor: '#D0CCC6',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    fontSize: '28px',
-    flexShrink: 0,
-  },
-  placeInfo: {
-    flex: 1,
-  },
-  placeName: {
-    fontSize: '14px',
-    fontWeight: '600',
-    margin: '0 0 4px 0',
-  },
-  placeCategory: {
-    fontSize: '12px',
-    color: '#666',
-    margin: 0,
-  },
-  rating: {
-    fontSize: '12px',
-    color: '#ff751f',
-    margin: '4px 0 0 0',
-  },
-  review: {
-    fontSize: '12px',
-    color: '#666',
-    margin: '4px 0 0 0',
-  },
-  emptyState: {
-    textAlign: 'center',
-    padding: '40px 20px',
-    color: '#999',
-  },
-  ctaSection: {
-    textAlign: 'center',
-    marginTop: '32px',
-    paddingBottom: '40px',
-  },
-  ctaButton: {
-    display: 'inline-block',
-    backgroundColor: '#03271a',
-    color: '#fbfaeb',
-    padding: '12px 24px',
-    borderRadius: '8px',
-    textDecoration: 'none',
-    fontSize: '14px',
-    fontWeight: '600',
-  },
-  ctaText: {
-    fontSize: '12px',
-    color: '#666',
-    margin: '12px 0 0 0',
-  },
-  errorContainer: {
-    minHeight: '100vh',
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: '20px',
-  },
-  errorTitle: {
-    fontSize: '24px',
-    fontWeight: '600',
-    margin: '0 0 12px 0',
-  },
-  errorDesc: {
-    fontSize: '14px',
-    color: '#666',
-    margin: '0 0 24px 0',
-  },
-};
