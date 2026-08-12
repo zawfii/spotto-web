@@ -3,6 +3,7 @@ import { Manrope } from 'next/font/google';
 import { supabase } from '@/lib/supabase';
 import Link from 'next/link';
 import Image from 'next/image';
+import ListMap from '@/components/ListMapClient';
 
 const manrope = Manrope({ subsets: ['latin', 'latin-ext'], weight: ['400', '500', '600', '700', '800'] });
 
@@ -72,7 +73,9 @@ export default async function ListPage({ params }: ListPageProps) {
       )}
 
       {list && (
-        <div style={{ maxWidth: '600px', margin: '0 auto', padding: '24px 20px 48px' }}>
+        <>
+          <ListMap places={places.map((p: any) => ({ id: p.id, name: p.name, lat: p.lat, lng: p.lng }))} />
+          <div style={{ maxWidth: '600px', margin: '0 auto', padding: '24px 20px 48px' }}>
           {/* Owner + list name */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
             {list.avatar_url
@@ -131,7 +134,8 @@ export default async function ListPage({ params }: ListPageProps) {
               Pobierz na iPhone
             </a>
           </div>
-        </div>
+          </div>
+        </>
       )}
     </main>
   );
