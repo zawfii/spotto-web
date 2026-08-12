@@ -3,7 +3,7 @@
 
 import Image from 'next/image';
 import { createBrowserClient } from '@supabase/ssr';
-import { useMemo, useState } from 'react';
+import { Suspense, useMemo, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 
 const GREEN = '#1A3C34';
@@ -11,6 +11,14 @@ const ORANGE = '#F5621C';
 const BG = '#F5F2E8';
 
 export default function OwnerLoginPage() {
+  return (
+    <Suspense fallback={null}>
+      <OwnerLoginForm />
+    </Suspense>
+  );
+}
+
+function OwnerLoginForm() {
   const searchParams = useSearchParams();
   const linkExpired = searchParams.get('error') === '1';
 
