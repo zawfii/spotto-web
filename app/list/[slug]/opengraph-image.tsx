@@ -18,13 +18,11 @@ async function getListData(slug: string) {
 }
 
 export default async function Image({ params }: { params: { slug: string } }) {
-  const [list, logoBuffer, iconBuffer] = await Promise.all([
+  const [list, logoBuffer] = await Promise.all([
     getListData(params.slug),
     readFile(join(process.cwd(), 'public/logo_spoot_bialy.png')),
-    readFile(join(process.cwd(), 'public/spoot-icon.png')),
   ]);
   const logoSrc = `data:image/png;base64,${logoBuffer.toString('base64')}`;
-  const iconSrc = `data:image/png;base64,${iconBuffer.toString('base64')}`;
 
   const places = list ? (list.places || []).filter((p: any) => p.id) : [];
   const name = list?.name || 'Lista Spoot';
@@ -46,12 +44,30 @@ export default async function Image({ params }: { params: { slug: string } }) {
           fontFamily: 'sans-serif',
         }}
       >
-        {/* Watermark */}
-        <img
-          src={iconSrc}
-          width={620}
-          height={620}
-          style={{ position: 'absolute', right: -160, bottom: -160, opacity: 0.07, display: 'flex' }}
+        {/* Watermark: dwa nachodzące koła, motyw z logo */}
+        <div
+          style={{
+            position: 'absolute',
+            right: -120,
+            bottom: -180,
+            width: 480,
+            height: 480,
+            borderRadius: '50%',
+            backgroundColor: 'rgba(255,117,31,0.05)',
+            display: 'flex',
+          }}
+        />
+        <div
+          style={{
+            position: 'absolute',
+            right: 60,
+            bottom: -180,
+            width: 480,
+            height: 480,
+            borderRadius: '50%',
+            border: '36px solid rgba(251,250,235,0.04)',
+            display: 'flex',
+          }}
         />
 
         {/* Content */}

@@ -8,13 +8,11 @@ export const contentType = 'image/png';
 export const alt = 'Spoot — profil użytkownika';
 
 export default async function Image({ params }: { params: { username: string } }) {
-  const [profile, logoBuffer, iconBuffer] = await Promise.all([
+  const [profile, logoBuffer] = await Promise.all([
     getProfileByUsername(params.username),
     readFile(join(process.cwd(), 'public/logo_spoot_bialy.png')),
-    readFile(join(process.cwd(), 'public/spoot-icon.png')),
   ]);
   const logoSrc = `data:image/png;base64,${logoBuffer.toString('base64')}`;
-  const iconSrc = `data:image/png;base64,${iconBuffer.toString('base64')}`;
 
   const displayName = profile?.display_name || 'Użytkownik Spoot';
   const username = profile?.username || params.username;
@@ -33,12 +31,30 @@ export default async function Image({ params }: { params: { username: string } }
           fontFamily: 'sans-serif',
         }}
       >
-        {/* Watermark */}
-        <img
-          src={iconSrc}
-          width={620}
-          height={620}
-          style={{ position: 'absolute', right: -160, bottom: -160, opacity: 0.07, display: 'flex' }}
+        {/* Watermark: dwa nachodzące koła, motyw z logo */}
+        <div
+          style={{
+            position: 'absolute',
+            right: -120,
+            bottom: -180,
+            width: 480,
+            height: 480,
+            borderRadius: '50%',
+            backgroundColor: 'rgba(255,117,31,0.05)',
+            display: 'flex',
+          }}
+        />
+        <div
+          style={{
+            position: 'absolute',
+            right: 60,
+            bottom: -180,
+            width: 480,
+            height: 480,
+            borderRadius: '50%',
+            border: '36px solid rgba(251,250,235,0.04)',
+            display: 'flex',
+          }}
         />
 
         {/* Content */}
