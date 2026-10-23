@@ -25,3 +25,13 @@ export async function getProfileByUsername(username: string) {
     return null;
   }
 }
+
+export async function getRatingGroupPreview(groupId: string) {
+  try {
+    const { data, error } = await supabase.rpc('get_rating_group_preview', { p_group_id: groupId });
+    if (error || !data || data.length === 0) return null;
+    return data[0] as { id: string; name: string; member_count: number };
+  } catch {
+    return null;
+  }
+}
