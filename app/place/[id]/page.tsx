@@ -4,7 +4,8 @@ import { Manrope } from 'next/font/google';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import { Wordmark } from '@/components/SpootLogo';
-import { AppBridge, StoreLink, TodayHours } from './PlaceClient';
+import { AppBridge, StoreLink } from '@/components/AppBridge';
+import { Badges, PlaceCard, TodayHours } from './PlaceClient';
 
 // Plus Jakarta Sans z apki odpada: next/font 14.2 wywraca się na jej plikach z Google Fonts.
 const manrope = Manrope({ subsets: ['latin', 'latin-ext'], weight: ['400', '500', '600', '700'], variable: '--font-manrope' });
@@ -114,6 +115,8 @@ export default async function PlacePage({ params }: PlacePageProps) {
   const address = place.address ? String(place.address).replace(/,\s*Polska$/, '') : null;
   const atmosphere: string[] = place.atmosphere ?? [];
 
+  const bridgePlace = { id: place.id, name: place.name, meta, imageUrl: place.image_url ?? null, spootRating: spootText, googleRating: googleText };
+
   const rows: ReactNode[] = [];
   if (address) {
     const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${place.name}, ${place.address}`)}`;
@@ -213,7 +216,33 @@ export default async function PlacePage({ params }: PlacePageProps) {
       </div>
 
       <AppBridge
-        place={{ id: place.id, name: place.name, meta, imageUrl: place.image_url ?? null, spootRating: spootText, googleRating: googleText }}
+        content={{
+          appPath: `place-detail?id=${encodeURIComponent(place.id)}`,
+          barTitle: `${place.name} czeka w Spoot`,
+          barText: 'Zapisz to miejsce i oceń, co zjesz.',
+          card: <PlaceCard place={bridgePlace} />,
+          openingText: 'Za chwilę zobaczysz to miejsce tam, gdzie możesz je zapisać i ocenić.',
+          browserLabel: 'Zobacz lokal w przeglądarce',
+          sheetHeader: (
+            <>
+              {place.image_url && (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={place.image_url} alt="" style={{ width: 56, height: 56, borderRadius: 12, objectFit: 'cover', flexShrink: 0 }} />
+              )}
+              <div style={{ flexGrow: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 2 }}>
+                <span style={{ fontFamily: MANROPE, fontWeight: 700, fontSize: 16 }}>{place.name}</span>
+                <span style={{ fontSize: 13, color: INK2 }}>{meta}</span>
+              </div>
+              <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}><Badges place={bridgePlace} /></div>
+            </>
+          ),
+          sheetTitle: `Zapisz ${place.name} i oceń, co zjesz`,
+          benefits: [
+            { title: 'Zapisz na później', text: 'Lokal trafi do Twoich zapisanych miejsc.', icon: <path d="M6 4h12v17l-6-4-6 4z" /> },
+            { title: 'Oceniaj, co jesz', text: 'Mięso, sos, bułka — każde osobno, w skali 1–10.', icon: ICONS.star },
+            { title: 'Polecenia pod Twój gust', text: 'Im więcej ocenisz, tym trafniej podpowiadamy.', icon: ICONS.sparkle },
+          ],
+        }}
         appStoreUrl={APP_STORE_URL}
         playUrl={PLAY_URL}
       />
@@ -237,6 +266,8 @@ const ICONS = {
   pin: <><path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z" /><circle cx="12" cy="9.5" r="2.5" /></>,
   phone: <path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2z" />,
   cash: <><rect x="3" y="6" width="18" height="12" rx="2" /><circle cx="12" cy="12" r="2.5" /></>,
+  star: <path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8-5.2-2.7-5.2 2.7 1-5.8-4.3-4.1 5.9-.9z" />,
+  sparkle: <><path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z" /><path d="M19 15l.8 2.2 2.2.8-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z" /></>,
 };
 
 const s: Record<string, CSSProperties> = {

@@ -3,7 +3,10 @@
     "details": [
       {
         "appIDs": ["9RQR6242TX.com.spoot.app"],
-        "components": [{ "/": "/place/*", "comment": "Link do lokalu otwiera ekran lokalu w apce" }]
+        "components": [
+          { "/": "/place/*", "comment": "Link do lokalu otwiera ekran lokalu w apce" },
+          { "/": "/u/*", "comment": "Link do profilu otwiera profil w apce" }
+        ]
       }
     ]
   }
