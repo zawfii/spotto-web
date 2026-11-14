@@ -1,10 +1,31 @@
-import { Metadata } from 'next';
-import { supabase } from '@/lib/supabase';
+import type { Metadata, Viewport } from 'next';
+import type { CSSProperties, ReactNode } from 'react';
+import { Manrope } from 'next/font/google';
 import Link from 'next/link';
+import { supabase } from '@/lib/supabase';
+import { Wordmark } from '@/components/SpootLogo';
+import { AppBridge, StoreLink, TodayHours } from './PlaceClient';
+
+// Plus Jakarta Sans z apki odpada: next/font 14.2 wywraca się na jej plikach z Google Fonts.
+const manrope = Manrope({ subsets: ['latin', 'latin-ext'], weight: ['400', '500', '600', '700'], variable: '--font-manrope' });
+
+// ID z eas.json (submit.production.ios.ascAppId) i pakiet z app.json.
+const APP_STORE_URL = 'https://apps.apple.com/pl/app/id6822473524';
+const PLAY_URL = 'https://play.google.com/store/apps/details?id=com.spoot.app';
+
+const GREEN = '#164938';
+const INK = '#03271a';
+const INK2 = '#1e3028';
+const CREAM = '#fdf5ec';
+const CARD = '#eae5de';
+const HAIR = 'rgba(3,39,26,0.15)';
+const MANROPE = 'var(--font-manrope), sans-serif';
 
 interface PlacePageProps {
   params: { id: string };
 }
+
+export const viewport: Viewport = { width: 'device-width', initialScale: 1, viewportFit: 'cover', themeColor: CREAM };
 
 async function getPlaceData(id: string) {
   try {
@@ -41,381 +62,189 @@ export async function generateMetadata({ params }: PlacePageProps): Promise<Meta
   };
 }
 
+// Jak utils/plural.ts w apce.
+function pluralPl(n: number, one: string, few: string, many: string) {
+  const abs = Math.abs(n);
+  if (abs === 1) return one;
+  const last = abs % 10;
+  const lastTwo = abs % 100;
+  return last >= 2 && last <= 4 && !(lastTwo >= 12 && lastTwo <= 14) ? few : many;
+}
+
+// Jak ratingLabel / ratingColor w apce (components/RatingSlider.tsx). Średni i niski kolor
+// przyciemnione, żeby duża cyfra na szarej karcie miała kontrast co najmniej 3:1.
+function ratingLabel(v: number) {
+  if (v <= 2) return 'Nie polecam';
+  if (v <= 4) return 'Słabe';
+  if (v <= 6) return 'Może być';
+  if (v <= 8) return 'Dobre';
+  return 'Rewelacja';
+}
+
+function ratingColor(v: number) {
+  if (v >= 8) return '#2e7d32';
+  if (v >= 5) return '#9a5b12';
+  return '#b23c00';
+}
+
 export default async function PlacePage({ params }: PlacePageProps) {
   const place = await getPlaceData(params.id);
+  const fonts = manrope.variable;
 
   if (!place) {
     return (
-      <main style={styles.container}>
-        <div style={styles.errorContainer}>
-          <h1 style={styles.errorTitle}>Miejsce nie znalezione</h1>
-          <p style={styles.errorDesc}>To miejsce mogło zostać usunięte lub jest niedostępne.</p>
-          <Link href="/" style={styles.backLink}>← Wróć</Link>
+      <main className={fonts} style={s.page}>
+        <div style={{ ...s.column, minHeight: '100vh', padding: 24, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 12, textAlign: 'center' }}>
+          <Wordmark size={28} />
+          <h1 style={{ margin: '24px 0 0', fontFamily: MANROPE, fontWeight: 700, fontSize: 22 }}>Nie znaleźliśmy tego miejsca</h1>
+          <p style={{ margin: 0, fontSize: 14, color: INK2 }}>Mogło zostać usunięte albo link jest nieaktualny.</p>
+          <Link href="/" style={{ padding: 12, fontSize: 14, color: GREEN, textDecoration: 'underline' }}>Strona główna</Link>
         </div>
       </main>
     );
   }
 
-  const spootRating = place.avg_spotto_rating;
-  const googleRating = place.google_rating;
+  const meta = [place.district, place.venue_type && place.venue_type !== place.category ? place.venue_type : null, place.category]
+    .filter(Boolean)
+    .join(' · ');
+  const spoot = place.avg_spotto_rating != null ? Number(place.avg_spotto_rating) : null;
+  const google = place.google_rating != null ? Number(place.google_rating) : null;
+  const spootText = spoot != null ? spoot.toFixed(1) : null;
+  const googleText = google != null ? google.toFixed(1).replace('.', ',') : null;
+  const address = place.address ? String(place.address).replace(/,\s*Polska$/, '') : null;
+  const atmosphere: string[] = place.atmosphere ?? [];
+
+  const rows: ReactNode[] = [];
+  if (address) {
+    const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${place.name}, ${place.address}`)}`;
+    rows.push(<InfoRow key="address" icon={ICONS.pin} action={<a href={mapsUrl} style={s.rowAction}>Trasa</a>}>{address}</InfoRow>);
+  }
+  if (place.hours) rows.push(<TodayHours key="hours" hours={place.hours} />);
+  if (place.phone) {
+    rows.push(
+      <InfoRow key="phone" icon={ICONS.phone} action={<a href={`tel:${String(place.phone).replace(/\s/g, '')}`} style={s.rowAction}>Zadzwoń</a>}>
+        {place.phone}
+      </InfoRow>,
+    );
+  }
+  if (place.price_range) rows.push(<InfoRow key="price" icon={ICONS.cash}>{place.price_range}</InfoRow>);
 
   return (
-    <main style={styles.container}>
-      {/* Hero */}
-      {place.image_url && (
-        <div style={styles.heroWrap}>
-          <img src={place.image_url} alt={place.name} style={styles.heroImage} />
-          <div style={styles.heroOverlay} />
-          <div style={styles.heroContent}>
-            {place.tags && place.tags.length > 0 && (
-              <div style={styles.tagsRow}>
-                {(place.tags as string[]).slice(0, 3).map((tag: string) => (
-                  <span key={tag} style={styles.tag}>{tag}</span>
+    <main className={fonts} style={{ ...s.page, paddingBottom: 'calc(200px + env(safe-area-inset-bottom))' }}>
+      <div style={s.column}>
+        <header style={{ height: 56, padding: '0 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <Link href="/" aria-label="Spoot — strona główna" style={{ display: 'flex' }}><Wordmark size={22} /></Link>
+          <StoreLink appStoreUrl={APP_STORE_URL} playUrl={PLAY_URL} style={{ ...s.eyebrow, color: GREEN, padding: '12px 0 12px 12px' }}>
+            POBIERZ APLIKACJĘ
+          </StoreLink>
+        </header>
+
+        <div style={{ padding: '0 16px', display: 'flex', flexDirection: 'column', gap: 16 }}>
+          {place.image_url ? (
+            <div style={{ position: 'relative', height: 230, borderRadius: 24, overflow: 'hidden', background: CARD }}>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={place.image_url} alt={`Zdjęcie: ${place.name}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              <div style={{ position: 'absolute', left: 0, right: 0, bottom: 0, padding: '14px 16px', background: 'rgba(0,0,0,0.55)', color: '#fff', display: 'flex', flexDirection: 'column', gap: 2 }}>
+                <h1 style={{ margin: 0, fontFamily: MANROPE, fontWeight: 700, fontSize: 26, lineHeight: '32px' }}>{place.name}</h1>
+                <p style={{ margin: 0, fontSize: 13, color: 'rgba(255,255,255,0.8)' }}>{meta}</p>
+              </div>
+            </div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 2, paddingTop: 8 }}>
+              <h1 style={{ margin: 0, fontFamily: MANROPE, fontWeight: 700, fontSize: 26, lineHeight: '32px' }}>{place.name}</h1>
+              <p style={{ margin: 0, fontSize: 13, color: INK2 }}>{meta}</p>
+            </div>
+          )}
+
+          {(spoot != null || google != null) && (
+            <div style={{ display: 'flex', gap: 12 }}>
+              {spoot != null && (
+                <div style={s.ratingCard}>
+                  <span style={s.eyebrow}>SPOOT</span>
+                  <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, color: ratingColor(spoot) }}>
+                    <span style={s.ratingValue}>{spootText}</span>
+                    <span style={{ fontFamily: MANROPE, fontWeight: 700, fontSize: 13 }}>{ratingLabel(spoot)}</span>
+                  </div>
+                  {place.spotto_ratings_count != null && (
+                    <span style={s.ratingCount}>{place.spotto_ratings_count} {pluralPl(place.spotto_ratings_count, 'ocena', 'oceny', 'ocen')}</span>
+                  )}
+                </div>
+              )}
+              {google != null && (
+                <div style={s.ratingCard}>
+                  <span style={s.eyebrow}>GOOGLE</span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="#ff751f">
+                      <path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8-5.2-2.7-5.2 2.7 1-5.8-4.3-4.1 5.9-.9z" />
+                    </svg>
+                    <span style={s.ratingValue}>{googleText}</span>
+                  </div>
+                  {place.google_ratings_count != null && (
+                    <span style={s.ratingCount}>
+                      {Number(place.google_ratings_count).toLocaleString('pl-PL')} {pluralPl(place.google_ratings_count, 'ocena', 'oceny', 'ocen')}
+                    </span>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+
+          {place.editorial_summary && (
+            <p style={{ margin: 0, fontSize: 15, lineHeight: '22px', color: INK2 }}>{place.editorial_summary}</p>
+          )}
+
+          {rows.length > 0 && (
+            <div style={{ background: CARD, borderRadius: 16, overflow: 'hidden' }}>
+              {rows.flatMap((row, i) => (i ? [<div key={`divider-${i}`} style={{ height: 1, marginLeft: 48, background: HAIR }} />, row] : [row]))}
+            </div>
+          )}
+
+          {atmosphere.length > 0 && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              <h2 style={{ margin: 0, fontFamily: MANROPE, fontWeight: 700, fontSize: 16 }}>Klimat</h2>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                {atmosphere.map((tag) => (
+                  <span key={tag} style={{ background: CARD, borderRadius: 999, padding: '6px 12px', fontSize: 13 }}>{tag}</span>
                 ))}
               </div>
-            )}
-            <h1 style={styles.heroName}>{place.name}</h1>
-            <p style={styles.heroMeta}>
-              📍 {place.district} &nbsp;·&nbsp; {place.venue_type && place.venue_type !== place.category ? `${place.venue_type} · ${place.category}` : place.category}
-            </p>
-          </div>
-        </div>
-      )}
-
-      {!place.image_url && (
-        <div style={styles.headerNoImage}>
-          <Link href="/" style={styles.backLinkSmall}>← Wróć</Link>
-          <h1 style={styles.titleNoImage}>{place.name}</h1>
-          <p style={styles.metaNoImage}>📍 {place.district} · {place.category}</p>
-        </div>
-      )}
-
-      <div style={styles.content}>
-        {place.image_url && (
-          <Link href="/" style={styles.backLinkSmall}>← Wróć</Link>
-        )}
-
-        {/* Ratings */}
-        <div style={styles.ratingsRow}>
-          {spootRating != null && (
-            <div style={styles.ratingCard}>
-              <span style={styles.ratingValue}>{Number(spootRating).toFixed(1)}</span>
-              <div>
-                <p style={styles.ratingLabel}>Spoot</p>
-                {place.spotto_ratings_count != null && (
-                  <p style={styles.ratingCount}>{place.spotto_ratings_count} ocen</p>
-                )}
-              </div>
             </div>
           )}
-          {googleRating != null && (
-            <div style={styles.ratingCard}>
-              <span style={styles.ratingValueGoogle}>★ {Number(googleRating).toFixed(1)}</span>
-              <div>
-                <p style={styles.ratingLabel}>Google</p>
-                {place.google_ratings_count != null && (
-                  <p style={styles.ratingCount}>{place.google_ratings_count.toLocaleString('pl-PL')} ocen</p>
-                )}
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Summary */}
-        {place.editorial_summary && (
-          <p style={styles.summary}>{place.editorial_summary}</p>
-        )}
-
-        {/* Info card */}
-        <div style={styles.infoCard}>
-          {place.address && (
-            <div style={styles.infoRow}>
-              <span style={styles.infoIcon}>📍</span>
-              <span style={styles.infoText}>{place.address}</span>
-            </div>
-          )}
-          {place.hours && (
-            <>
-              <div style={styles.infoDivider} />
-              <div style={styles.infoRow}>
-                <span style={styles.infoIcon}>🕐</span>
-                <span style={styles.infoText}>{place.hours.split(';')[0]?.trim()}</span>
-              </div>
-            </>
-          )}
-          {place.phone && (
-            <>
-              <div style={styles.infoDivider} />
-              <div style={styles.infoRow}>
-                <span style={styles.infoIcon}>📞</span>
-                <a href={`tel:${place.phone}`} style={styles.infoLink}>{place.phone}</a>
-              </div>
-            </>
-          )}
-          {place.price_range && (
-            <>
-              <div style={styles.infoDivider} />
-              <div style={styles.infoRow}>
-                <span style={styles.infoIcon}>💰</span>
-                <span style={styles.infoText}>{place.price_range}</span>
-              </div>
-            </>
-          )}
-        </div>
-
-        {/* Atmosphere */}
-        {place.atmosphere && (place.atmosphere as string[]).length > 0 && (
-          <div style={styles.section}>
-            <h2 style={styles.sectionTitle}>Atmosfera</h2>
-            <div style={styles.tagsRowWrap}>
-              {(place.atmosphere as string[]).map((tag: string) => (
-                <span key={tag} style={styles.atmosTag}>{tag}</span>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* CTA */}
-        <div style={styles.ctaSection}>
-          <p style={styles.ctaTitle}>Odkrywaj więcej miejsc w Spoot</p>
-          <a href="https://apps.apple.com" style={styles.ctaButton}>
-            Pobierz aplikację
-          </a>
-          <p style={styles.ctaText}>Oceniaj, zapisuj i odkrywaj restauracje w Warszawie</p>
         </div>
       </div>
+
+      <AppBridge
+        place={{ id: place.id, name: place.name, meta, imageUrl: place.image_url ?? null, spootRating: spootText, googleRating: googleText }}
+        appStoreUrl={APP_STORE_URL}
+        playUrl={PLAY_URL}
+      />
     </main>
   );
 }
 
-const styles: Record<string, React.CSSProperties> = {
-  container: {
-    minHeight: '100vh',
-    backgroundColor: '#fbfaeb',
-    fontFamily: 'system-ui, -apple-system, sans-serif',
-    color: '#03271a',
-  },
-  heroWrap: {
-    position: 'relative',
-    height: '280px',
-    overflow: 'hidden',
-  },
-  heroImage: {
-    width: '100%',
-    height: '100%',
-    objectFit: 'cover',
-  },
-  heroOverlay: {
-    position: 'absolute',
-    inset: 0,
-    background: 'linear-gradient(to bottom, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0.55) 100%)',
-  },
-  heroContent: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    padding: '20px',
-  },
-  tagsRow: {
-    display: 'flex',
-    gap: '6px',
-    marginBottom: '6px',
-    flexWrap: 'wrap' as const,
-  },
-  tag: {
-    backgroundColor: 'rgba(3,39,26,0.75)',
-    color: '#fbfaeb',
-    borderRadius: '100px',
-    padding: '3px 10px',
-    fontSize: '11px',
-    fontWeight: '600',
-  },
-  heroName: {
-    color: '#fff',
-    fontSize: '26px',
-    fontWeight: '700',
-    margin: '0 0 4px 0',
-    lineHeight: '1.2',
-  },
-  heroMeta: {
-    color: 'rgba(255,255,255,0.85)',
-    fontSize: '13px',
-    margin: 0,
-  },
-  headerNoImage: {
-    padding: '16px 20px 12px',
-    borderBottom: '1px solid #D0CCC6',
-  },
-  titleNoImage: {
-    fontSize: '24px',
-    fontWeight: '700',
-    margin: '8px 0 4px',
-  },
-  metaNoImage: {
-    fontSize: '13px',
-    color: '#666',
-    margin: 0,
-  },
-  content: {
-    maxWidth: '600px',
-    margin: '0 auto',
-    padding: '16px 20px',
-  },
-  backLink: {
-    color: '#03271a',
-    textDecoration: 'none',
-    fontSize: '14px',
-    fontWeight: '500',
-  },
-  backLinkSmall: {
-    display: 'inline-block',
-    color: '#03271a',
-    textDecoration: 'none',
-    fontSize: '13px',
-    fontWeight: '500',
-    marginBottom: '12px',
-    opacity: 0.7,
-  },
-  ratingsRow: {
-    display: 'flex',
-    gap: '12px',
-    marginBottom: '16px',
-  },
-  ratingCard: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '10px',
-    backgroundColor: 'white',
-    borderRadius: '12px',
-    padding: '12px 16px',
-    boxShadow: '0 1px 3px rgba(0,0,0,0.08)',
-    flex: 1,
-  },
-  ratingValue: {
-    fontSize: '28px',
-    fontWeight: '700',
-    color: '#c84c4c',
-    lineHeight: '1',
-  },
-  ratingValueGoogle: {
-    fontSize: '18px',
-    fontWeight: '700',
-    color: '#f59e0b',
-    lineHeight: '1',
-  },
-  ratingLabel: {
-    fontSize: '12px',
-    fontWeight: '600',
-    color: '#03271a',
-    margin: 0,
-  },
-  ratingCount: {
-    fontSize: '11px',
-    color: '#888',
-    margin: '2px 0 0 0',
-  },
-  summary: {
-    fontSize: '14px',
-    color: '#444',
-    lineHeight: '1.6',
-    marginBottom: '16px',
-  },
-  infoCard: {
-    backgroundColor: 'white',
-    borderRadius: '12px',
-    overflow: 'hidden',
-    boxShadow: '0 1px 3px rgba(0,0,0,0.08)',
-    marginBottom: '16px',
-  },
-  infoRow: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '10px',
-    padding: '12px 16px',
-  },
-  infoDivider: {
-    height: '1px',
-    backgroundColor: '#f0ede6',
-    marginLeft: '42px',
-  },
-  infoIcon: {
-    fontSize: '16px',
-    width: '20px',
-    textAlign: 'center' as const,
-    flexShrink: 0,
-  },
-  infoText: {
-    fontSize: '14px',
-    color: '#03271a',
-  },
-  infoLink: {
-    fontSize: '14px',
-    color: '#03271a',
-    textDecoration: 'none',
-  },
-  section: {
-    marginBottom: '16px',
-  },
-  sectionTitle: {
-    fontSize: '15px',
-    fontWeight: '600',
-    margin: '0 0 8px 0',
-  },
-  tagsRowWrap: {
-    display: 'flex',
-    flexWrap: 'wrap' as const,
-    gap: '8px',
-  },
-  atmosTag: {
-    backgroundColor: 'white',
-    border: '1px solid #D0CCC6',
-    borderRadius: '100px',
-    padding: '5px 14px',
-    fontSize: '13px',
-    color: '#03271a',
-  },
-  ctaSection: {
-    textAlign: 'center' as const,
-    marginTop: '32px',
-    paddingBottom: '48px',
-  },
-  ctaTitle: {
-    fontSize: '16px',
-    fontWeight: '600',
-    margin: '0 0 16px 0',
-  },
-  ctaButton: {
-    display: 'inline-block',
-    backgroundColor: '#03271a',
-    color: '#fbfaeb',
-    padding: '12px 28px',
-    borderRadius: '100px',
-    textDecoration: 'none',
-    fontSize: '14px',
-    fontWeight: '600',
-  },
-  ctaText: {
-    fontSize: '12px',
-    color: '#888',
-    margin: '12px 0 0 0',
-  },
-  errorContainer: {
-    minHeight: '100vh',
-    display: 'flex',
-    flexDirection: 'column' as const,
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: '20px',
-  },
-  errorTitle: {
-    fontSize: '24px',
-    fontWeight: '600',
-    margin: '0 0 12px 0',
-  },
-  errorDesc: {
-    fontSize: '14px',
-    color: '#666',
-    margin: '0 0 24px 0',
-  },
+function InfoRow({ icon, action, children }: { icon: ReactNode; action?: ReactNode; children: ReactNode }) {
+  return (
+    <div style={{ minHeight: 52, padding: '0 16px', display: 'flex', alignItems: 'center', gap: 12 }}>
+      <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={GREEN} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+        {icon}
+      </svg>
+      <span style={{ flexGrow: 1, padding: '14px 0', fontSize: 15 }}>{children}</span>
+      {action}
+    </div>
+  );
+}
+
+const ICONS = {
+  pin: <><path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z" /><circle cx="12" cy="9.5" r="2.5" /></>,
+  phone: <path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2z" />,
+  cash: <><rect x="3" y="6" width="18" height="12" rx="2" /><circle cx="12" cy="12" r="2.5" /></>,
+};
+
+const s: Record<string, CSSProperties> = {
+  page: { minHeight: '100vh', background: CREAM, color: INK, fontFamily: 'var(--font-manrope), system-ui, sans-serif' },
+  column: { maxWidth: 480, margin: '0 auto' },
+  eyebrow: { fontFamily: MANROPE, fontWeight: 700, fontSize: 11, letterSpacing: 1.2, color: INK2 },
+  ratingCard: { flex: 1, background: CARD, borderRadius: 16, padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: 2 },
+  ratingValue: { fontFamily: MANROPE, fontWeight: 700, fontSize: 28, lineHeight: '34px' },
+  ratingCount: { fontSize: 12, color: INK2 },
+  rowAction: { padding: '14px 0 14px 8px', fontFamily: MANROPE, fontWeight: 700, fontSize: 13, color: GREEN, flexShrink: 0 },
 };

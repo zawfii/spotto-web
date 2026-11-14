@@ -37,3 +37,22 @@ img {
   max-width: 100%;
   display: block;
 }
+
+summary::-webkit-details-marker {
+  display: none;
+}
+
+/* Strona lokalu: oddychający sygnet przy otwieraniu apki, wysuwany arkusz. */
+@keyframes spoot-dot-l { from { transform: translateX(0); } to { transform: translateX(-3px); } }
+@keyframes spoot-dot-r { from { transform: translateX(0); } to { transform: translateX(3px); } }
+@keyframes spoot-sheet-up { from { transform: translateY(100%); } to { transform: none; } }
+@keyframes spoot-fade-in { from { opacity: 0; } to { opacity: 1; } }
+
+.spoot-dot-l { animation: spoot-dot-l 750ms ease-in-out infinite alternate; }
+.spoot-dot-r { animation: spoot-dot-r 750ms ease-in-out infinite alternate; }
+.spoot-sheet { animation: spoot-sheet-up 280ms ease-out; }
+.spoot-fade { animation: spoot-fade-in 200ms ease-out; }
+
+@media (prefers-reduced-motion: reduce) {
+  .spoot-dot-l, .spoot-dot-r, .spoot-sheet, .spoot-fade { animation: none; }
+}
