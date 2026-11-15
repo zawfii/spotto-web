@@ -10,6 +10,8 @@ const css = `
 .legal h3{font-size:17px;margin:28px 0 8px}
 .legal p,.legal ul,.legal ol{margin:0 0 14px}
 .legal ul,.legal ol{padding-left:22px}
+.legal ul{list-style:disc}
+.legal ol{list-style:decimal}
 .legal li{margin-bottom:6px}
 .legal a{color:#164938}
 .legal hr{border:0;border-top:1px solid #d9d7c3;margin:40px 0 16px}
