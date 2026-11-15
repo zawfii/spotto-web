@@ -1,21 +1,59 @@
-import { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
+import type { CSSProperties, ReactNode } from 'react';
 import { Manrope } from 'next/font/google';
-import { supabase } from '@/lib/supabase';
 import Link from 'next/link';
-import Image from 'next/image';
-import ListMap from '@/components/ListMapClient';
+import { supabase, isRealPhoto } from '@/lib/supabase';
+import { pluralPl } from '@/lib/format';
+import { Wordmark } from '@/components/SpootLogo';
+import { AppBridge, OpenAppButton } from '@/components/AppBridge';
+import { Avatar, Icon, ICONS } from '@/components/ui';
+import { ListPlaces, ShareButton, type ListPlace } from './ListClient';
 
-const manrope = Manrope({ subsets: ['latin', 'latin-ext'], weight: ['400', '500', '600', '700', '800'] });
+const manrope = Manrope({ subsets: ['latin', 'latin-ext'], weight: ['400', '500', '600', '700'], variable: '--font-manrope' });
+
+// Jak na stronie profilu (app/u/[username]/page.tsx).
+const APP_STORE_URL = 'https://apps.apple.com/pl/app/id6822473524';
+const PLAY_URL = 'https://play.google.com/store/apps/details?id=com.spoot.app';
+
+const GREEN = '#164938';
+const INK = '#03271a';
+const INK2 = '#1e3028';
+const CREAM = '#fdf5ec';
+const MANROPE = 'var(--font-manrope), sans-serif';
+const page: CSSProperties = { minHeight: '100vh', background: CREAM, color: INK, fontFamily: 'var(--font-manrope), system-ui, sans-serif' };
 
 interface ListPageProps {
   params: { slug: string };
 }
 
+export const viewport: Viewport = { width: 'device-width', initialScale: 1, viewportFit: 'cover', themeColor: CREAM };
+
+type RpcPlace = { id: string; name: string; image: string; category: string; rating: string; review: string };
+
 async function getListData(slug: string) {
   try {
     const { data, error } = await supabase.rpc('get_public_list_by_slug', { p_slug: slug });
     if (error || !data || data.length === 0) return null;
-    return data[0];
+    const list = data[0];
+    // RPC zwraca display_name jako „username”; prawdziwy nick do linku bierzemy z profiles (czytelne dla anon).
+    const { data: owner } = await supabase.from('profiles').select('username').eq('id', list.user_id).maybeSingle();
+    const places: ListPlace[] = ((list.places ?? []) as RpcPlace[])
+      .filter((p) => p.id)
+      .map((p) => ({
+        id: p.id,
+        name: p.name,
+        category: p.category || null,
+        image: isRealPhoto(p.image) ? p.image : null,
+        rating: p.rating ? Number(p.rating) : null,
+        review: p.review || null,
+      }));
+    return {
+      name: list.name as string,
+      displayName: (list.username as string | null)?.trim() || null,
+      avatarUrl: (list.avatar_url as string | null) ?? null,
+      handle: (owner?.username as string | undefined) ?? null,
+      places,
+    };
   } catch {
     return null;
   }
@@ -24,12 +62,13 @@ async function getListData(slug: string) {
 export async function generateMetadata({ params }: ListPageProps): Promise<Metadata> {
   const list = await getListData(params.slug);
   if (!list) return { title: 'Lista nie znaleziona - Spoot' };
+  const author = list.displayName || 'Użytkownik Spoot';
   return {
     title: `${list.name} - Spoot`,
-    description: `Lista miejsc "${list.name}" polecana przez ${list.username} na Spoot`,
+    description: `Lista miejsc "${list.name}" polecana przez ${author} na Spoot`,
     openGraph: {
       title: `${list.name} - Spoot`,
-      description: `Lista miejsc polecana przez ${list.username}`,
+      description: `Lista miejsc polecana przez ${author}`,
       type: 'website',
     },
   };
@@ -37,106 +76,99 @@ export async function generateMetadata({ params }: ListPageProps): Promise<Metad
 
 export default async function ListPage({ params }: ListPageProps) {
   const list = await getListData(params.slug);
-  const places = list ? (list.places || []).filter((p: any) => p.id) : [];
+  const fonts = manrope.variable;
+
+  if (!list) {
+    return (
+      <main className={fonts} style={page}>
+        <div style={{ maxWidth: 480, margin: '0 auto', minHeight: '100vh', padding: 24, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 12, textAlign: 'center' }}>
+          <Wordmark size={28} />
+          <h1 style={{ margin: '24px 0 0', fontFamily: MANROPE, fontWeight: 700, fontSize: 22 }}>Nie znaleźliśmy tej listy</h1>
+          <p style={{ margin: 0, fontSize: 14, color: INK2 }}>Mogła zostać usunięta albo link jest nieaktualny.</p>
+          <Link href="/" style={{ padding: 12, fontSize: 14, color: GREEN, textDecoration: 'underline' }}>Strona główna</Link>
+        </div>
+      </main>
+    );
+  }
+
+  const n = list.places.length;
+  const count = `${n} ${pluralPl(n, 'miejsce', 'miejsca', 'miejsc')}`;
+  const author = list.displayName || (list.handle ? `@${list.handle}` : 'Użytkownik Spoot');
+  const authorMeta = [list.handle && `@${list.handle}`, count].filter(Boolean).join(' · ');
+
+  const authorRow: ReactNode = (
+    <>
+      <Avatar url={list.avatarUrl} name={author} size={40} onDark />
+      <span style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
+        <span style={{ fontFamily: MANROPE, fontWeight: 700, fontSize: 15, lineHeight: '20px' }}>{author}</span>
+        <span style={{ fontSize: 13, lineHeight: '18px', color: 'rgba(255,255,255,0.75)' }}>{authorMeta}</span>
+      </span>
+      {list.handle && <Icon color="rgba(255,255,255,0.75)" size={16}>{ICONS.chevron}</Icon>}
+    </>
+  );
+  const authorStyle: CSSProperties = { alignSelf: 'flex-start', minHeight: 44, display: 'flex', alignItems: 'center', gap: 10 };
 
   return (
-    <main className={manrope.className} style={{ minHeight: '100vh', backgroundColor: '#fbfaeb', color: '#03271a' }}>
-      {/* Topbar */}
-      <div style={{
-        position: 'sticky', top: 0, zIndex: 10,
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        padding: '0 20px', height: '60px',
-        backgroundColor: '#fbfaeb',
-        borderBottom: '1px solid #D0CCC6',
-      }}>
-        <Link href="/" style={{ display: 'flex', alignItems: 'center' }}>
-          <Image src="/logo_spoot_zielony.png" alt="Spoot" width={90} height={36} style={{ objectFit: 'contain' }} />
-        </Link>
-        <a
-          href="https://apps.apple.com"
-          style={{
-            position: 'absolute', right: '20px',
-            backgroundColor: '#03271a', color: '#fbfaeb',
-            padding: '6px 14px', borderRadius: '20px',
-            fontSize: '13px', fontWeight: 600,
-          }}
-        >
-          Pobierz ↗
-        </a>
+    <main className={fonts} style={{ ...page, paddingBottom: 'calc(100px + env(safe-area-inset-bottom))' }}>
+      <div style={{ maxWidth: 480, margin: '0 auto' }}>
+        <header style={{ height: 56, padding: '0 16px', display: 'flex', alignItems: 'center' }}>
+          <Link href="/" aria-label="Spoot — strona główna" style={{ display: 'flex' }}><Wordmark size={22} /></Link>
+        </header>
+
+        <div style={{ padding: '0 16px', display: 'flex', flexDirection: 'column', gap: 24 }}>
+          <section style={{ background: GREEN, color: '#fff', borderRadius: 24, padding: 24, display: 'flex', flexDirection: 'column', gap: 16 }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+              <span style={{ fontFamily: MANROPE, fontWeight: 700, fontSize: 11, letterSpacing: 1.2, color: 'rgba(255,255,255,0.75)' }}>LISTA</span>
+              <h1 style={{ margin: 0, fontFamily: MANROPE, fontWeight: 700, fontSize: 30, lineHeight: '36px', overflowWrap: 'anywhere' }}>{list.name}</h1>
+            </div>
+            {list.handle
+              ? <Link href={`/u/${list.handle}`} style={authorStyle}>{authorRow}</Link>
+              : <div style={authorStyle}>{authorRow}</div>}
+            <div style={{ display: 'flex', gap: 8 }}>
+              <OpenAppButton style={{ flexGrow: 1, minHeight: 48, borderRadius: 999, background: '#fff', color: GREEN, fontFamily: MANROPE, fontWeight: 700, fontSize: 15 }}>
+                Otwórz w Spoot
+              </OpenAppButton>
+              <ShareButton title={list.name} style={{ width: 48, height: 48, flexShrink: 0, borderRadius: '50%', background: 'rgba(255,255,255,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center' }} />
+            </div>
+          </section>
+
+          <ListPlaces places={list.places} />
+        </div>
       </div>
 
-      {!list && (
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '60vh', gap: '12px' }}>
-          <p style={{ fontSize: '18px', fontWeight: 600 }}>Lista nie znaleziona</p>
-          <Link href="/" style={{ fontSize: '14px', color: '#03271a', opacity: 0.6 }}>← Strona główna</Link>
-        </div>
-      )}
-
-      {list && (
-        <>
-          <ListMap places={places.map((p: any) => ({ id: p.id, name: p.name, lat: p.lat, lng: p.lng }))} />
-          <div style={{ maxWidth: '600px', margin: '0 auto', padding: '24px 20px 48px' }}>
-          {/* Owner + list name */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
-            {list.avatar_url
-              ? <img src={list.avatar_url} alt={list.username} style={{ width: 44, height: 44, borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
-              : <div style={{ width: 44, height: 44, borderRadius: '50%', backgroundColor: '#D0CCC6', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '20px', flexShrink: 0 }}>👤</div>
-            }
-            <div>
-              <p style={{ fontSize: '13px', color: '#03271a', opacity: 0.6, fontWeight: 500 }}>{list.username || 'Użytkownik Spoot'}</p>
-              <p style={{ fontSize: '20px', fontWeight: 700, lineHeight: 1.2 }}>{list.name}</p>
-              <p style={{ fontSize: '12px', color: '#03271a', opacity: 0.5, marginTop: '2px' }}>{places.length} {places.length === 1 ? 'miejsce' : places.length < 5 ? 'miejsca' : 'miejsc'}</p>
+      <AppBridge
+        content={{
+          appPath: `list/${encodeURIComponent(params.slug)}`,
+          barTitle: `Lista „${list.name}” w Spoot`,
+          barText: 'Zobacz ją w aplikacji.',
+          card: (
+            <div style={{ width: '100%', borderRadius: 24, background: GREEN, color: '#fff', padding: '28px 16px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, textAlign: 'center' }}>
+              <span style={{ fontFamily: MANROPE, fontWeight: 700, fontSize: 11, letterSpacing: 1.2, color: 'rgba(255,255,255,0.75)' }}>LISTA · {count.toUpperCase()}</span>
+              <span style={{ marginTop: 6, fontFamily: MANROPE, fontWeight: 700, fontSize: 22 }}>{list.name}</span>
+              <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.75)' }}>{author}</span>
             </div>
-          </div>
-
-          {/* Places */}
-          {places.length === 0 && (
-            <p style={{ textAlign: 'center', padding: '40px 0', color: '#03271a', opacity: 0.4 }}>Lista jest pusta</p>
-          )}
-
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginBottom: '40px' }}>
-            {places.map((place: any) => (
-              <div key={place.id} style={{
-                display: 'flex', gap: '12px', alignItems: 'flex-start',
-                backgroundColor: '#fff', borderRadius: '12px', padding: '12px',
-                boxShadow: '0 1px 4px rgba(3,39,26,0.07)',
-              }}>
-                {place.image
-                  ? <img src={place.image} alt={place.name} style={{ width: 80, height: 80, borderRadius: '8px', objectFit: 'cover', flexShrink: 0 }} />
-                  : <div style={{ width: 80, height: 80, borderRadius: '8px', backgroundColor: '#D0CCC6', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '28px', flexShrink: 0 }}>🍽️</div>
-                }
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <p style={{ fontWeight: 700, fontSize: '15px', marginBottom: '2px' }}>{place.name}</p>
-                  <p style={{ fontSize: '12px', color: '#03271a', opacity: 0.5 }}>{place.category}</p>
-                  {place.rating && <p style={{ fontSize: '13px', color: '#ff751f', fontWeight: 600, marginTop: '4px' }}>⭐ {place.rating}</p>}
-                  {place.review && <p style={{ fontSize: '13px', color: '#03271a', opacity: 0.65, marginTop: '4px', fontStyle: 'italic', overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' as any }}>{place.review}</p>}
-                </div>
+          ),
+          openingText: 'Za chwilę zobaczysz tę listę w aplikacji.',
+          browserLabel: 'Zobacz listę w przeglądarce',
+          sheetHeader: (
+            <>
+              <Avatar url={list.avatarUrl} name={author} size={56} />
+              <div style={{ flexGrow: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 2 }}>
+                <span style={{ fontFamily: MANROPE, fontWeight: 700, fontSize: 16, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{list.name}</span>
+                <span style={{ fontSize: 13, color: INK2 }}>{author} · {count}</span>
               </div>
-            ))}
-          </div>
-
-          {/* CTA */}
-          <div style={{
-            backgroundColor: '#03271a', borderRadius: '16px',
-            padding: '24px', textAlign: 'center', color: '#fbfaeb',
-          }}>
-            <p style={{ fontWeight: 700, fontSize: '18px', marginBottom: '8px' }}>Dołącz do Spoot</p>
-            <p style={{ fontSize: '14px', opacity: 0.7, marginBottom: '20px' }}>Twórz własne listy i odkrywaj miejsca polecane przez znajomych</p>
-            <a
-              href="https://apps.apple.com"
-              style={{
-                display: 'inline-block',
-                backgroundColor: '#fbfaeb', color: '#03271a',
-                padding: '12px 28px', borderRadius: '24px',
-                fontWeight: 700, fontSize: '14px',
-              }}
-            >
-              Pobierz na iPhone
-            </a>
-          </div>
-          </div>
-        </>
-      )}
+            </>
+          ),
+          sheetTitle: 'Zbieraj takie listy w Spoot',
+          benefits: [
+            { title: 'Zapisuj miejsca', text: 'Z TikToka, Instagrama i od znajomych — w jednym miejscu.', icon: ICONS.bookmark },
+            { title: 'Oceniaj, co jesz', text: 'Mięso, sos, bułka — każde osobno, w skali 1–10.', icon: ICONS.star },
+            { title: 'Polecenia pod Twój gust', text: 'Im więcej ocenisz, tym trafniej podpowiadamy.', icon: ICONS.sparkle },
+          ],
+        }}
+        appStoreUrl={APP_STORE_URL}
+        playUrl={PLAY_URL}
+      />
     </main>
   );
 }

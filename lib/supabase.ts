@@ -80,6 +80,6 @@ export async function getProfileExtras(username: string) {
 
 // Zastępcze zdjęcia z mocków apki to stock z Unsplash — wtedy lepiej ikona niż cudze wnętrze.
 // ponytail: rozpoznaje tylko host Unsplash; gdyby doszły inne zastępcze źródła, dopisać tutaj.
-function isRealPhoto(url: string | null | undefined): url is string {
+export function isRealPhoto(url: string | null | undefined): url is string {
   return !!url && !url.includes('images.unsplash.com');
 }
