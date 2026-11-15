@@ -4,7 +4,11 @@ import { Manrope } from 'next/font/google';
 import Link from 'next/link';
 import { getProfileByUsername, supabase } from '@/lib/supabase';
 import { Wordmark } from '@/components/SpootLogo';
-import { AppBridge, OpenAppButton, StoreLink } from '@/components/AppBridge';
+import { AppBridge, OpenAppButton } from '@/components/AppBridge';
+import { ShowMore } from './ProfileClient';
+
+// Tyle ocen widać od razu, reszta po „Pokaż wszystkie”.
+const VISIBLE_RATINGS = 8;
 
 const manrope = Manrope({ subsets: ['latin', 'latin-ext'], weight: ['400', '500', '600', '700'], variable: '--font-manrope' });
 
@@ -77,9 +81,15 @@ async function getProfileExtras(username: string) {
     supabase.from('follows').select('*', { count: 'exact', head: true }).eq('following_id', p.id),
     supabase.from('follows').select('*', { count: 'exact', head: true }).eq('follower_id', p.id),
   ]);
+  const rows = (ratings.data ?? []) as Rating[];
+  // Ocena trzyma zdjęcie z chwili oceniania (bywa zastępcze), lokal ma aktualne z Google.
+  const { data: places } = rows.length
+    ? await supabase.from('places').select('id, image_url').in('id', Array.from(new Set(rows.map((r) => r.place_id))))
+    : { data: [] };
+  const placeImage = new Map((places ?? []).map((pl) => [pl.id as string, pl.image_url as string | null]));
   return {
     city: (p.city as string | null) ?? null,
-    ratings: (ratings.data ?? []) as Rating[],
+    ratings: rows.map((r) => ({ ...r, place_image: [placeImage.get(r.place_id), r.place_image].find(isRealPhoto) ?? null })),
     ratingsCount: ratings.count ?? ratings.data?.length ?? 0,
     followers: followers.count ?? 0,
     following: following.count ?? 0,
@@ -108,11 +118,23 @@ function relativePl(iso: string) {
   return `${n} ${pluralPl(n, 'rok', 'lata', 'lat')} temu`;
 }
 
+// Zastępcze zdjęcia z mocków apki to stock z Unsplash — wtedy lepiej ikona niż cudze wnętrze.
+// ponytail: rozpoznaje tylko host Unsplash; gdyby doszły inne zastępcze źródła, dopisać tutaj.
+function isRealPhoto(url: string | null | undefined): url is string {
+  return !!url && !url.includes('images.unsplash.com');
+}
+
+// Apka zapisuje danie z wariantem w nawiasie, czasem tym samym: „Pad Thai (Pad Thai)” → „Pad Thai”.
+function dishName(d: string) {
+  const m = d.match(/^(.+?) \((.+)\)$/);
+  return m && m[1].trim().toLowerCase() === m[2].trim().toLowerCase() ? m[1] : d;
+}
+
 // Jak metaLine w components/RatingFeedCard.tsx: dania z wynikami, a bez nich opinia.
 function metaLine(r: Rating) {
   const dishes = r.dish_entries?.length
-    ? r.dish_entries.slice(0, 2).map((d) => (d.score != null ? `${d.name} ${d.score}` : d.name))
-    : (r.dishes ?? []).slice(0, 2);
+    ? r.dish_entries.slice(0, 2).map((d) => (d.score != null ? `${dishName(d.name)} ${d.score}` : dishName(d.name)))
+    : (r.dishes ?? []).slice(0, 2).map(dishName);
   if (dishes.length) return dishes.join(' · ');
   return r.opinion ? `„${r.opinion}”` : '';
 }
@@ -136,18 +158,17 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
 
   const name = profile.display_name?.trim() || `@${profile.username}`;
   const handle = `@${profile.username}`;
-  const { lists, topki } = profile;
+  // Najpełniejsze topki pierwsze; puste listy nic nie mówią.
+  const topki = [...profile.topki].sort((a, b) => b.total_count - a.total_count);
+  const lists = profile.lists.filter((l) => l.place_count > 0).sort((a, b) => b.place_count - a.place_count);
   const ratings = extras?.ratings ?? [];
   const ratingsCount = extras?.ratingsCount ?? 0;
 
   return (
-    <main className={fonts} style={{ ...s.page, paddingBottom: 'calc(200px + env(safe-area-inset-bottom))' }}>
+    <main className={fonts} style={{ ...s.page, paddingBottom: 'calc(100px + env(safe-area-inset-bottom))' }}>
       <div style={s.column}>
-        <header style={{ height: 56, padding: '0 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <header style={{ height: 56, padding: '0 16px', display: 'flex', alignItems: 'center' }}>
           <Link href="/" aria-label="Spoot — strona główna" style={{ display: 'flex' }}><Wordmark size={22} /></Link>
-          <StoreLink appStoreUrl={APP_STORE_URL} playUrl={PLAY_URL} style={{ ...s.eyebrow, color: GREEN, padding: '12px 0 12px 12px' }}>
-            POBIERZ APLIKACJĘ
-          </StoreLink>
         </header>
 
         <div style={{ padding: '0 16px', display: 'flex', flexDirection: 'column', gap: 24 }}>
@@ -171,27 +192,36 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
 
           {topki.length > 0 && (
             <section id="topki" style={s.section}>
-              <h2 style={s.h2}>Topki</h2>
-              {topki.map((topka) => {
-                const places = topka.places ?? [];
-                const more = topka.total_count - places.length;
-                return (
-                  <div key={topka.id} style={{ background: CARD, borderRadius: 16, padding: 16, display: 'flex', flexDirection: 'column', gap: 10 }}>
-                    <h3 style={{ margin: 0, fontFamily: MANROPE, fontWeight: 700, fontSize: 16 }}>Top 3 {topka.title}</h3>
-                    <ol style={{ listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', gap: 8 }}>
-                      {places.map((place) => (
-                        <li key={place.rank} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                          <span aria-hidden="true" style={{ width: 24, height: 24, borderRadius: '50%', background: place.rank === 1 ? ORANGE : GREEN, color: '#fff', fontFamily: MANROPE, fontWeight: 700, fontSize: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                            {place.rank}
-                          </span>
-                          <span style={{ fontSize: 15 }}>{place.name}</span>
-                        </li>
-                      ))}
-                    </ol>
-                    {more > 0 && <span style={{ paddingLeft: 34, fontSize: 13, color: INK2 }}>i {more} {pluralPl(more, 'kolejne', 'kolejne', 'kolejnych')} w aplikacji</span>}
-                  </div>
-                );
-              })}
+              <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 12 }}>
+                <h2 style={s.h2}>Topki</h2>
+                <span style={{ fontSize: 13, color: INK2 }}>{topki.length} {pluralPl(topki.length, 'kategoria', 'kategorie', 'kategorii')}</span>
+              </div>
+              {/* Karuzela: kolejna karta wystaje zza krawędzi, więc widać, że jest ich więcej. */}
+              <div style={{ margin: '0 -16px', padding: '0 16px', display: 'flex', gap: 12, overflowX: 'auto', scrollSnapType: 'x mandatory', scrollPaddingInline: 16, scrollbarWidth: 'none' }}>
+                {topki.map((topka) => {
+                  const places = topka.places ?? [];
+                  const more = topka.total_count - places.length;
+                  return (
+                    <div key={topka.id} style={{ width: 248, flexShrink: 0, scrollSnapAlign: 'start', boxSizing: 'border-box', background: CARD, borderRadius: 16, padding: 16, display: 'flex', flexDirection: 'column', gap: 10 }}>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                        <span style={s.eyebrow}>TOP 3</span>
+                        <h3 style={{ ...s.ellipsis, margin: 0, fontFamily: MANROPE, fontWeight: 700, fontSize: 16, lineHeight: '22px' }}>{topka.title}</h3>
+                      </div>
+                      <ol style={{ listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', gap: 8 }}>
+                        {places.map((place) => (
+                          <li key={place.rank} style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
+                            <span aria-hidden="true" style={{ width: 24, height: 24, borderRadius: '50%', background: place.rank === 1 ? ORANGE : GREEN, color: place.rank === 1 ? INK : '#fff', fontFamily: MANROPE, fontWeight: 700, fontSize: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                              {place.rank}
+                            </span>
+                            <span style={{ ...s.ellipsis, fontSize: 15 }}>{place.name}</span>
+                          </li>
+                        ))}
+                      </ol>
+                      {more > 0 && <span style={{ marginTop: 'auto', paddingLeft: 34, fontSize: 13, color: INK2 }}>i {more} {pluralPl(more, 'kolejne', 'kolejne', 'kolejnych')} w aplikacji</span>}
+                    </div>
+                  );
+                })}
+              </div>
             </section>
           )}
 
@@ -200,29 +230,17 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
             {ratings.length === 0 ? (
               <p style={{ margin: 0, padding: '24px 0', textAlign: 'center', fontSize: 15, color: INK2 }}>Jeszcze tu nic nie ma</p>
             ) : (
-              ratings.map((r) => {
-                const meta = metaLine(r);
-                return (
-                  <Link key={r.id} href={`/place/${r.place_id}`} style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '14px 0', borderBottom: `1px solid ${HAIR}` }}>
-                    {r.place_image ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={r.place_image} alt="" style={{ width: 56, height: 56, borderRadius: 12, objectFit: 'cover', flexShrink: 0 }} />
-                    ) : (
-                      <span aria-hidden="true" style={{ width: 56, height: 56, borderRadius: 12, background: CARD, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                        <Icon color={INK2} size={22}>{ICONS.fork}</Icon>
-                      </span>
-                    )}
-                    <div style={{ flexGrow: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 1 }}>
-                      <span style={{ ...s.ellipsis, fontFamily: MANROPE, fontWeight: 700, fontSize: 16, lineHeight: '22px' }}>{r.place_name}</span>
-                      <span style={{ ...s.ellipsis, fontSize: 13, color: INK2 }}>{[r.place_category, relativePl(r.created_at)].filter(Boolean).join(' · ')}</span>
-                      {meta && <span style={{ ...s.ellipsis, fontSize: 13, color: INK2 }}>{meta}</span>}
-                    </div>
-                    <span role="img" aria-label={`Ocena ${r.rating} na 10`} style={{ width: 44, height: 44, borderRadius: '50%', border: `3px solid ${ratingColor(r.rating)}`, background: CREAM, boxSizing: 'border-box', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: MANROPE, fontWeight: 700, fontSize: 17, flexShrink: 0 }}>
-                      {r.rating}
-                    </span>
-                  </Link>
-                );
-              })
+              <>
+                {ratings.slice(0, VISIBLE_RATINGS).map((r) => <RatingRow key={r.id} r={r} />)}
+                {ratings.length > VISIBLE_RATINGS && (
+                  <ShowMore
+                    label={`Pokaż wszystkie ${ratings.length} ${pluralPl(ratings.length, 'ocenę', 'oceny', 'ocen')}`}
+                    style={{ width: '100%', minHeight: 44, marginTop: 16, borderRadius: 16, background: CARD, border: `1.5px solid ${GREEN}`, color: GREEN, fontFamily: MANROPE, fontWeight: 700, fontSize: 14, cursor: 'pointer' }}
+                  >
+                    {ratings.slice(VISIBLE_RATINGS).map((r) => <RatingRow key={r.id} r={r} />)}
+                  </ShowMore>
+                )}
+              </>
             )}
             {ratingsCount > ratings.length && (
               <p style={{ margin: 0, paddingTop: 14, fontSize: 13, color: INK2, textAlign: 'center' }}>Pozostałe oceny zobaczysz w aplikacji</p>
@@ -283,6 +301,30 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
         playUrl={PLAY_URL}
       />
     </main>
+  );
+}
+
+function RatingRow({ r }: { r: Rating }) {
+  const meta = metaLine(r);
+  return (
+    <Link href={`/place/${r.place_id}`} style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '14px 0', borderBottom: `1px solid ${HAIR}` }}>
+      {r.place_image ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={r.place_image} alt="" loading="lazy" style={{ width: 56, height: 56, borderRadius: 12, objectFit: 'cover', flexShrink: 0 }} />
+      ) : (
+        <span aria-hidden="true" style={{ width: 56, height: 56, borderRadius: 12, background: CARD, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+          <Icon color={INK2} size={22}>{ICONS.fork}</Icon>
+        </span>
+      )}
+      <div style={{ flexGrow: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 1 }}>
+        <span style={{ ...s.ellipsis, fontFamily: MANROPE, fontWeight: 700, fontSize: 16, lineHeight: '22px' }}>{r.place_name}</span>
+        <span style={{ ...s.ellipsis, fontSize: 13, color: INK2 }}>{[r.place_category, relativePl(r.created_at)].filter(Boolean).join(' · ')}</span>
+        {meta && <span style={{ ...s.ellipsis, fontSize: 13, color: INK2 }}>{meta}</span>}
+      </div>
+      <span role="img" aria-label={`Ocena ${r.rating} na 10`} style={{ width: 44, height: 44, borderRadius: '50%', border: `3px solid ${ratingColor(r.rating)}`, background: CREAM, boxSizing: 'border-box', display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: MANROPE, fontWeight: 700, fontSize: 17, flexShrink: 0 }}>
+        {r.rating}
+      </span>
+    </Link>
   );
 }
 

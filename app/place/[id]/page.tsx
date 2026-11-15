@@ -133,7 +133,7 @@ export default async function PlacePage({ params }: PlacePageProps) {
   if (place.price_range) rows.push(<InfoRow key="price" icon={ICONS.cash}>{place.price_range}</InfoRow>);
 
   return (
-    <main className={fonts} style={{ ...s.page, paddingBottom: 'calc(200px + env(safe-area-inset-bottom))' }}>
+    <main className={fonts} style={{ ...s.page, paddingBottom: 'calc(100px + env(safe-area-inset-bottom))' }}>
       <div style={s.column}>
         <header style={{ height: 56, padding: '0 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <Link href="/" aria-label="Spoot — strona główna" style={{ display: 'flex' }}><Wordmark size={22} /></Link>

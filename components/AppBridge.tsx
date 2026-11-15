@@ -144,20 +144,15 @@ export function AppBridge({ content, appStoreUrl, playUrl }: { content: BridgeCo
     <>
       <aside aria-label="Aplikacja Spoot" style={styles.bar}>
         <div style={styles.barInner}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <span aria-hidden="true" style={styles.appIcon}><Sygnet d={20} ring={CREAM} /></span>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 1, minWidth: 0 }}>
-              <span style={{ fontFamily: MANROPE, fontWeight: 700, fontSize: 15 }}>{content.barTitle}</span>
-              <span style={{ fontSize: 13, color: INK2 }}>{content.barText}</span>
-            </div>
+          <span aria-hidden="true" style={styles.appIcon}><Sygnet d={20} ring={CREAM} /></span>
+          <div style={{ flexGrow: 1, display: 'flex', flexDirection: 'column', gap: 1, minWidth: 0 }}>
+            <span style={{ fontFamily: MANROPE, fontWeight: 700, fontSize: 15, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{content.barTitle}</span>
+            <span style={{ fontSize: 13, color: INK2 }}>{content.barText}</span>
           </div>
           {mobile ? (
-            <>
-              <button type="button" onClick={() => openApp(platform ?? 'ios')} style={styles.primary}>Otwórz w aplikacji</button>
-              <span style={{ fontSize: 12, color: INK2, textAlign: 'center' }}>Nie masz Spoot? Pokażemy, skąd go pobrać.</span>
-            </>
+            <button type="button" onClick={() => openApp(platform ?? 'ios')} style={styles.barButton}>Otwórz</button>
           ) : (
-            <a href={appStoreUrl} style={styles.primary}>Pobierz aplikację Spoot</a>
+            <a href={appStoreUrl} style={styles.barButton}>Pobierz</a>
           )}
         </div>
       </aside>
@@ -231,9 +226,13 @@ const styles: Record<string, CSSProperties> = {
   bar: {
     position: 'fixed', left: 0, right: 0, bottom: 0, zIndex: 20,
     background: '#fffcf8', borderRadius: '24px 24px 0 0', boxShadow: '0 -4px 24px rgba(3,39,26,0.08)',
-    padding: '16px 16px calc(16px + env(safe-area-inset-bottom))',
+    padding: '12px 16px calc(12px + env(safe-area-inset-bottom))',
   },
-  barInner: { maxWidth: 480, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 12 },
+  barInner: { maxWidth: 480, margin: '0 auto', display: 'flex', alignItems: 'center', gap: 12 },
+  barButton: {
+    display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, height: 44, padding: '0 20px', borderRadius: 999,
+    background: GREEN, color: '#fff', fontFamily: MANROPE, fontWeight: 700, fontSize: 15, textDecoration: 'none', cursor: 'pointer',
+  },
   appIcon: { width: 44, height: 44, borderRadius: 12, background: GREEN, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
   primary: {
     display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', height: 50, borderRadius: 16,
