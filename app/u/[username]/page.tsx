@@ -2,7 +2,8 @@ import type { Metadata, Viewport } from 'next';
 import type { CSSProperties, ReactNode } from 'react';
 import { Manrope } from 'next/font/google';
 import Link from 'next/link';
-import { getProfileByUsername, supabase } from '@/lib/supabase';
+import { getProfileByUsername, getProfileExtras, type Rating } from '@/lib/supabase';
+import { pluralPl, ratingColor } from '@/lib/format';
 import { Wordmark } from '@/components/SpootLogo';
 import { AppBridge, OpenAppButton } from '@/components/AppBridge';
 import { ShowMore } from './ProfileClient';
@@ -38,69 +39,11 @@ export async function generateMetadata({ params }: ProfilePageProps): Promise<Me
     title: `${profile.display_name} (@${profile.username}) - Spoot`,
     description: profile.bio || `Odkryj miejsca polecane przez ${profile.display_name} na Spoot`,
     openGraph: {
-      title: `${profile.display_name} - Spoot`,
-      description: profile.bio || `Listy i topki ${profile.display_name}`,
+      title: `${profile.display_name} (@${profile.username}) na Spoot`,
+      description: profile.bio || 'Oceny, listy i topki na Spoot',
       type: 'profile',
     },
   };
-}
-
-// Jak utils/plural.ts w apce.
-function pluralPl(n: number, one: string, few: string, many: string) {
-  const abs = Math.abs(n);
-  if (abs === 1) return one;
-  const last = abs % 10;
-  const lastTwo = abs % 100;
-  return last >= 2 && last <= 4 && !(lastTwo >= 12 && lastTwo <= 14) ? few : many;
-}
-
-type Rating = {
-  id: string;
-  place_id: string;
-  place_name: string;
-  place_image: string | null;
-  place_category: string | null;
-  rating: number;
-  opinion: string | null;
-  dishes: string[] | null;
-  dish_entries: { name: string; score?: number }[] | null;
-  created_at: string;
-};
-
-// To samo co ekran profilu znajomego w apce (app/user-profile.tsx) — profiles, ratings i follows są czytelne dla anon.
-async function getProfileExtras(username: string) {
-  const { data: p } = await supabase.from('profiles').select('id, city').eq('username', username.toLowerCase()).maybeSingle();
-  if (!p) return null;
-  const [ratings, followers, following] = await Promise.all([
-    supabase
-      .from('ratings')
-      .select('id, place_id, place_name, place_image, place_category, rating, opinion, dishes, dish_entries, created_at', { count: 'exact' })
-      .eq('user_id', p.id)
-      .order('created_at', { ascending: false })
-      .limit(50),
-    supabase.from('follows').select('*', { count: 'exact', head: true }).eq('following_id', p.id),
-    supabase.from('follows').select('*', { count: 'exact', head: true }).eq('follower_id', p.id),
-  ]);
-  const rows = (ratings.data ?? []) as Rating[];
-  // Ocena trzyma zdjęcie z chwili oceniania (bywa zastępcze), lokal ma aktualne z Google.
-  const { data: places } = rows.length
-    ? await supabase.from('places').select('id, image_url').in('id', Array.from(new Set(rows.map((r) => r.place_id))))
-    : { data: [] };
-  const placeImage = new Map((places ?? []).map((pl) => [pl.id as string, pl.image_url as string | null]));
-  return {
-    city: (p.city as string | null) ?? null,
-    ratings: rows.map((r) => ({ ...r, place_image: [placeImage.get(r.place_id), r.place_image].find(isRealPhoto) ?? null })),
-    ratingsCount: ratings.count ?? ratings.data?.length ?? 0,
-    followers: followers.count ?? 0,
-    following: following.count ?? 0,
-  };
-}
-
-// Jak ratingColor w apce (components/RatingSlider.tsx).
-function ratingColor(v: number) {
-  if (v >= 8) return '#2E7D32';
-  if (v >= 5) return '#D4892A';
-  return ORANGE;
 }
 
 // Jak utils/relativeTime.ts w apce.
@@ -116,12 +59,6 @@ function relativePl(iso: string) {
   if (days < 365) { const n = Math.max(1, Math.floor(days / 30.44)); return `${n} ${pluralPl(n, 'miesiąc', 'miesiące', 'miesięcy')} temu`; }
   const n = Math.max(1, Math.floor(days / 365.25));
   return `${n} ${pluralPl(n, 'rok', 'lata', 'lat')} temu`;
-}
-
-// Zastępcze zdjęcia z mocków apki to stock z Unsplash — wtedy lepiej ikona niż cudze wnętrze.
-// ponytail: rozpoznaje tylko host Unsplash; gdyby doszły inne zastępcze źródła, dopisać tutaj.
-function isRealPhoto(url: string | null | undefined): url is string {
-  return !!url && !url.includes('images.unsplash.com');
 }
 
 // Apka zapisuje danie z wariantem w nawiasie, czasem tym samym: „Pad Thai (Pad Thai)” → „Pad Thai”.
