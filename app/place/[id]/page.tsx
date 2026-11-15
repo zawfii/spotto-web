@@ -8,7 +8,7 @@ import { Wordmark } from '@/components/SpootLogo';
 import { AppBridge, OpenAppButton, StoreLink } from '@/components/AppBridge';
 import { Avatar } from '@/components/ui';
 import { ShowMore } from '../../u/[username]/ProfileClient';
-import { Badges, DishThumb, PlaceCard, PlaceMap, TodayHours } from './PlaceClient';
+import { Badges, DishThumb, PlaceCard, TodayHours } from './PlaceClient';
 
 // Tyle opinii widać od razu, reszta po „Pokaż wszystkie”.
 const VISIBLE_REVIEWS = 5;
@@ -124,7 +124,8 @@ export default async function PlacePage({ params }: PlacePageProps) {
   const bridgePlace = { id: place.id, name: place.name, meta, imageUrl: place.image_url ?? null, spootRating: spootText, googleRating: googleText };
 
   const coords = place.lat != null && place.lng != null ? { lat: Number(place.lat), lng: Number(place.lng) } : null;
-  const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address ? `${place.name}, ${place.address}` : `${coords?.lat},${coords?.lng}`)}`;
+  const mapsQuery = address ? `${place.name}, ${place.address}` : `${coords?.lat},${coords?.lng}`;
+  const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(mapsQuery)}`;
   const menuDate = menu.updatedAt ? new Date(menu.updatedAt).toLocaleDateString('pl-PL', { timeZone: 'Europe/Warsaw' }) : null;
   const menuCaption = !menu.sections.length
     ? 'Kartę tego lokalu znajdziesz na jego stronie'
@@ -210,47 +211,6 @@ export default async function PlacePage({ params }: PlacePageProps) {
             <p style={{ margin: 0, fontSize: 15, lineHeight: '22px', color: INK2 }}>{place.editorial_summary}</p>
           )}
 
-          {(coords || rows.length > 0) && (
-            <div style={{ background: CARD, borderRadius: 16, overflow: 'hidden' }}>
-              {coords && (
-                <a href={mapsUrl} aria-label={`${place.name} na mapie — otwórz w Mapach Google`} style={{ display: 'block' }}>
-                  <PlaceMap lat={coords.lat} lng={coords.lng} />
-                </a>
-              )}
-              {rows.flatMap((row, i) => (i ? [<div key={`divider-${i}`} style={{ height: 1, marginLeft: 48, background: HAIR }} />, row] : [row]))}
-            </div>
-          )}
-
-          <section id="opinie" style={s.section}>
-            <h2 style={s.h2}>Opinie w Spoot</h2>
-            {reviews.length > 0 ? (
-              <div>
-                {reviews.slice(0, VISIBLE_REVIEWS).map((r) => <ReviewRow key={r.id} r={r} />)}
-                {reviews.length > VISIBLE_REVIEWS && (
-                  <ShowMore
-                    label={`Pokaż wszystkie ${reviews.length} ${pluralPl(reviews.length, 'ocenę', 'oceny', 'ocen')}`}
-                    style={{ width: '100%', minHeight: 44, marginTop: 16, borderRadius: 16, background: CARD, border: `1.5px solid ${GREEN}`, color: GREEN, fontFamily: MANROPE, fontWeight: 700, fontSize: 14, cursor: 'pointer' }}
-                  >
-                    {reviews.slice(VISIBLE_REVIEWS).map((r) => <ReviewRow key={r.id} r={r} />)}
-                  </ShowMore>
-                )}
-              </div>
-            ) : (
-              // Oceny grupowe liczą się do średniej, ale nie są publiczne — wtedy bez „nikt jeszcze”.
-              <div style={{ background: CARD, borderRadius: 16, padding: 20, display: 'flex', flexDirection: 'column', gap: 4 }}>
-                <span style={{ fontFamily: MANROPE, fontWeight: 700, fontSize: 16 }}>
-                  {place.spotto_ratings_count ? `Oceń ${place.name} w Spoot` : `Nikt jeszcze nie ocenił ${place.name}`}
-                </span>
-                <span style={{ fontSize: 14, lineHeight: '20px', color: INK2 }}>
-                  {place.spotto_ratings_count ? 'Każde danie osobno, w skali 1–10.' : 'Oceń jako pierwszy: każde danie osobno, w skali 1–10.'}
-                </span>
-                <OpenAppButton style={{ minHeight: 44, marginTop: 12, borderRadius: 999, border: 'none', background: GREEN, color: '#fff', fontFamily: MANROPE, fontWeight: 700, fontSize: 14, cursor: 'pointer' }}>
-                  Oceń w Spoot
-                </OpenAppButton>
-              </div>
-            )}
-          </section>
-
           {(menu.sections.length > 0 || menu.url) && (
             <section id="menu" style={s.section}>
               <h2 style={s.h2}>Menu</h2>
@@ -295,6 +255,42 @@ export default async function PlacePage({ params }: PlacePageProps) {
             </section>
           )}
 
+          {rows.length > 0 && (
+            <div style={{ background: CARD, borderRadius: 16, overflow: 'hidden' }}>
+              {rows.flatMap((row, i) => (i ? [<div key={`divider-${i}`} style={{ height: 1, marginLeft: 48, background: HAIR }} />, row] : [row]))}
+            </div>
+          )}
+
+          <section id="opinie" style={s.section}>
+            <h2 style={s.h2}>Opinie w Spoot</h2>
+            {reviews.length > 0 ? (
+              <div>
+                {reviews.slice(0, VISIBLE_REVIEWS).map((r) => <ReviewRow key={r.id} r={r} />)}
+                {reviews.length > VISIBLE_REVIEWS && (
+                  <ShowMore
+                    label={`Pokaż wszystkie ${reviews.length} ${pluralPl(reviews.length, 'ocenę', 'oceny', 'ocen')}`}
+                    style={{ width: '100%', minHeight: 44, marginTop: 16, borderRadius: 16, background: CARD, border: `1.5px solid ${GREEN}`, color: GREEN, fontFamily: MANROPE, fontWeight: 700, fontSize: 14, cursor: 'pointer' }}
+                  >
+                    {reviews.slice(VISIBLE_REVIEWS).map((r) => <ReviewRow key={r.id} r={r} />)}
+                  </ShowMore>
+                )}
+              </div>
+            ) : (
+              // Oceny grupowe liczą się do średniej, ale nie są publiczne — wtedy bez „nikt jeszcze”.
+              <div style={{ background: CARD, borderRadius: 16, padding: 20, display: 'flex', flexDirection: 'column', gap: 4 }}>
+                <span style={{ fontFamily: MANROPE, fontWeight: 700, fontSize: 16 }}>
+                  {place.spotto_ratings_count ? `Oceń ${place.name} w Spoot` : `Nikt jeszcze nie ocenił ${place.name}`}
+                </span>
+                <span style={{ fontSize: 14, lineHeight: '20px', color: INK2 }}>
+                  {place.spotto_ratings_count ? 'Każde danie osobno, w skali 1–10.' : 'Oceń jako pierwszy: każde danie osobno, w skali 1–10.'}
+                </span>
+                <OpenAppButton style={{ minHeight: 44, marginTop: 12, borderRadius: 999, border: 'none', background: GREEN, color: '#fff', fontFamily: MANROPE, fontWeight: 700, fontSize: 14, cursor: 'pointer' }}>
+                  Oceń w Spoot
+                </OpenAppButton>
+              </div>
+            )}
+          </section>
+
           {atmosphere.length > 0 && (
             <div style={s.section}>
               <h2 style={s.h2}>Klimat</h2>
@@ -304,6 +300,25 @@ export default async function PlacePage({ params }: PlacePageProps) {
                 ))}
               </div>
             </div>
+          )}
+
+          {(address || coords) && (
+            <section style={s.section}>
+              <h2 style={s.h2}>Lokalizacja</h2>
+              {/* Nieruchoma jak w apce — dotknięcie otwiera Mapy Google (ten sam adres co „Trasa”).
+                  ponytail: embed Google bez klucza (output=embed) jest nieudokumentowany; gdyby przestał działać,
+                  przejść na Maps Embed API (darmowe, klucz z ograniczeniem do spootme.pl). */}
+              <a href={mapsUrl} aria-label={`${place.name} na mapie — otwórz w Mapach Google`} style={{ display: 'block', borderRadius: 16, overflow: 'hidden', background: CARD }}>
+                <iframe
+                  title={`Mapa: ${place.name}`}
+                  src={`https://maps.google.com/maps?q=${encodeURIComponent(mapsQuery)}&z=16&hl=pl&output=embed`}
+                  loading="lazy"
+                  tabIndex={-1}
+                  aria-hidden="true"
+                  style={{ display: 'block', width: '100%', height: 200, border: 0, pointerEvents: 'none' }}
+                />
+              </a>
+            </section>
           )}
         </div>
       </div>
