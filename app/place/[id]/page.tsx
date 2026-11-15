@@ -266,7 +266,7 @@ export default async function PlacePage({ params }: PlacePageProps) {
                     <details key={sec.id} open={i === 0} style={{ borderTop: i ? `1px solid ${HAIR}` : undefined }}>
                       <summary style={{ minHeight: 52, padding: '0 16px', display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer', listStyle: 'none' }}>
                         <span style={{ flexGrow: 1, minWidth: 0, padding: '14px 0', fontFamily: MANROPE, fontWeight: 700, fontSize: 15 }}>{sec.name}</span>
-                        <span style={{ fontSize: 13, color: INK2, flexShrink: 0 }}>{sec.items.length} {pluralPl(sec.items.length, 'danie', 'dania', 'dań')}</span>
+                        <span style={{ fontSize: 13, color: INK2, flexShrink: 0 }}>{sec.items.length} {pluralPl(sec.items.length, 'pozycja', 'pozycje', 'pozycji')}</span>
                         <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={INK2} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
                           <path d="M6 9l6 6 6-6" />
                         </svg>
