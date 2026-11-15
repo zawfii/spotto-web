@@ -8,11 +8,12 @@ export const size = { width: 1200, height: 630 };
 export const contentType = 'image/png';
 export const alt = 'Profil na Spoot';
 
-// Kolory jak strona profilu (page.tsx).
+// Zielone tło, logo w wersji „kolor-ciemne” (biały tekst i pierścień) jak components/Logo.tsx w apce.
 const GREEN = '#164938';
 const ORANGE = '#ff751f';
 const CREAM = '#fdf5ec';
-const MUTED = 'rgba(22,73,56,0.6)';
+const WHITE = '#ffffff';
+const MUTED = 'rgba(255,255,255,0.65)';
 
 const PAD = 48;
 const PANEL_W = 540; // prawa kolumna ze zdjęciami
@@ -40,14 +41,14 @@ function Sygnet({ d }: { d: number }) {
   return (
     <div style={{ position: 'relative', display: 'flex', width: d * 1.53, height: d }}>
       <div style={{ ...circle, left: 0, backgroundColor: ORANGE }} />
-      <div style={{ ...circle, left: d * 0.53, border: `${d * 0.06}px solid ${GREEN}` }} />
+      <div style={{ ...circle, left: d * 0.53, border: `${d * 0.06}px solid ${WHITE}` }} />
     </div>
   );
 }
 
 function Wordmark({ size: s }: { size: number }) {
   return (
-    <div style={{ display: 'flex', alignItems: 'baseline', fontSize: s, fontWeight: 700, letterSpacing: -0.02 * s, lineHeight: 1, color: GREEN }}>
+    <div style={{ display: 'flex', alignItems: 'baseline', fontSize: s, fontWeight: 700, letterSpacing: -0.02 * s, lineHeight: 1, color: WHITE }}>
       <span>sp</span>
       <div style={{ display: 'flex', margin: '0 1px' }}>
         <Sygnet d={0.654 * s} />
@@ -68,7 +69,7 @@ function Stat({ value, label }: { value: number; label: string }) {
 
 function Photo({ src, name, rating, w, h }: { src: string; name: string; rating: number; w: number; h: number }) {
   return (
-    <div style={{ position: 'relative', display: 'flex', width: w, height: h, borderRadius: 28, overflow: 'hidden', backgroundColor: GREEN }}>
+    <div style={{ position: 'relative', display: 'flex', width: w, height: h, borderRadius: 28, overflow: 'hidden', backgroundColor: 'rgba(255,255,255,0.08)' }}>
       <img src={src} width={w} height={h} style={{ objectFit: 'cover' }} />
       <div style={{ position: 'absolute', left: 0, bottom: 0, width: w, height: h * 0.5, display: 'flex', backgroundImage: 'linear-gradient(to bottom, rgba(0,0,0,0), rgba(0,0,0,0.7))' }} />
       <div style={{ position: 'absolute', left: 18, bottom: 18, width: w - 36, display: 'flex', alignItems: 'center', gap: 12 }}>
@@ -108,7 +109,7 @@ export default async function Image({ params }: { params: { username: string } }
 
   return new ImageResponse(
     (
-      <div style={{ width: '100%', height: '100%', display: 'flex', backgroundColor: CREAM, color: GREEN, fontFamily: 'Manrope', padding: PAD }}>
+      <div style={{ width: '100%', height: '100%', display: 'flex', backgroundColor: GREEN, color: WHITE, fontFamily: 'Manrope', padding: PAD }}>
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', padding: '10px 40px 6px 16px' }}>
           <Wordmark size={46} />
 
@@ -116,7 +117,7 @@ export default async function Image({ params }: { params: { username: string } }
             {profile?.avatar_url ? (
               <img src={profile.avatar_url} width={128} height={128} style={{ borderRadius: 64, objectFit: 'cover' }} />
             ) : (
-              <div style={{ width: 128, height: 128, borderRadius: 64, backgroundColor: GREEN, color: CREAM, fontSize: 60, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <div style={{ width: 128, height: 128, borderRadius: 64, backgroundColor: 'rgba(255,255,255,0.15)', color: WHITE, fontSize: 60, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 {displayName.charAt(0).toUpperCase()}
               </div>
             )}
@@ -146,7 +147,7 @@ export default async function Image({ params }: { params: { username: string } }
           </div>
         ) : (
           // Bez ocen ze zdjęciami — duży sygnet zamiast pustego pola.
-          <div style={{ width: PANEL_W, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 28, backgroundColor: 'rgba(22,73,56,0.06)' }}>
+          <div style={{ width: PANEL_W, display: 'flex', alignItems: 'center', justifyContent: 'center', borderRadius: 28, backgroundColor: 'rgba(255,255,255,0.06)' }}>
             <Sygnet d={220} />
           </div>
         )}
