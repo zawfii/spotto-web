@@ -1,6 +1,22 @@
 'use client';
 
 import { useEffect, useState, type CSSProperties, type ReactNode } from 'react';
+import dynamic from 'next/dynamic';
+
+// Leaflet potrzebuje window — tylko po stronie przeglądarki.
+export const PlaceMap = dynamic(() => import('./PlaceMap'), {
+  ssr: false,
+  loading: () => <div style={{ height: 160, background: '#d9d4cc' }} />,
+});
+
+// Zdjęcie dania jest linkowane ze strony lokalu i może zniknąć — wtedy chowamy je jak w apce.
+export function DishThumb({ src }: { src: string }) {
+  const [broken, setBroken] = useState(false);
+  if (broken) return null;
+  // Leniwe ładowanie: obrazek startuje po hydracji, więc onError zdąży się podpiąć.
+  // eslint-disable-next-line @next/next/no-img-element
+  return <img src={src} alt="" loading="lazy" onError={() => setBroken(true)} style={{ width: 56, height: 56, borderRadius: 12, objectFit: 'cover', flexShrink: 0 }} />;
+}
 
 export type BridgePlace = {
   id: string;

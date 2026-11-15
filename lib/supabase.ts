@@ -83,3 +83,92 @@ export async function getProfileExtras(username: string) {
 export function isRealPhoto(url: string | null | undefined): url is string {
   return !!url && !url.includes('images.unsplash.com');
 }
+
+// URL-e z bazy pochodzą ze scrapingu stron i od użytkowników — do linków i <img> tylko http(s).
+function safeUrl(url: string | null | undefined) {
+  return url && /^https?:\/\//i.test(url) ? url : null;
+}
+
+export type PlaceReview = {
+  id: string;
+  rating: number;
+  opinion: string | null;
+  dishes: string[] | null;
+  dish_entries: { name: string; score?: number }[] | null;
+  created_at: string;
+  photos: string[];
+  author: { name: string; username: string | null; avatar_url: string | null };
+};
+
+export type PlaceMenuSection = {
+  id: string;
+  name: string;
+  items: { id: string; name: string; price: number; description: string | null; is_vege: boolean; image_url: string | null }[];
+};
+
+// Opinie i menu lokalu — jak app/place-ratings.tsx i hooks/useMenu.ts w apce. Oceny grupowe ukrywa RLS.
+export async function getPlaceExtras(placeId: string) {
+  const [ratings, menu, link, venue] = await Promise.all([
+    supabase
+      .from('ratings')
+      .select('id, user_id, rating, opinion, dishes, dish_entries, created_at, rating_photos(url)')
+      .eq('place_id', placeId)
+      .order('created_at', { ascending: false })
+      .limit(50),
+    supabase
+      .from('menu_sections')
+      .select('id, name, source, source_url, updated_at, menu_items(id, name, price, description, is_vege, image_url)')
+      .eq('place_id', placeId)
+      .order('position', { ascending: true })
+      .order('position', { ascending: true, referencedTable: 'menu_items' }),
+    supabase.from('place_menu_links').select('url').eq('place_id', placeId).maybeSingle(),
+    supabase.from('venue_details').select('menu_url').eq('place_id', placeId).maybeSingle(),
+  ]);
+
+  const rows = ratings.data ?? [];
+  const userIds = Array.from(new Set(rows.map((r) => r.user_id as string)));
+  const { data: profiles } = userIds.length
+    ? await supabase.from('profiles').select('id, display_name, username, avatar_url').in('id', userIds)
+    : { data: [] };
+  const byId = new Map((profiles ?? []).map((p) => [p.id as string, p]));
+
+  const reviews: PlaceReview[] = rows.map((r) => {
+    const p = byId.get(r.user_id as string);
+    return {
+      id: r.id,
+      rating: r.rating,
+      opinion: r.opinion,
+      dishes: r.dishes,
+      dish_entries: r.dish_entries,
+      created_at: r.created_at,
+      photos: ((r.rating_photos ?? []) as { url: string }[]).map((ph) => safeUrl(ph.url)).filter((u): u is string => !!u),
+      author: {
+        name: p?.display_name?.trim() || (p?.username ? `@${p.username}` : 'Użytkownik Spoot'),
+        username: p?.username ?? null,
+        avatar_url: safeUrl(p?.avatar_url),
+      },
+    };
+  });
+
+  // Menu właściciela wygrywa z importem ze strony/zdjęcia — nie mieszamy dwóch kart.
+  const all = menu.data ?? [];
+  const own = all.filter((sec) => sec.source === 'owner');
+  const shown = own.length ? own : all;
+  const sections: PlaceMenuSection[] = shown
+    .map((sec) => ({
+      id: sec.id,
+      name: sec.name,
+      items: ((sec.menu_items ?? []) as PlaceMenuSection['items']).map((it) => ({ ...it, image_url: safeUrl(it.image_url) })),
+    }))
+    .filter((sec) => sec.items.length > 0);
+
+  return {
+    reviews,
+    menu: {
+      sections,
+      source: (shown[0]?.source as 'owner' | 'website' | 'photo' | undefined) ?? null,
+      updatedAt: shown.reduce<string | null>((max, sec) => (!max || sec.updated_at > max ? sec.updated_at : max), null),
+      url: safeUrl(venue.data?.menu_url) || safeUrl(link.data?.url) || safeUrl(shown[0]?.source_url),
+    },
+  };
+}
