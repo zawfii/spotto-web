@@ -3,7 +3,8 @@
 
 import { createBrowserClient } from '@supabase/ssr';
 import { Suspense, useMemo, useState } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { baseFor } from '@/lib/panel';
 import { Wordmark } from '@/components/SpootLogo';
 import { Btn, inputCls, labelCls } from '@/components/owner/ui';
 
@@ -19,7 +20,11 @@ function OwnerLoginForm() {
   const searchParams = useSearchParams();
   const linkExpired = searchParams.get('error') === '1';
 
+  const router = useRouter();
   const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  // Hasło jak w aplikacji; link na e-mail dla kont z Google/Apple, które hasła nie mają.
+  const [mode, setMode] = useState<'password' | 'link'>('password');
   const [sent, setSent] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -36,6 +41,14 @@ function OwnerLoginForm() {
     e.preventDefault();
     setLoading(true);
     setError('');
+    if (mode === 'password') {
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      setLoading(false);
+      if (error) { setError('Nieprawidłowy e-mail lub hasło.'); return; }
+      router.replace(baseFor(window.location.host) || '/');
+      router.refresh();
+      return;
+    }
     const { error } = await supabase.auth.signInWithOtp({
       email,
       options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
@@ -74,7 +87,11 @@ function OwnerLoginForm() {
           <>
             <div className="flex flex-col gap-1">
               <h1 className="font-display text-[26px] font-bold leading-[34px]">Panel właściciela</h1>
-              <p className="text-spoot-ink2">Wpisz adres e-mail — wyślemy link do logowania. Bez hasła.</p>
+              <p className="text-spoot-ink2">
+                {mode === 'password'
+                  ? 'Zaloguj się tym samym e-mailem i hasłem co w aplikacji Spoot.'
+                  : 'Wpisz adres e-mail — wyślemy link do logowania. Bez hasła.'}
+              </p>
             </div>
 
             {linkExpired && (
@@ -88,9 +105,26 @@ function OwnerLoginForm() {
                 Adres e-mail
                 <input type="email" value={email} onChange={e => setEmail(e.target.value)} required autoComplete="email" placeholder="np. kontakt@twojlokal.pl" className={inputCls} />
               </label>
+              {mode === 'password' && (
+                <label className={labelCls}>
+                  Hasło
+                  <input type="password" value={password} onChange={e => setPassword(e.target.value)} required autoComplete="current-password" className={inputCls} />
+                </label>
+              )}
               {error && <p role="alert" className="text-spoot-danger">{error}</p>}
-              <Btn type="submit" disabled={loading || !email}>{loading ? 'Wysyłam…' : 'Wyślij link logowania'}</Btn>
+              <Btn type="submit" disabled={loading || !email || (mode === 'password' && !password)}>
+                {mode === 'password' ? (loading ? 'Loguję…' : 'Zaloguj się') : (loading ? 'Wysyłam…' : 'Wyślij link logowania')}
+              </Btn>
             </form>
+            <button
+              type="button"
+              onClick={() => { setMode(mode === 'password' ? 'link' : 'password'); setError(''); }}
+              className="self-start py-2 font-display text-[13px] font-bold underline underline-offset-4"
+            >
+              {mode === 'password'
+                ? 'Logujesz się w aplikacji przez Google lub Apple? Dostaniesz link na e-mail'
+                : 'Mam hasło — zaloguj się hasłem'}
+            </button>
           </>
         )}
 
