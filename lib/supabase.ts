@@ -7,7 +7,11 @@ if (!supabaseUrl || !supabaseAnonKey) {
   throw new Error('Missing Supabase environment variables');
 }
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+// Next 14 zapisuje odpowiedzi fetch w komponentach serwerowych na stałe — bez no-store zmiana menu
+// czy ceny w panelu nie pokazałaby się na stronach publicznych aż do następnego wdrożenia.
+export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+  global: { fetch: (input, init) => fetch(input, { ...init, cache: 'no-store' }) },
+});
 
 export async function getProfileByUsername(username: string) {
   try {

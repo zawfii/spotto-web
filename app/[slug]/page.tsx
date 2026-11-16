@@ -10,8 +10,7 @@ import { HoursList, OpenStatus, type Hours } from './SiteClient';
 
 // Strona lokalu pod spootme.pl/<slug> (panel → „Strona dla lokalu”). Nie ma własnych treści:
 // przy każdym wejściu czyta te same tabele, które zapisuje panel — zmiana ceny czy godzin widać od razu.
-// Bez tego Next 14 trzymałby odpowiedzi supabase-js w cache.
-export const dynamic = 'force-dynamic';
+// Świeżość danych zapewnia klient w lib/supabase.ts (fetch z cache: 'no-store').
 
 const ACCENT = '#8E1B3A';
 const INK = '#1B1A19';
