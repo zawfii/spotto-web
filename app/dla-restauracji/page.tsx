@@ -25,6 +25,8 @@ export const metadata: Metadata = {
 const REGISTER = '/owner/register';
 const LOGIN = '/owner/login';
 const MAIL = 'info@spootme.pl';
+// Lokal pokazowy: jego strona (pakiet Strona Plus) służy za przykład, a ekrany panelu noszą jego dane.
+const DEMO_SITE = 'bistropokazowe';
 
 // Zrzuty to statyczne kopie ekranów panelu z danymi przykładowymi (public/demo-panel/*.html),
 // pokazane w pomniejszonej ramce. --w: szerokość widoku, --iw: szerokość ekranu w ramce,
@@ -44,7 +46,9 @@ html{scroll-behavior:smooth}
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
 `;
 
-function Shot({ file, title, className = '', chrome = false }: { file: string; title: string; className?: string; chrome?: boolean }) {
+function Shot({ file, src, address = 'panel.spootme.pl', title, className = '', chrome = false, eager = false }: {
+  file?: string; src?: string; address?: string; title: string; className?: string; chrome?: boolean; eager?: boolean;
+}) {
   return (
     <div className={`rs-shot ${className} shrink-0 rounded-[18px] bg-spoot-card p-2 ${chrome ? 'pt-0' : ''}`}>
       {chrome && (
@@ -52,11 +56,11 @@ function Shot({ file, title, className = '', chrome = false }: { file: string; t
           <span className="h-2.5 w-2.5 rounded-full bg-spoot-chip" />
           <span className="h-2.5 w-2.5 rounded-full bg-spoot-chip" />
           <span className="h-2.5 w-2.5 rounded-full bg-spoot-chip" />
-          <span className="ml-2.5 rounded-full bg-spoot-surface px-3.5 py-0.5 font-display text-xs font-semibold">panel.spootme.pl</span>
+          <span className="ml-2.5 rounded-full bg-spoot-surface px-3.5 py-0.5 font-display text-xs font-semibold">{address}</span>
         </div>
       )}
       <div className="rs-view">
-        <iframe className="rs-frame" src={`/demo-panel/${file}.html`} title={title} tabIndex={-1} scrolling="no" loading={chrome ? 'eager' : 'lazy'} />
+        <iframe className="rs-frame" src={src ?? `/demo-panel/${file}.html`} title={title} tabIndex={-1} scrolling="no" loading={eager ? 'eager' : 'lazy'} />
       </div>
     </div>
   );
@@ -121,7 +125,7 @@ const BENEFITS: { eyebrow: string; title: string; text: string; bullets: string[
     title: 'Zmieniasz kartę w minutę, nie u grafika',
     text: 'Gość sprawdza menu, zanim wyjdzie z domu. U Ciebie zobaczy aktualne dania i ceny — a nie zdjęcie karty sprzed dwóch lat.',
     bullets: [
-      'Skończył się sandacz? Wyłączasz go jednym kliknięciem',
+      'Skończyły się policzki wołowe? Wyłączasz je jednym kliknięciem',
       'Kod QR na stoliki: jeden wydruk, zawsze aktualna karta',
       'Nie masz czasu przepisywać? Wprowadzimy menu za Ciebie',
     ],
@@ -201,8 +205,8 @@ export default function DlaRestauracjiPage() {
               <p className="text-sm text-spoot-ink2">Bez umowy i bez karty. Dostęp dostaje tylko zweryfikowany właściciel.</p>
             </div>
             <div className="flex max-w-full flex-col items-center gap-3 overflow-hidden">
-              <Shot file="pulpit" title="Podgląd panelu: pulpit z liczbami, opiniami i szybkimi akcjami" chrome />
-              <p className="text-xs text-spoot-ink2">Ekrany panelu z danymi przykładowymi.</p>
+              <Shot file="pulpit" title="Podgląd panelu: pulpit z liczbami, opiniami i szybkimi akcjami" chrome eager />
+              <p className="text-xs text-spoot-ink2">Panel Bistro Pokazowego — naszego lokalu demonstracyjnego. Liczby są przykładowe.</p>
             </div>
           </div>
         </section>
@@ -246,6 +250,15 @@ export default function DlaRestauracjiPage() {
                 Gość, który wpisuje nazwę lokalu w Google, chce trzech rzeczy: menu, godzin i adresu. Na Twojej stronie będą zawsze aktualne, bo
                 czyta je prosto ze Spoot — niczego nie wpisujesz dwa razy.
               </p>
+            </div>
+            <div className="flex max-w-full flex-col items-center gap-4 overflow-hidden">
+              <Shot src={`/${DEMO_SITE}`} address={`spootme.pl/${DEMO_SITE}`} title="Podgląd strony lokalu: Bistro Pokazowe" chrome />
+              <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-center">
+                <p className="text-spoot-ink2">Tak może wyglądać Twoja strona. To działająca Strona Plus naszego lokalu pokazowego.</p>
+                <a href={`/${DEMO_SITE}`} target="_blank" rel="noopener" className={`${BTN} min-h-[44px] border-[1.5px] border-spoot-ink bg-spoot-card px-5 text-sm`}>
+                  Otwórz stronę Bistro Pokazowego
+                </a>
+              </div>
             </div>
             <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,300px),1fr))] gap-3">
               {WEBSITE_PACKAGES.map(pkg => {
