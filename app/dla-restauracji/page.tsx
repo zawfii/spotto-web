@@ -37,6 +37,7 @@ const SHOT_CSS = `
 @media(max-width:1000px){.rs-shot{--w:660}}
 .rs-f{--w:640;--iw:1100;--off:240;--r:.74}
 .rs-wide{--iw:1340}
+.rs-tall{--r:.95}
 @media(max-width:740px){.rs-shot,.rs-f{--w:420}}
 @media(max-width:480px){.rs-shot,.rs-f{--w:300}}
 html{scroll-behavior:smooth}
@@ -227,7 +228,7 @@ export default function DlaRestauracjiPage() {
                   <Bullets items={b.bullets} />
                 </div>
                 <div className="max-w-full overflow-hidden">
-                  <Shot file={b.file} title={b.shot} className={`rs-f ${b.wide ? 'rs-wide' : ''}`} />
+                  <Shot file={b.file} title={b.shot} className={`rs-f ${b.wide ? 'rs-wide' : ''} ${b.file === 'statystyki' ? 'rs-tall' : ''}`} />
                 </div>
               </div>
             ))}

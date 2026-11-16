@@ -28,6 +28,13 @@ a{color:#03271a}
 .pill-open{background:#e8f5e9;color:#2e7d32}
 .pill-muted{background:#eae5de;color:#03271a;border-color:rgba(3,39,26,0.15)}
 .pill-closed{background:#eae5de;color:#1e3028}
+.bar,.hbar{transition:transform .8s cubic-bezier(.2,.8,.2,1)}
+.bar{transform-origin:50% 100%}
+.hbar{transform-origin:0 50%}
+.js .bar{transform:scaleY(0)}
+.js .hbar{transform:scaleX(0)}
+.js .in>.bar,.js .in>.hbar{transform:none}
+@media(prefers-reduced-motion:reduce){.js .bar,.js .hbar{transform:none;transition:none}}
 .av{flex:none;width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:#03271a;color:#fff;font:700 16px/22px Manrope,sans-serif}
 </style>
 </head>
@@ -198,5 +205,7 @@ a{color:#03271a}
 </div>
 </main>
 </div>
-</body>
+<script>document.documentElement.classList.add('js');
+var io=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target)}})},{threshold:.35});
+document.querySelectorAll('.bar,.hbar').forEach(function(b,i){b.style.transitionDelay=(i%7*70)+'ms';io.observe(b.parentElement)});</script></body>
 </html>
