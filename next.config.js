@@ -7,7 +7,13 @@ const nextConfig = {
   async redirects() {
     // Na razie strona główna = landing na www (repo spoot-landing). Linki z apki
     // (/join-group, /u, /place, /list, AASA) zostają tutaj. Tymczasowe (307), nie 308.
-    return [{ source: '/', destination: 'https://www.spootme.pl/', permanent: false }];
+    // Nie dotyczy panel.spootme.pl — tam korzeń to pulpit właściciela (middleware.ts).
+    return [{
+      source: '/',
+      missing: [{ type: 'host', value: 'panel.spootme.pl' }],
+      destination: 'https://www.spootme.pl/',
+      permanent: false,
+    }];
   },
   async headers() {
     // Apple pobiera ten plik bez rozszerzenia — musi przyjść jako JSON.

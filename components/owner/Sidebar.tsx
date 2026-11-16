@@ -1,84 +1,62 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
-import { createBrowserClient } from '@supabase/ssr';
-import { useMemo } from 'react';
+import { usePathname } from 'next/navigation';
+import { Wordmark } from '@/components/SpootLogo';
+import LogoutButton from './LogoutButton';
+import { NavIcon, NAV_ICONS } from './ui';
 
 const NAV = [
-  { href: '/owner', label: 'Dashboard', icon: '⊞' },
-  { href: '/owner/menu', label: 'Menu', icon: '🍽' },
-  { href: '/owner/stats', label: 'Statystyki', icon: '📊' },
-  { href: '/owner/reviews', label: 'Opinie', icon: '⭐' },
-  { href: '/owner/settings', label: 'Ustawienia', icon: '⚙️' },
+  { path: '', label: 'Pulpit', icon: NAV_ICONS.home },
+  { path: '/menu', label: 'Menu', icon: NAV_ICONS.menu },
+  { path: '/stats', label: 'Statystyki', icon: NAV_ICONS.stats },
+  { path: '/reviews', label: 'Opinie', icon: NAV_ICONS.star },
+  { path: '/settings', label: 'Profil lokalu', icon: NAV_ICONS.store },
 ];
 
-export default function Sidebar({ ownerInitial }: { ownerInitial: string }) {
+type Props = { base: string; venueName: string; venueMeta: string; userEmail: string };
+
+export default function Sidebar({ base, venueName, venueMeta, userEmail }: Props) {
   const pathname = usePathname();
-  const router = useRouter();
-
-  const supabase = useMemo(
-    () => createBrowserClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-    ),
-    []
-  );
-
-  async function handleLogout() {
-    await supabase.auth.signOut();
-    router.push('/owner/login');
-    router.refresh();
-  }
-
-  function isActive(href: string) {
-    if (href === '/owner') return pathname === '/owner';
-    return pathname.startsWith(href);
-  }
+  // Na subdomenie przeglądarka widzi /menu, pod spootme.pl — /owner/menu.
+  const isActive = (path: string) => {
+    const href = `${base}${path}` || '/';
+    return path === '' ? pathname === href : pathname.startsWith(href);
+  };
 
   return (
-    <nav className="w-[60px] bg-[#1a1a1a] flex flex-col items-center py-4 gap-1 flex-shrink-0">
-      {/* Logo */}
-      <div className="w-9 h-9 bg-[#D4892A] rounded-xl flex items-center justify-center text-white font-bold text-base mb-4">
-        S
+    <nav aria-label="Panel właściciela" className="flex flex-[1_0_240px] flex-col gap-6 bg-spoot-ink px-4 py-6 text-white">
+      <div className="flex flex-col gap-1.5 px-3">
+        <Wordmark size={26} color="#ffffff" />
+        <span className="font-display text-[10px] font-bold tracking-[1.5px] text-white/80">DLA RESTAURACJI</span>
       </div>
 
-      {/* Nav items */}
-      {NAV.map(item => (
-        <Link
-          key={item.href}
-          href={item.href}
-          title={item.label}
-          className={`
-            w-11 h-11 rounded-xl flex flex-col items-center justify-center gap-0.5
-            transition-colors group relative
-            ${isActive(item.href)
-              ? 'bg-[#D4892A]/20'
-              : 'hover:bg-white/8'}
-          `}
-        >
-          <span className="text-lg leading-none">{item.icon}</span>
-          <span className={`text-[8px] font-medium leading-none ${
-            isActive(item.href) ? 'text-[#D4892A]' : 'text-white/40'
-          }`}>
-            {item.label.toUpperCase()}
-          </span>
-          {/* Tooltip */}
-          <span className="absolute left-14 bg-[#333] text-white text-xs px-2 py-1 rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50">
-            {item.label}
-          </span>
-        </Link>
-      ))}
+      <div className="flex flex-col gap-0.5 rounded-2xl bg-white/15 p-3">
+        <span className="font-display text-sm font-bold">{venueName}</span>
+        {venueMeta && <span className="text-xs text-white/80">{venueMeta}</span>}
+      </div>
 
-      {/* Spacer + avatar */}
-      <div className="flex-1" />
-      <button
-        onClick={handleLogout}
-        title="Wyloguj"
-        className="w-8 h-8 rounded-full bg-[#333] flex items-center justify-center text-white/60 text-sm font-semibold hover:bg-[#444] transition-colors"
-      >
-        {ownerInitial}
-      </button>
+      <div className="flex flex-col gap-1">
+        {NAV.map(item => {
+          const active = isActive(item.path);
+          return (
+            <Link
+              key={item.path}
+              href={`${base}${item.path}` || '/'}
+              aria-current={active ? 'page' : undefined}
+              className={`flex min-h-11 items-center gap-3 rounded-xl px-3 font-display text-sm font-semibold transition-colors ${active ? 'bg-white/15 text-white' : 'text-white/80 hover:bg-white/10'}`}
+            >
+              <NavIcon>{item.icon}</NavIcon>
+              {item.label}
+            </Link>
+          );
+        })}
+      </div>
+
+      <div className="mt-auto flex flex-col gap-1 border-t border-white/50 px-3 pt-3">
+        <span className="truncate text-xs text-white/80">{userEmail}</span>
+        <LogoutButton base={base} className="self-start py-2 font-display text-[13px] font-bold underline underline-offset-4 hover:text-white/80" />
+      </div>
     </nav>
   );
 }

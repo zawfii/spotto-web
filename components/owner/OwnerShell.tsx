@@ -1,32 +1,21 @@
-'use client';
-
 import Sidebar from './Sidebar';
-import TopBar from './TopBar';
 import type { VenueInfo } from '@/lib/owner';
 
-type Props = {
-  venue: VenueInfo;
-  userEmail: string;
-  children: React.ReactNode;
-};
+type Props = { venue: VenueInfo; userEmail: string; base: string; children: React.ReactNode };
 
-export default function OwnerShell({ venue, userEmail, children }: Props) {
-  const initial = userEmail?.[0]?.toUpperCase() ?? 'O';
-
+// Boczne menu + treść. flex-wrap: na telefonie menu ląduje nad treścią.
+export default function OwnerShell({ venue, userEmail, base, children }: Props) {
   return (
-    <div className="flex h-screen overflow-hidden bg-[#f7f7f5]" style={{ color: '#1a1a1a' }}>
-      <Sidebar ownerInitial={initial} />
-      <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
-        <TopBar
-          venueName={venue.place_name}
-          venueCategory={venue.place_category}
-          venueDistrict={venue.place_district}
-          isPremium={venue.is_premium}
-        />
-        <main className="flex-1 overflow-y-auto p-5">
-          {children}
-        </main>
-      </div>
+    <div className="flex min-h-screen flex-wrap">
+      <Sidebar
+        base={base}
+        venueName={venue.place_name}
+        venueMeta={[venue.place_district, venue.place_category].filter(Boolean).join(' · ')}
+        userEmail={userEmail}
+      />
+      <main className="min-w-0 flex-[999_1_560px] px-5 pb-12 pt-8 sm:px-10">
+        <div className="mx-auto flex max-w-[1120px] flex-col gap-6">{children}</div>
+      </main>
     </div>
   );
 }

@@ -14,6 +14,15 @@ export function ratingColor(v: number) {
   return '#ff751f';
 }
 
+// Jak ratingLabel w apce: słowo do oceny 1–10.
+export function ratingLabel(v: number) {
+  if (v >= 9) return 'Rewelacja';
+  if (v >= 7) return 'Dobre';
+  if (v >= 5) return 'Może być';
+  if (v >= 3) return 'Słabe';
+  return 'Nie polecam';
+}
+
 // Jak utils/relativeTime.ts w apce.
 export function relativePl(iso: string) {
   const diff = Date.now() - new Date(iso).getTime();

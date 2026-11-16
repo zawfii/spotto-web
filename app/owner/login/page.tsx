@@ -1,14 +1,11 @@
 // app/owner/login/page.tsx
 'use client';
 
-import Image from 'next/image';
 import { createBrowserClient } from '@supabase/ssr';
 import { Suspense, useMemo, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
-
-const GREEN = '#1A3C34';
-const ORANGE = '#F5621C';
-const BG = '#F5F2E8';
+import { Wordmark } from '@/components/SpootLogo';
+import { Btn, inputCls, labelCls } from '@/components/owner/ui';
 
 export default function OwnerLoginPage() {
   return (
@@ -26,7 +23,6 @@ function OwnerLoginForm() {
   const [sent, setSent] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [focused, setFocused] = useState(false);
 
   const supabase = useMemo(
     () => createBrowserClient(
@@ -46,172 +42,60 @@ function OwnerLoginForm() {
     });
     setLoading(false);
     if (error) {
-      setError('Nie udało się wysłać linku. Sprawdź adres email.');
+      setError('Nie udało się wysłać linku. Sprawdź adres e-mail.');
     } else {
       setSent(true);
     }
   }
 
   return (
-    <div style={{
-      minHeight: '100vh',
-      backgroundColor: BG,
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      fontFamily: "-apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
-      color: GREEN,
-    }}>
-      <div style={{
-        width: 480,
-        backgroundColor: 'white',
-        borderRadius: 24,
-        padding: '52px 48px',
-        boxShadow: '0 4px 40px rgba(26,60,52,0.10)',
-      }}>
-
-        {/* Logo */}
-        <div style={{ marginBottom: 40 }}>
-          <Image
-            src="/logo_spoot_zielony.png"
-            alt="Spoot"
-            width={120}
-            height={40}
-            style={{ objectFit: 'contain', objectPosition: 'left' }}
-          />
+    <div className="flex min-h-screen items-center justify-center p-4">
+      <div className="flex w-full max-w-md flex-col gap-5 rounded-3xl bg-spoot-card p-8 sm:p-10">
+        <div className="flex flex-col gap-1.5">
+          <Wordmark size={32} />
+          <span className="font-display text-[10px] font-bold tracking-[1.5px]">DLA RESTAURACJI</span>
         </div>
 
-        {/* Heading */}
-        <h1 style={{ fontSize: 26, fontWeight: 800, color: GREEN, marginBottom: 6, lineHeight: 1.2 }}>
-          Panel właściciela
-        </h1>
-        <p style={{ fontSize: 14, color: '#6B7C79', marginBottom: 32, lineHeight: 1.5 }}>
-          Wpisz adres email — wyślemy link do logowania.<br />Bez hasła, jednym kliknięciem.
-        </p>
-
-        {/* Error banner */}
-        {linkExpired && (
-          <div style={{
-            backgroundColor: '#FEF2F2',
-            border: '1px solid #FECACA',
-            borderRadius: 12,
-            padding: '12px 16px',
-            marginBottom: 20,
-            fontSize: 13,
-            color: '#DC2626',
-          }}>
-            Link logowania wygasł lub jest nieprawidłowy. Wyślij nowy poniżej.
-          </div>
-        )}
-
         {sent ? (
-          <div style={{ textAlign: 'center', padding: '24px 0' }}>
-            <div style={{
-              width: 64,
-              height: 64,
-              borderRadius: 20,
-              backgroundColor: '#FFF4EE',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              margin: '0 auto 20px',
-              fontSize: 28,
-            }}>
-              📬
-            </div>
-            <p style={{ fontWeight: 700, fontSize: 18, color: GREEN, marginBottom: 8 }}>
-              Sprawdź skrzynkę
-            </p>
-            <p style={{ fontSize: 14, color: '#6B7C79', lineHeight: 1.5 }}>
-              Link logowania wysłany na<br />
-              <strong style={{ color: GREEN }}>{email}</strong>
+          <>
+            <h1 className="font-display text-[26px] font-bold leading-[34px]">Sprawdź skrzynkę</h1>
+            <p className="text-spoot-ink2">
+              Link do logowania wysłaliśmy na <strong className="text-spoot-ink">{email}</strong>. Otwórz go na tym urządzeniu.
             </p>
             <button
+              type="button"
               onClick={() => { setSent(false); setEmail(''); }}
-              style={{
-                marginTop: 24,
-                fontSize: 13,
-                color: '#6B7C79',
-                textDecoration: 'underline',
-                background: 'none',
-                border: 'none',
-                cursor: 'pointer',
-              }}
+              className="self-start py-2 font-display text-[13px] font-bold underline underline-offset-4"
             >
               Wyślij na inny adres
             </button>
-          </div>
+          </>
         ) : (
-          <form onSubmit={handleSubmit}>
-            <label style={{
-              display: 'block',
-              fontSize: 12,
-              fontWeight: 700,
-              color: '#6B7C79',
-              textTransform: 'uppercase',
-              letterSpacing: '0.08em',
-              marginBottom: 8,
-            }}>
-              Adres email
-            </label>
-            <input
-              type="email"
-              value={email}
-              onChange={e => setEmail(e.target.value)}
-              required
-              placeholder="jan@restauracja.pl"
-              onFocus={() => setFocused(true)}
-              onBlur={() => setFocused(false)}
-              style={{
-                width: '100%',
-                padding: '14px 16px',
-                borderRadius: 14,
-                border: `2px solid ${focused ? ORANGE : '#E8E5DC'}`,
-                backgroundColor: focused ? '#FFFAF7' : '#FAFAF8',
-                fontSize: 15,
-                color: GREEN,
-                outline: 'none',
-                transition: 'border-color 0.15s, background 0.15s',
-                boxSizing: 'border-box',
-              }}
-            />
+          <>
+            <div className="flex flex-col gap-1">
+              <h1 className="font-display text-[26px] font-bold leading-[34px]">Panel właściciela</h1>
+              <p className="text-spoot-ink2">Wpisz adres e-mail — wyślemy link do logowania. Bez hasła.</p>
+            </div>
 
-            {error && (
-              <p style={{ fontSize: 13, color: '#DC2626', marginTop: 8 }}>{error}</p>
+            {linkExpired && (
+              <p role="alert" className="rounded-xl bg-spoot-tint p-3">
+                Link logowania wygasł albo jest nieprawidłowy. Wyślij nowy poniżej.
+              </p>
             )}
 
-            <button
-              type="submit"
-              disabled={loading || !email}
-              style={{
-                width: '100%',
-                padding: '15px',
-                borderRadius: 14,
-                backgroundColor: loading || !email ? '#C5C0B8' : GREEN,
-                color: 'white',
-                fontWeight: 700,
-                fontSize: 15,
-                cursor: loading || !email ? 'not-allowed' : 'pointer',
-                transition: 'background 0.15s',
-                marginTop: 12,
-                border: 'none',
-                letterSpacing: '0.01em',
-              }}
-            >
-              {loading ? 'Wysyłanie...' : 'Wyślij link logowania →'}
-            </button>
-          </form>
+            <form onSubmit={handleSubmit} className="flex flex-col gap-3">
+              <label className={labelCls}>
+                Adres e-mail
+                <input type="email" value={email} onChange={e => setEmail(e.target.value)} required autoComplete="email" placeholder="np. kontakt@twojlokal.pl" className={inputCls} />
+              </label>
+              {error && <p role="alert" className="text-spoot-danger">{error}</p>}
+              <Btn type="submit" disabled={loading || !email}>{loading ? 'Wysyłam…' : 'Wyślij link logowania'}</Btn>
+            </form>
+          </>
         )}
 
-        <p style={{
-          textAlign: 'center',
-          fontSize: 12,
-          color: '#9CA8A5',
-          marginTop: 36,
-          lineHeight: 1.6,
-        }}>
-          Dostęp tylko dla zweryfikowanych właścicieli lokali.<br />
-          Pierwsze zgłoszenie przez aplikację mobilną Spoot.
+        <p className="border-t border-spoot-line pt-4 text-xs text-spoot-ink2">
+          Dostęp mają zweryfikowani właściciele lokali. Pierwsze zgłoszenie składasz w aplikacji Spoot.
         </p>
       </div>
     </div>

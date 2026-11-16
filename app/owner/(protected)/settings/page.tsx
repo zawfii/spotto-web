@@ -2,8 +2,9 @@
 
 import { createBrowserClient } from '@supabase/ssr';
 import { useEffect, useState, useCallback, useMemo } from 'react';
-import type { VenueInfo, VenuePhoto, Hours, DayKey } from '@/lib/owner';
+import type { VenuePhoto, Hours, DayKey } from '@/lib/owner';
 import { DEFAULT_HOURS } from '@/lib/owner';
+import { Btn, Card, CardTitle, Eyebrow, Loading, NavIcon, NAV_ICONS, PageHeader, checkCls, inputCls, labelCls } from '@/components/owner/ui';
 
 const DAY_LABELS: { key: DayKey; label: string }[] = [
   { key: 'mon', label: 'Poniedziałek' },
@@ -14,6 +15,7 @@ const DAY_LABELS: { key: DayKey; label: string }[] = [
   { key: 'sat', label: 'Sobota' },
   { key: 'sun', label: 'Niedziela' },
 ];
+const MAX_PHOTOS = 10;
 
 export default function SettingsPage() {
   const supabase = useMemo(
@@ -24,7 +26,8 @@ export default function SettingsPage() {
     []
   );
 
-  const [venue, setVenue] = useState<VenueInfo | null>(null);
+  const [venueId, setVenueId] = useState<string | null>(null);
+  const [placeId, setPlaceId] = useState<string | null>(null);
   const [photos, setPhotos] = useState<VenuePhoto[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -38,106 +41,104 @@ export default function SettingsPage() {
   const [instagram, setInstagram] = useState('');
   const [menuUrl, setMenuUrl] = useState('');
   const [hours, setHours] = useState<Hours>(DEFAULT_HOURS);
+  const [reservationNotif, setReservationNotif] = useState(true);
+  // PIN żyje w venue_staff_pins (widoczny tylko dla właściciela); savedPin = stan w bazie.
+  const [staffPin, setStaffPin] = useState('');
+  const [savedPin, setSavedPin] = useState('');
 
   const load = useCallback(async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
 
-    const { data: vd } = await supabase
-      .from('venue_details')
-      .select('*')
-      .eq('owner_id', user.id)
-      .maybeSingle();
-    if (!vd) return;
+      const { data: vd } = await supabase
+        .from('venue_details')
+        .select('*')
+        .eq('owner_id', user.id)
+        .maybeSingle();
+      if (!vd) return;
 
-    const { data: place } = await supabase
-      .from('places')
-      .select('name, category, district, image_url')
-      .eq('id', vd.place_id)
-      .maybeSingle();
+      setVenueId(vd.id);
+      setPlaceId(vd.place_id);
+      setDescription(vd.description ?? '');
+      setPhone(vd.phone ?? '');
+      setAddress(vd.address ?? '');
+      setInstagram(vd.instagram ?? '');
+      setMenuUrl(vd.menu_url ?? '');
+      setHours((vd.hours as Hours) ?? DEFAULT_HOURS);
+      setReservationNotif(vd.reservation_notifications ?? true);
 
-    const v: VenueInfo = {
-      place_id: vd.place_id,
-      place_name: place?.name ?? '',
-      place_category: place?.category ?? '',
-      place_district: place?.district ?? null,
-      place_image_url: place?.image_url ?? null,
-      description: vd.description ?? '',
-      phone: vd.phone ?? '',
-      address: vd.address ?? '',
-      instagram: vd.instagram ?? '',
-      menu_url: vd.menu_url ?? '',
-      hours: (vd.hours as Hours) ?? DEFAULT_HOURS,
-      is_premium: vd.is_premium ?? false,
-      reservation_notifications: vd.reservation_notifications ?? true,
-    };
-
-    setVenue(v);
-    setDescription(v.description);
-    setPhone(v.phone);
-    setAddress(v.address);
-    setInstagram(v.instagram);
-    setMenuUrl(v.menu_url);
-    setHours(v.hours);
-
-    const { data: photoRows } = await supabase
-      .from('venue_photos')
-      .select('*')
-      .eq('owner_id', user.id)
-      .order('position', { ascending: true });
-    setPhotos((photoRows ?? []) as VenuePhoto[]);
-    setLoading(false);
+      const [{ data: photoRows }, { data: pinRow }] = await Promise.all([
+        supabase.from('venue_photos').select('*').eq('owner_id', user.id).order('position', { ascending: true }),
+        supabase.from('venue_staff_pins').select('pin').eq('venue_id', vd.id).maybeSingle(),
+      ]);
+      setPhotos((photoRows ?? []) as VenuePhoto[]);
+      setStaffPin(pinRow?.pin ?? '');
+      setSavedPin(pinRow?.pin ?? '');
+    } finally {
+      setLoading(false);
+    }
   }, [supabase]);
 
   useEffect(() => { load(); }, [load]);
 
-  async function handleSave() {
-    if (!venue) return;
+  async function handleSave(e: React.FormEvent) {
+    e.preventDefault();
+    if (!placeId) return;
     setSaving(true);
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) { setSaving(false); return; }
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
 
-    await supabase.from('venue_details').upsert(
-      { owner_id: user.id, place_id: venue.place_id, description, phone, address, instagram, menu_url: menuUrl, hours },
-      { onConflict: 'place_id' }
-    );
-    setSaving(false);
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
+      const { error } = await supabase.from('venue_details').upsert(
+        { owner_id: user.id, place_id: placeId, description, phone, address, instagram, menu_url: menuUrl, hours, reservation_notifications: reservationNotif },
+        { onConflict: 'place_id' }
+      );
+      if (error) throw error;
+
+      const pin = staffPin.trim();
+      if (venueId && pin !== savedPin) {
+        const { error: pinError } = await supabase.from('venue_staff_pins').upsert({ venue_id: venueId, pin });
+        if (pinError) throw pinError;
+        setSavedPin(pin);
+      }
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2500);
+    } catch {
+      alert('Nie udało się zapisać zmian. Spróbuj ponownie.');
+    } finally {
+      setSaving(false);
+    }
   }
 
   async function handlePhotoUpload(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file || !venue || photos.length >= 10) return;
+    const input = e.target;
+    const file = input.files?.[0];
+    if (!file || !placeId || photos.length >= MAX_PHOTOS) return;
     setUploadingPhoto(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
 
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) { setUploadingPhoto(false); return; }
+      const ext = file.name.split('.').pop()?.toLowerCase() ?? 'jpg';
+      const storagePath = `${user.id}/${Date.now()}.${ext}`;
 
-    const ext = file.name.split('.').pop()?.toLowerCase() ?? 'jpg';
-    const storagePath = `${user.id}/${Date.now()}.${ext}`;
+      const { error: uploadError } = await supabase.storage
+        .from('venue-photos')
+        .upload(storagePath, file, { contentType: file.type, upsert: false });
+      if (uploadError) { alert('Nie udało się wgrać zdjęcia: ' + uploadError.message); return; }
 
-    const { error: uploadError } = await supabase.storage
-      .from('venue-photos')
-      .upload(storagePath, file, { contentType: file.type, upsert: false });
-
-    if (uploadError) {
+      const { data: urlData } = supabase.storage.from('venue-photos').getPublicUrl(storagePath);
+      const { data: photoRow } = await supabase
+        .from('venue_photos')
+        .insert({ place_id: placeId, owner_id: user.id, url: urlData.publicUrl, storage_path: storagePath, position: photos.length })
+        .select()
+        .single();
+      if (photoRow) setPhotos(prev => [...prev, photoRow as VenuePhoto]);
+    } finally {
       setUploadingPhoto(false);
-      alert('Błąd uploadu: ' + uploadError.message);
-      return;
+      input.value = '';
     }
-
-    const { data: urlData } = supabase.storage.from('venue-photos').getPublicUrl(storagePath);
-
-    const { data: photoRow } = await supabase
-      .from('venue_photos')
-      .insert({ place_id: venue.place_id, owner_id: user.id, url: urlData.publicUrl, storage_path: storagePath, position: photos.length })
-      .select()
-      .single();
-
-    if (photoRow) setPhotos(prev => [...prev, photoRow as VenuePhoto]);
-    setUploadingPhoto(false);
-    e.target.value = '';
   }
 
   async function handleDeletePhoto(photo: VenuePhoto) {
@@ -151,139 +152,114 @@ export default function SettingsPage() {
     setHours(prev => ({ ...prev, [day]: { ...prev[day], [field]: value } }));
   }
 
-  if (loading) {
-    return <div className="flex items-center justify-center h-40"><div className="text-2xl animate-spin">⏳</div></div>;
+  function copyMondayToAll() {
+    setHours(prev => Object.fromEntries(DAY_LABELS.map(({ key }) => [key, { ...prev.mon }])) as Hours);
   }
 
-  return (
-    <div className="max-w-2xl space-y-6">
-      <h1 className="text-lg font-bold text-[#1a1a1a]">Ustawienia lokalu</h1>
+  if (loading) return <Loading />;
 
-      {/* Zdjęcia */}
-      <section>
-        <div className="flex items-center justify-between mb-3">
-          <h2 className="text-sm font-bold text-[#1a1a1a]">Zdjęcia</h2>
-          <span className="text-xs text-gray-400">{photos.length}/10</span>
+  return (
+    <form onSubmit={handleSave} className="flex flex-col gap-6">
+      <PageHeader eyebrow="Profil lokalu" title="To widzą goście w Spoot">
+        <span role="status" className="self-center font-display text-[13px] font-bold">{saved ? 'Zapisano' : ''}</span>
+        <Btn type="submit" disabled={saving}>{saving ? 'Zapisuję…' : 'Zapisz zmiany'}</Btn>
+      </PageHeader>
+
+      <Card className="flex flex-col gap-4">
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="grow"><CardTitle>Zdjęcia i profil</CardTitle></div>
+          <span className="text-xs text-spoot-ink2">{photos.length}/{MAX_PHOTOS} · pierwsze zdjęcie to okładka</span>
         </div>
-        <div className="flex flex-wrap gap-2">
-          {photos.map(photo => (
-            <div key={photo.id} className="relative">
+        <div className="grid grid-cols-[repeat(auto-fill,minmax(160px,1fr))] gap-3">
+          {photos.map((photo, i) => (
+            <div key={photo.id} className="relative h-40 overflow-hidden rounded-2xl bg-spoot-chip">
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={photo.url} alt="" className="w-20 h-20 rounded-xl object-cover" />
+              <img src={photo.url} alt={`Zdjęcie lokalu ${i + 1}`} className="h-full w-full object-cover" />
+              {i === 0 && <Eyebrow className="absolute left-2 top-2 rounded-full bg-black/60 px-2.5 py-0.5 !text-[10px] text-white">Okładka</Eyebrow>}
               <button
+                type="button"
                 onClick={() => handleDeletePhoto(photo)}
-                className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-red-500 rounded-full text-white text-xs flex items-center justify-center hover:bg-red-600"
+                aria-label={`Usuń zdjęcie ${i + 1}`}
+                className="absolute right-1 top-1 flex h-11 w-11 items-center justify-center rounded-full bg-black/60 text-white hover:bg-black/80"
               >
-                ×
+                <NavIcon>{NAV_ICONS.close}</NavIcon>
               </button>
             </div>
           ))}
-          {photos.length < 10 && (
-            <label className="w-20 h-20 rounded-xl border-2 border-dashed border-gray-200 flex flex-col items-center justify-center gap-1 cursor-pointer hover:border-[#D4892A] transition-colors">
-              {uploadingPhoto ? (
-                <span className="text-xs text-gray-400">...</span>
-              ) : (
-                <>
-                  <span className="text-xl text-gray-400">+</span>
-                  <span className="text-[9px] text-gray-400 font-semibold">DODAJ</span>
-                </>
-              )}
-              <input type="file" accept="image/*" className="hidden" onChange={handlePhotoUpload} disabled={uploadingPhoto} />
+          {photos.length < MAX_PHOTOS && (
+            <label className="flex h-40 cursor-pointer flex-col items-center justify-center gap-2 rounded-2xl border-[1.5px] border-dashed border-spoot-ink/50 font-display font-bold hover:bg-spoot-chip/50">
+              <NavIcon>{NAV_ICONS.plus}</NavIcon>
+              {uploadingPhoto ? 'Wgrywam…' : 'Dodaj zdjęcie'}
+              <input type="file" accept="image/*" className="sr-only" onChange={handlePhotoUpload} disabled={uploadingPhoto} />
             </label>
           )}
         </div>
-      </section>
+        <label className={labelCls}>
+          Opis
+          <textarea value={description} onChange={e => setDescription(e.target.value)} rows={4} placeholder="Opisz swoją restaurację..." className={`${inputCls} h-auto resize-y py-3`} />
+        </label>
+      </Card>
 
-      {/* Opis */}
-      <section className="bg-white rounded-2xl border border-gray-100 p-5 space-y-4">
-        <h2 className="text-sm font-bold text-[#1a1a1a]">Opis restauracji</h2>
-        <textarea
-          value={description}
-          onChange={e => setDescription(e.target.value)}
-          rows={4}
-          placeholder="Opisz swój lokal..."
-          className="w-full px-3 py-2.5 rounded-xl border border-gray-200 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-[#D4892A]"
-        />
-      </section>
-
-      {/* Dane kontaktowe */}
-      <section className="bg-white rounded-2xl border border-gray-100 divide-y divide-gray-50 overflow-hidden">
-        <div className="px-5 py-3">
-          <h2 className="text-sm font-bold text-[#1a1a1a]">Dane kontaktowe</h2>
-        </div>
-        {[
-          { icon: '📞', label: 'Telefon', value: phone, setter: setPhone, type: 'tel', placeholder: '+48 600 000 000' },
-          { icon: '📍', label: 'Adres', value: address, setter: setAddress, type: 'text', placeholder: 'ul. Przykładowa 1, Warszawa' },
-          { icon: '🔗', label: 'Link do menu', value: menuUrl, setter: setMenuUrl, type: 'url', placeholder: 'https://...' },
-          { icon: '📸', label: 'Instagram', value: instagram, setter: setInstagram, type: 'text', placeholder: '@twojlokal' },
-        ].map(field => (
-          <div key={field.label} className="flex items-center gap-3 px-5 py-3">
-            <span className="text-base w-6 flex-shrink-0">{field.icon}</span>
-            <input
-              type={field.type}
-              value={field.value}
-              onChange={e => field.setter(e.target.value)}
-              placeholder={field.placeholder}
-              className="flex-1 text-sm text-[#1a1a1a] focus:outline-none placeholder:text-gray-300"
-            />
-          </div>
-        ))}
-      </section>
-
-      {/* Godziny otwarcia */}
-      <section className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
-        <div className="px-5 py-3 border-b border-gray-50">
-          <h2 className="text-sm font-bold text-[#1a1a1a]">Godziny otwarcia</h2>
-        </div>
-        <div className="divide-y divide-gray-50">
+      <div className="flex flex-wrap items-start gap-6">
+        <Card className="flex min-w-0 flex-[1_1_400px] flex-col">
+          <div className="pb-3"><CardTitle>Godziny otwarcia</CardTitle></div>
           {DAY_LABELS.map(({ key, label }) => {
             const schedule = hours[key];
             return (
-              <div key={key} className="flex items-center gap-3 px-5 py-3">
-                <span className="text-sm text-[#1a1a1a] flex-1">{label}</span>
-                <button
-                  onClick={() => updateHour(key, 'closed', !schedule.closed)}
-                  className={`w-10 h-5 rounded-full transition-colors relative flex-shrink-0 ${schedule.closed ? 'bg-gray-200' : 'bg-[#D4892A]'}`}
-                >
-                  <span className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-all ${schedule.closed ? 'left-0.5' : 'left-5'}`} />
-                </button>
-                {schedule.closed ? (
-                  <span className="text-xs text-gray-400 w-28 text-center">Zamknięte</span>
-                ) : (
-                  <div className="flex items-center gap-1 flex-shrink-0">
-                    <input
-                      type="text"
-                      value={schedule.open}
-                      onChange={e => updateHour(key, 'open', e.target.value)}
-                      maxLength={5}
-                      placeholder="00:00"
-                      className="w-12 h-7 rounded-lg border border-gray-200 text-center text-xs focus:outline-none focus:ring-1 focus:ring-[#D4892A]"
-                    />
-                    <span className="text-gray-400 text-xs">–</span>
-                    <input
-                      type="text"
-                      value={schedule.close}
-                      onChange={e => updateHour(key, 'close', e.target.value)}
-                      maxLength={5}
-                      placeholder="00:00"
-                      className="w-12 h-7 rounded-lg border border-gray-200 text-center text-xs focus:outline-none focus:ring-1 focus:ring-[#D4892A]"
-                    />
-                  </div>
-                )}
+              <div key={key} className="flex flex-wrap items-center gap-2 border-t border-spoot-line py-2">
+                <span className="flex-[1_1_96px] font-display font-semibold">{label}</span>
+                <input type="time" value={schedule.closed ? '' : schedule.open} onChange={e => updateHour(key, 'open', e.target.value)} disabled={schedule.closed} aria-label={`${label} od`} className={`${inputCls} !w-28`} />
+                <input type="time" value={schedule.closed ? '' : schedule.close} onChange={e => updateHour(key, 'close', e.target.value)} disabled={schedule.closed} aria-label={`${label} do`} className={`${inputCls} !w-28`} />
+                <label className="flex min-h-11 items-center gap-2">
+                  <input type="checkbox" checked={schedule.closed} onChange={e => updateHour(key, 'closed', e.target.checked)} className={checkCls} />
+                  Zamknięte
+                </label>
               </div>
             );
           })}
-        </div>
-      </section>
+          <div className="pt-2"><Btn variant="outline" size="sm" onClick={copyMondayToAll}>Skopiuj poniedziałek na cały tydzień</Btn></div>
+        </Card>
 
-      {/* Przycisk zapisz */}
-      <button
-        onClick={handleSave}
-        disabled={saving}
-        className="w-full py-3.5 bg-[#1a1a1a] text-white rounded-full font-semibold text-sm disabled:opacity-50 hover:bg-[#333] transition-colors"
-      >
-        {saving ? 'Zapisywanie...' : saved ? '✓ Zapisano!' : 'Zapisz zmiany'}
-      </button>
-    </div>
+        <div className="flex min-w-0 flex-[1_1_400px] flex-col gap-6">
+          <Card className="flex flex-col gap-4">
+            <CardTitle>Dane biznesowe</CardTitle>
+            <label className={labelCls}>
+              Telefon
+              <input type="tel" value={phone} onChange={e => setPhone(e.target.value)} placeholder="+48 600 000 000" className={inputCls} />
+            </label>
+            <label className={labelCls}>
+              Adres
+              <input value={address} onChange={e => setAddress(e.target.value)} placeholder="ul. Przykładowa 1, Warszawa" className={inputCls} />
+            </label>
+            <label className={labelCls}>
+              Link do menu
+              <input type="url" value={menuUrl} onChange={e => setMenuUrl(e.target.value)} placeholder="https://..." className={inputCls} />
+            </label>
+            <label className={labelCls}>
+              Instagram
+              <input value={instagram} onChange={e => setInstagram(e.target.value)} placeholder="@twojlokal" className={inputCls} />
+            </label>
+          </Card>
+
+          <Card className="flex flex-col">
+            <div className="pb-3"><CardTitle>Powiadomienia i dostęp</CardTitle></div>
+            <label className="flex min-h-14 items-center gap-3 border-t border-spoot-line">
+              <span className="flex grow flex-col">
+                <span className="font-display font-bold">Powiadomienia rezerwacji</span>
+                <span className="text-xs text-spoot-ink2">Dajemy znać, gdy ktoś chce zarezerwować stolik</span>
+              </span>
+              <input type="checkbox" checked={reservationNotif} onChange={e => setReservationNotif(e.target.checked)} className={checkCls} />
+            </label>
+            <label className={`${labelCls} border-t border-spoot-line pt-3`}>
+              Dostęp personelu — PIN
+              <input value={staffPin} onChange={e => setStaffPin(e.target.value)} inputMode="numeric" maxLength={8} placeholder="PIN np. 1234 — puste = brak blokady" className={inputCls} />
+              <span className="font-body text-xs font-normal normal-case tracking-normal text-spoot-ink2">
+                W aplikacji na wspólnym telefonie PIN blokuje Menu, Oferty, Statystyki i Ustawienia. Bez PIN-u personel skanuje karty i widzi pulpit.
+              </span>
+            </label>
+          </Card>
+        </div>
+      </div>
+    </form>
   );
 }

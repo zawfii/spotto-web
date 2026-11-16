@@ -1,78 +1,55 @@
 // app/owner/(protected)/reviews/page.tsx
-import { redirect } from 'next/navigation';
-import { createSupabaseServerClient } from '@/lib/supabase-server';
-import { getOwnerVenue, fetchReviews } from '@/lib/owner';
-
-function Stars({ rating }: { rating: number }) {
-  // rating is 1-10, display as 1-5 stars
-  const stars = Math.round(rating / 2);
-  return (
-    <span className="text-xs text-[#D4892A]">
-      {'★'.repeat(stars)}{'☆'.repeat(5 - stars)}
-    </span>
-  );
-}
+import { fetchReviews } from '@/lib/owner';
+import { requireVenue } from '@/lib/owner-server';
+import { pluralPl } from '@/lib/format';
+import { Card, Initial, PageHeader, RatingBadge } from '@/components/owner/ui';
 
 function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString('pl-PL', {
-    day: 'numeric',
-    month: 'long',
-    year: 'numeric',
-  });
+  return new Date(iso).toLocaleDateString('pl-PL', { day: 'numeric', month: 'long', year: 'numeric' });
 }
 
 export default async function ReviewsPage() {
-  const supabase = createSupabaseServerClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) redirect('/owner/login');
-
-  const venue = await getOwnerVenue(supabase, user.id);
-  if (!venue) redirect('/owner/login');
-
+  const ctx = await requireVenue();
+  if (!ctx) return null;
+  const { supabase, venue } = ctx;
   const reviews = await fetchReviews(supabase, venue.place_id);
 
   return (
-    <div className="max-w-2xl space-y-4">
-      <div className="flex items-center justify-between">
-        <h1 className="text-lg font-bold text-[#1a1a1a]">Opinie</h1>
-        <span className="text-sm text-gray-400">{reviews.length} opinii</span>
-      </div>
+    <>
+      <PageHeader
+        eyebrow="Opinie"
+        title="Co goście piszą o Twoim lokalu"
+        sub={reviews.length > 0 ? `${reviews.length} ${pluralPl(reviews.length, 'ostatnia opinia', 'ostatnie opinie', 'ostatnich opinii')}` : undefined}
+      />
 
       {reviews.length === 0 ? (
-        <div className="bg-white rounded-2xl border border-gray-100 p-12 text-center">
-          <div className="text-4xl mb-3">⭐</div>
-          <p className="text-sm text-gray-500">Brak opinii — będą tu gdy użytkownicy ocenią Twój lokal.</p>
-        </div>
+        <Card className="text-center text-spoot-ink2">Brak opinii. Pojawią się tu, gdy goście ocenią Twój lokal.</Card>
       ) : (
-        <div className="bg-white rounded-2xl border border-gray-100 divide-y divide-gray-50 overflow-hidden">
-          {reviews.map(r => (
-            <div key={r.id} className="flex gap-3 p-4">
-              <div className="w-9 h-9 rounded-full bg-[#D4892A] flex items-center justify-center text-white text-sm font-bold flex-shrink-0">
-                {(r.display_name?.[0] ?? '?').toUpperCase()}
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center justify-between gap-2">
-                  <span className="text-sm font-semibold text-[#1a1a1a] truncate">{r.display_name}</span>
-                  <span className="text-xs text-gray-400 flex-shrink-0">{formatDate(r.created_at)}</span>
-                </div>
-                <Stars rating={r.rating} />
-                {r.opinion && (
-                  <p className="text-sm text-gray-600 mt-1">{r.opinion}</p>
-                )}
-                {r.tags.length > 0 && (
-                  <div className="flex flex-wrap gap-1 mt-1.5">
-                    {r.tags.map(tag => (
-                      <span key={tag} className="text-[10px] bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full">
-                        {tag}
-                      </span>
-                    ))}
+        <Card className="py-1">
+          <ul>
+            {reviews.map((r, i) => (
+              <li key={r.id} className={`flex gap-3 py-4 ${i > 0 ? 'border-t border-spoot-line' : ''}`}>
+                <Initial name={r.display_name} />
+                <div className="flex min-w-0 flex-1 flex-col gap-1.5">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="font-display font-bold">{r.display_name}</span>
+                    <RatingBadge rating={r.rating} />
+                    <span className="ml-auto text-xs text-spoot-ink2">{formatDate(r.created_at)}</span>
                   </div>
-                )}
-              </div>
-            </div>
-          ))}
-        </div>
+                  {r.opinion && <p className="text-spoot-ink2">{r.opinion}</p>}
+                  {r.tags.length > 0 && (
+                    <div className="flex flex-wrap gap-1.5">
+                      {r.tags.map(tag => (
+                        <span key={tag} className="rounded-full bg-spoot-chip px-2 py-0.5 text-xs">{tag}</span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </li>
+            ))}
+          </ul>
+        </Card>
       )}
-    </div>
+    </>
   );
 }

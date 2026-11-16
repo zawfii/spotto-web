@@ -2,8 +2,46 @@
 
 import { createBrowserClient } from '@supabase/ssr';
 import { useEffect, useState, useCallback, useMemo } from 'react';
-import type { MenuSection, MenuItem, MenuItemInput } from '@/lib/owner';
-import { formatPrice } from '@/lib/owner';
+import type { MenuSection, MenuItem } from '@/lib/owner';
+import { formatPrice, pluralPl } from '@/lib/format';
+import { Btn, Card, CardTitle, Eyebrow, Loading, PageHeader, checkCls, inputCls, labelCls } from '@/components/owner/ui';
+
+// Jak getPresetSections w apce (app/owner-panel.tsx).
+const DEFAULT_PRESETS = ['Przystawki', 'Zupy', 'Dania główne', 'Desery', 'Napoje', 'Inne'];
+const ASIAN_PRESETS = ['Przystawki', 'Zupy', 'Dania główne', 'Makarony & ryż', 'Desery', 'Napoje'];
+const PRESETS: Record<string, string[]> = {
+  'Kawiarnie': ['Kawy', 'Herbaty', 'Ciasta & desery', 'Śniadania', 'Napoje zimne', 'Lunch'],
+  'Bary': ['Piwa', 'Drinki & koktajle', 'Wódki', 'Wina', 'Whisky', 'Przekąski'],
+  'Desery & Lody': ['Lody & sorbety', 'Ciasta', 'Desery', 'Napoje', 'Inne', 'Sezonowe'],
+  'Japońska': ['Sushi & Maki', 'Sashimi', 'Ramen & Zupy', 'Przystawki', 'Napoje', 'Desery'],
+  'Włoska': ['Pizza', 'Makarony', 'Przystawki', 'Sałatki', 'Desery', 'Napoje'],
+  'Amerykańska': ['Burgery', 'Frytki & dodatki', 'Sałatki', 'Desery', 'Napoje', 'Inne'],
+  'Polska': ['Przystawki', 'Zupy', 'Dania główne', 'Pierogi', 'Desery', 'Napoje'],
+  'Ukraińska': ['Przystawki', 'Zupy', 'Dania główne', 'Pierogi', 'Desery', 'Napoje'],
+  'Indyjska': ['Przystawki', 'Curry', 'Biryani', 'Chleby & ryż', 'Desery', 'Napoje'],
+  'Meksykańska': ['Tacos & quesadillas', 'Nachos & przystawki', 'Dania główne', 'Desery', 'Piwa & drinki', 'Napoje'],
+  'Chińska': ['Przystawki', 'Dim Sum', 'Zupy', 'Dania główne', 'Makarony & ryż', 'Napoje'],
+  'Koreańska': ['BBQ', 'Przystawki', 'Zupy & stew', 'Makarony & ryż', 'Desery', 'Napoje'],
+  'Tajska': ASIAN_PRESETS,
+  'Wietnamska': ASIAN_PRESETS,
+  'Azjatyckie': ASIAN_PRESETS,
+  'Seafood': ['Ryby', 'Owoce morza', 'Zupy', 'Sałatki', 'Desery', 'Napoje'],
+  'Hiszpańska': ['Tapas', 'Paella', 'Sałatki', 'Desery', 'Wina & drinki', 'Napoje'],
+  'Grecka': ['Mezes', 'Sałatki', 'Dania główne', 'Grillowane', 'Desery', 'Napoje'],
+  'Bałkańska': ['Przystawki', 'Zupy', 'Grillowane', 'Dania główne', 'Desery', 'Napoje'],
+  'Bliski Wschód': ['Meze', 'Kebaby', 'Dania główne', 'Sałatki', 'Desery', 'Napoje'],
+};
+
+const ITEM_COLUMNS = 'id, section_id, name, price, description, is_vege, spice_level, is_available, position';
+const SPICE_LABELS = ['Brak', 'Łagodne', 'Ostre', 'Bardzo ostre'];
+
+type ItemForm = {
+  editId: string | null; sectionId: string;
+  name: string; price: string; description: string;
+  is_vege: boolean; spice_level: 0 | 1 | 2 | 3; is_available: boolean;
+};
+
+const parsePrice = (s: string) => parseFloat(s.replace(',', '.'));
 
 export default function MenuPage() {
   const supabase = useMemo(
@@ -15,16 +53,13 @@ export default function MenuPage() {
   );
 
   const [placeId, setPlaceId] = useState<string | null>(null);
+  const [category, setCategory] = useState('');
   const [sections, setSections] = useState<MenuSection[]>([]);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
-
-  // Modals
-  const [sectionModal, setSectionModal] = useState<{ open: boolean; editId: string | null; name: string }>({ open: false, editId: null, name: '' });
-  const [itemModal, setItemModal] = useState<{
-    open: boolean; editId: string | null; sectionId: string;
-    name: string; price: string; description: string;
-    is_vege: boolean; spice_level: 0 | 1 | 2 | 3; is_available: boolean;
-  }>({ open: false, editId: null, sectionId: '', name: '', price: '', description: '', is_vege: false, spice_level: 0, is_available: true });
+  const [newSection, setNewSection] = useState('');
+  const [quick, setQuick] = useState({ name: '', price: '' });
+  const [form, setForm] = useState<ItemForm | null>(null);
 
   const load = useCallback(async () => {
     try {
@@ -33,15 +68,18 @@ export default function MenuPage() {
 
       const { data: vd } = await supabase.from('venue_details').select('place_id').eq('owner_id', user.id).maybeSingle();
       if (!vd) return;
-
       setPlaceId(vd.place_id);
 
-      const { data: sectionRows } = await supabase
-        .from('menu_sections')
-        .select('id, name, position, menu_items(id, section_id, name, price, description, is_vege, spice_level, is_available, position)')
-        .eq('place_id', vd.place_id)
-        .order('position', { ascending: true });
-
+      const [{ data: place }, { data: sectionRows }] = await Promise.all([
+        supabase.from('places').select('category').eq('id', vd.place_id).maybeSingle(),
+        supabase
+          .from('menu_sections')
+          .select(`id, name, position, menu_items(${ITEM_COLUMNS})`)
+          .eq('place_id', vd.place_id)
+          .eq('source', 'owner') // import ze strony/zdjęcia nie jest edytowalny przez właściciela (RLS)
+          .order('position', { ascending: true }),
+      ]);
+      setCategory(place?.category ?? '');
       setSections(
         (sectionRows ?? []).map(s => ({
           ...s,
@@ -55,239 +93,296 @@ export default function MenuPage() {
 
   useEffect(() => { load(); }, [load]);
 
-  // ── Section CRUD ──────────────────────────────────────────────────────────
+  const selected = sections.find(s => s.id === selectedId) ?? sections[0] ?? null;
+  const itemCount = sections.reduce((n, s) => n + s.menu_items.length, 0);
+  const unavailable = sections.reduce((n, s) => n + s.menu_items.filter(i => !i.is_available).length, 0);
+  const presets = (PRESETS[category] ?? DEFAULT_PRESETS).filter(p => !sections.some(s => s.name === p));
 
-  async function saveSection() {
-    const name = sectionModal.name.trim();
+  // ── Sekcje ────────────────────────────────────────────────────────────────
+
+  async function addSection(rawName: string) {
+    const name = rawName.trim();
     if (!name || !placeId) return;
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
-
-    if (sectionModal.editId) {
-      const { error } = await supabase.from('menu_sections').update({ name }).eq('id', sectionModal.editId);
-      if (error) { alert('Błąd zapisu: ' + error.message); return; }
-      setSections(prev => prev.map(s => s.id === sectionModal.editId ? { ...s, name } : s));
-    } else {
-      const pos = sections.length;
-      const { data, error } = await supabase.from('menu_sections')
-        .insert({ place_id: placeId, owner_id: user.id, name, position: pos })
-        .select('id, name, position')
-        .single();
-      if (error) { alert('Błąd zapisu: ' + error.message); return; }
-      if (data) setSections(prev => [...prev, { ...data, menu_items: [] }]);
-    }
-    setSectionModal({ open: false, editId: null, name: '' });
+    const { data, error } = await supabase.from('menu_sections')
+      .insert({ place_id: placeId, owner_id: user.id, name, position: sections.length })
+      .select('id, name, position')
+      .single();
+    if (error) { alert('Nie udało się dodać sekcji: ' + error.message); return; }
+    setSections(prev => [...prev, { ...data, menu_items: [] }]);
+    setSelectedId(data.id);
+    setNewSection('');
   }
 
-  async function deleteSection(sectionId: string) {
-    const count = sections.find(s => s.id === sectionId)?.menu_items.length ?? 0;
-    if (!confirm(`Usunąć sekcję${count > 0 ? ` i ${count} dań` : ''}?`)) return;
-    await supabase.from('menu_sections').delete().eq('id', sectionId);
-    setSections(prev => prev.filter(s => s.id !== sectionId));
+  async function renameSection(section: MenuSection) {
+    const name = prompt('Nazwa sekcji', section.name)?.trim();
+    if (!name || name === section.name) return;
+    const { error } = await supabase.from('menu_sections').update({ name }).eq('id', section.id);
+    if (error) { alert('Nie udało się zapisać: ' + error.message); return; }
+    setSections(prev => prev.map(s => (s.id === section.id ? { ...s, name } : s)));
   }
 
-  // ── Item CRUD ─────────────────────────────────────────────────────────────
+  async function deleteSection(section: MenuSection) {
+    const count = section.menu_items.length;
+    const extra = count > 0 ? ` i ${count} ${pluralPl(count, 'danie', 'dania', 'dań')}` : '';
+    if (!confirm(`Usunąć sekcję „${section.name}”${extra}?`)) return;
+    const { error } = await supabase.from('menu_sections').delete().eq('id', section.id);
+    if (error) { alert('Nie udało się usunąć: ' + error.message); return; }
+    setSections(prev => prev.filter(s => s.id !== section.id));
+    setSelectedId(null);
+    setForm(null);
+  }
 
-  async function saveItem() {
-    const name = itemModal.name.trim();
-    const price = parseFloat(itemModal.price.replace(',', '.'));
-    if (!name || isNaN(price) || price <= 0) return;
+  // ── Dania ─────────────────────────────────────────────────────────────────
 
-    const payload: MenuItemInput = {
-      name, price,
-      description: itemModal.description.trim() || null,
-      is_vege: itemModal.is_vege,
-      spice_level: itemModal.spice_level,
-      is_available: itemModal.is_available,
+  async function insertItem(sectionId: string, payload: Omit<MenuItem, 'id' | 'section_id' | 'position'>) {
+    const position = sections.find(s => s.id === sectionId)?.menu_items.length ?? 0;
+    const { data, error } = await supabase.from('menu_items')
+      .insert({ section_id: sectionId, ...payload, position })
+      .select(ITEM_COLUMNS)
+      .single();
+    if (error) { alert('Nie udało się dodać dania: ' + error.message); return false; }
+    setSections(prev => prev.map(s => (s.id === sectionId ? { ...s, menu_items: [...s.menu_items, data as MenuItem] } : s)));
+    return true;
+  }
+
+  async function quickAdd(e: React.FormEvent) {
+    e.preventDefault();
+    const price = parsePrice(quick.price);
+    if (!selected || !quick.name.trim() || isNaN(price) || price <= 0) return;
+    const ok = await insertItem(selected.id, {
+      name: quick.name.trim(), price, description: null, is_vege: false, spice_level: 0, is_available: true,
+    });
+    if (ok) setQuick({ name: '', price: '' });
+  }
+
+  async function saveForm(e: React.FormEvent) {
+    e.preventDefault();
+    if (!form) return;
+    const price = parsePrice(form.price);
+    if (!form.name.trim() || isNaN(price) || price <= 0) return;
+    const payload = {
+      name: form.name.trim(), price,
+      description: form.description.trim() || null,
+      is_vege: form.is_vege, spice_level: form.spice_level, is_available: form.is_available,
     };
 
-    if (itemModal.editId) {
-      const { error } = await supabase.from('menu_items').update(payload).eq('id', itemModal.editId);
-      if (error) { alert('Błąd zapisu: ' + error.message); return; }
+    if (!form.editId) {
+      if (await insertItem(form.sectionId, payload)) setForm(null);
+      return;
+    }
+
+    const current = sections.flatMap(s => s.menu_items).find(i => i.id === form.editId);
+    const moved = current && current.section_id !== form.sectionId;
+    const position = moved ? sections.find(s => s.id === form.sectionId)?.menu_items.length ?? 0 : current?.position ?? 0;
+    const { error } = await supabase.from('menu_items')
+      .update({ ...payload, section_id: form.sectionId, position })
+      .eq('id', form.editId);
+    if (error) { alert('Nie udało się zapisać: ' + error.message); return; }
+    if (moved) {
+      await load();
+    } else {
       setSections(prev => prev.map(s => ({
         ...s,
-        menu_items: s.menu_items.map(item =>
-          item.id === itemModal.editId ? { ...item, ...payload } : item
-        ),
+        menu_items: s.menu_items.map(i => (i.id === form.editId ? { ...i, ...payload } : i)),
       })));
-    } else {
-      const section = sections.find(s => s.id === itemModal.sectionId);
-      const pos = section?.menu_items.length ?? 0;
-      const { data, error } = await supabase.from('menu_items')
-        .insert({ section_id: itemModal.sectionId, ...payload, position: pos })
-        .select()
-        .single();
-      if (error) { alert('Błąd zapisu: ' + error.message); return; }
-      if (data) {
-        setSections(prev => prev.map(s =>
-          s.id === itemModal.sectionId
-            ? { ...s, menu_items: [...s.menu_items, data as MenuItem] }
-            : s
-        ));
-      }
     }
-    setItemModal(m => ({ ...m, open: false }));
+    setForm(null);
   }
 
-  async function deleteItem(itemId: string) {
-    if (!confirm('Usunąć danie?')) return;
-    await supabase.from('menu_items').delete().eq('id', itemId);
+  async function toggleAvailable(item: MenuItem) {
+    const is_available = !item.is_available;
+    const { error } = await supabase.from('menu_items').update({ is_available }).eq('id', item.id);
+    if (error) { alert('Nie udało się zapisać: ' + error.message); return; }
     setSections(prev => prev.map(s => ({
       ...s,
-      menu_items: s.menu_items.filter(item => item.id !== itemId),
+      menu_items: s.menu_items.map(i => (i.id === item.id ? { ...i, is_available } : i)),
     })));
   }
 
-  if (loading) {
-    return <div className="flex items-center justify-center h-40"><div className="text-2xl animate-spin">⏳</div></div>;
+  async function deleteItem(item: MenuItem) {
+    if (!confirm(`Usunąć „${item.name}”?`)) return;
+    const { error } = await supabase.from('menu_items').delete().eq('id', item.id);
+    if (error) { alert('Nie udało się usunąć: ' + error.message); return; }
+    setSections(prev => prev.map(s => ({ ...s, menu_items: s.menu_items.filter(i => i.id !== item.id) })));
+    if (form?.editId === item.id) setForm(null);
   }
 
+  const openNew = () => selected && setForm({
+    editId: null, sectionId: selected.id, name: '', price: '', description: '', is_vege: false, spice_level: 0, is_available: true,
+  });
+  const openEdit = (item: MenuItem) => setForm({
+    editId: item.id, sectionId: item.section_id, name: item.name, price: String(item.price),
+    description: item.description ?? '', is_vege: item.is_vege, spice_level: item.spice_level, is_available: item.is_available,
+  });
+
+  if (loading) return <Loading />;
+
   return (
-    <div className="max-w-2xl space-y-4">
-      <div className="flex items-center justify-between">
-        <h1 className="text-lg font-bold text-[#1a1a1a]">Menu</h1>
-        <button
-          onClick={() => setSectionModal({ open: true, editId: null, name: '' })}
-          className="text-sm text-[#D4892A] font-semibold hover:underline"
-        >
-          + Dodaj sekcję
-        </button>
-      </div>
+    <>
+      <PageHeader
+        eyebrow="Menu"
+        title="Karta dań"
+        sub={`${sections.length} ${pluralPl(sections.length, 'sekcja', 'sekcje', 'sekcji')} · ${itemCount} ${pluralPl(itemCount, 'danie', 'dania', 'dań')}${unavailable > 0 ? ` · ${unavailable} niedostępne` : ''}. Zmiany widać w aplikacji od razu po zapisaniu.`}
+      >
+        <Btn onClick={openNew} disabled={!selected}>Dodaj danie</Btn>
+      </PageHeader>
 
-      {sections.length === 0 && (
-        <div className="bg-white rounded-2xl border border-gray-100 p-12 text-center">
-          <div className="text-4xl mb-3">🍽</div>
-          <p className="text-sm text-gray-500">Brak sekcji menu. Dodaj pierwszą sekcję powyżej.</p>
-        </div>
-      )}
-
-      {sections.map(section => (
-        <div key={section.id}>
-          {/* Nagłówek sekcji */}
-          <div className="flex items-center gap-2 mb-2">
-            <h2 className="text-sm font-bold text-[#1a1a1a] flex-1">{section.name}</h2>
-            <button
-              onClick={() => setSectionModal({ open: true, editId: section.id, name: section.name })}
-              className="text-xs text-gray-400 hover:text-[#D4892A]"
-            >
-              Edytuj
-            </button>
-            <button
-              onClick={() => deleteSection(section.id)}
-              className="text-xs text-red-400 hover:text-red-600"
-            >
-              Usuń
-            </button>
-          </div>
-
-          {/* Dania */}
-          <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
-            {section.menu_items.map((item, idx) => (
-              <div key={item.id} className={`flex items-center gap-3 px-4 py-3 ${idx > 0 ? 'border-t border-gray-50' : ''}`}>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-1">
-                    <span className={`text-sm font-medium ${!item.is_available ? 'text-gray-400' : 'text-[#1a1a1a]'}`}>
-                      {item.name}
-                    </span>
-                    {!item.is_available && <span className="text-[10px] text-gray-400">· niedostępne</span>}
-                  </div>
-                  <div className="flex gap-1 mt-0.5">
-                    {item.is_vege && <span className="text-xs">🌱</span>}
-                    {item.spice_level > 0 && <span className="text-xs">{'🌶'.repeat(item.spice_level)}</span>}
-                  </div>
+      <div className="flex flex-wrap items-start gap-6">
+        {/* Sekcje */}
+        <Card className="flex min-w-0 flex-[1_1_200px] flex-col gap-1 !p-3">
+          <Eyebrow className="px-3 py-2">Sekcje</Eyebrow>
+          {sections.map(s => {
+            const active = s.id === selected?.id;
+            return (
+              <button
+                key={s.id}
+                type="button"
+                aria-pressed={active}
+                onClick={() => { setSelectedId(s.id); setForm(null); }}
+                className={`flex min-h-11 items-center gap-2 rounded-xl px-3 text-left font-display ${active ? 'bg-spoot-ink font-bold text-white' : 'font-semibold hover:bg-spoot-chip/70'}`}
+              >
+                <span className="grow">{s.name}</span>
+                <span className="text-xs">{s.menu_items.length}</span>
+              </button>
+            );
+          })}
+          <form onSubmit={e => { e.preventDefault(); addSection(newSection); }} className="mt-2 flex flex-col gap-2 border-t border-spoot-line p-3">
+            <label className={labelCls}>
+              Nowa sekcja
+              <input value={newSection} onChange={e => setNewSection(e.target.value)} placeholder="np. Przystawki" maxLength={50} className={inputCls} />
+            </label>
+            <Btn type="submit" variant="outline" size="sm" disabled={!newSection.trim()}>Dodaj sekcję</Btn>
+            {presets.length > 0 && (
+              <>
+                <span className="pt-1 text-xs text-spoot-ink2">{sections.length === 0 ? 'Zacznij od gotowych sekcji' : 'Albo dodaj gotową'}</span>
+                <div className="flex flex-wrap gap-1.5">
+                  {presets.map(p => (
+                    <button key={p} type="button" onClick={() => addSection(p)} className="min-h-9 rounded-full border border-spoot-line px-3 font-display text-xs font-semibold hover:bg-spoot-chip/70">
+                      + {p}
+                    </button>
+                  ))}
                 </div>
-                <span className="text-sm font-semibold text-[#1a1a1a]">{formatPrice(item.price)}</span>
-                <button
-                  onClick={() => setItemModal({
-                    open: true, editId: item.id, sectionId: item.section_id,
-                    name: item.name, price: String(item.price),
-                    description: item.description ?? '',
-                    is_vege: item.is_vege, spice_level: item.spice_level, is_available: item.is_available,
-                  })}
-                  className="text-xs text-gray-400 hover:text-[#D4892A] px-1"
-                >
-                  ✏️
-                </button>
-                <button onClick={() => deleteItem(item.id)} className="text-xs text-red-400 hover:text-red-600 px-1">🗑</button>
-              </div>
-            ))}
-            <button
-              onClick={() => setItemModal({ open: true, editId: null, sectionId: section.id, name: '', price: '', description: '', is_vege: false, spice_level: 0, is_available: true })}
-              className="w-full flex items-center gap-2 px-4 py-3 border-t border-gray-50 text-sm text-[#D4892A] hover:bg-gray-50 transition-colors"
-            >
-              <span>+</span> Dodaj danie
-            </button>
-          </div>
-        </div>
-      ))}
+              </>
+            )}
+          </form>
+        </Card>
 
-      {/* Modal: Sekcja */}
-      {sectionModal.open && (
-        <div className="fixed inset-0 bg-black/50 flex items-end justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl w-full max-w-sm p-5 space-y-4">
-            <h3 className="font-bold text-[#1a1a1a]">{sectionModal.editId ? 'Edytuj sekcję' : 'Nowa sekcja'}</h3>
-            <input
-              autoFocus
-              value={sectionModal.name}
-              onChange={e => setSectionModal(m => ({ ...m, name: e.target.value }))}
-              placeholder="Nazwa sekcji"
-              maxLength={50}
-              className="w-full px-4 py-3 rounded-xl border border-gray-200 text-sm focus:outline-none focus:ring-2 focus:ring-[#D4892A]"
-            />
-            <div className="flex gap-2">
-              <button onClick={() => setSectionModal({ open: false, editId: null, name: '' })} className="flex-1 py-3 rounded-full bg-gray-100 text-sm font-semibold text-[#1a1a1a]">Anuluj</button>
-              <button onClick={saveSection} disabled={!sectionModal.name.trim()} className="flex-1 py-3 rounded-full bg-[#1a1a1a] text-white text-sm font-semibold disabled:opacity-40">Zapisz</button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Modal: Danie */}
-      {itemModal.open && (
-        <div className="fixed inset-0 bg-black/50 flex items-end justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl w-full max-w-sm p-5 space-y-3 max-h-[90vh] overflow-y-auto">
-            <h3 className="font-bold text-[#1a1a1a]">{itemModal.editId ? 'Edytuj danie' : 'Nowe danie'}</h3>
-            <div>
-              <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wide">Nazwa *</label>
-              <input autoFocus value={itemModal.name} onChange={e => setItemModal(m => ({ ...m, name: e.target.value }))} placeholder="Nazwa dania" maxLength={80} className="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm mt-1 focus:outline-none focus:ring-2 focus:ring-[#D4892A]" />
-            </div>
-            <div>
-              <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wide">Cena (zł) *</label>
-              <input value={itemModal.price} onChange={e => setItemModal(m => ({ ...m, price: e.target.value }))} placeholder="np. 38" inputMode="decimal" className="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm mt-1 focus:outline-none focus:ring-2 focus:ring-[#D4892A]" />
-            </div>
-            <div>
-              <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wide">Opis</label>
-              <textarea value={itemModal.description} onChange={e => setItemModal(m => ({ ...m, description: e.target.value }))} placeholder="Krótki opis..." maxLength={240} rows={2} className="w-full px-3 py-2 rounded-xl border border-gray-200 text-sm mt-1 resize-none focus:outline-none focus:ring-2 focus:ring-[#D4892A]" />
-            </div>
-            <div className="flex items-center justify-between py-1">
-              <span className="text-sm text-[#1a1a1a]">🌱 Wegetariańskie</span>
-              <button onClick={() => setItemModal(m => ({ ...m, is_vege: !m.is_vege }))} className={`w-10 h-5 rounded-full transition-colors relative ${itemModal.is_vege ? 'bg-[#D4892A]' : 'bg-gray-200'}`}>
-                <span className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-all ${itemModal.is_vege ? 'left-5' : 'left-0.5'}`} />
-              </button>
-            </div>
-            <div>
-              <label className="text-[10px] font-bold text-gray-400 uppercase tracking-wide">Ostrość</label>
-              <div className="flex gap-2 mt-1">
-                {([0, 1, 2, 3] as const).map(level => (
-                  <button key={level} onClick={() => setItemModal(m => ({ ...m, spice_level: level }))} className={`flex-1 py-1.5 rounded-lg text-xs border transition-colors ${itemModal.spice_level === level ? 'border-[#D4892A] bg-orange-50' : 'border-gray-200'}`}>
-                    {level === 0 ? 'Brak' : '🌶'.repeat(level)}
-                  </button>
-                ))}
+        {/* Dania w wybranej sekcji */}
+        <Card className="flex min-w-0 flex-[3_1_440px] flex-col gap-4">
+          {!selected ? (
+            <p className="text-spoot-ink2">Brak sekcji. Dodaj pierwszą po lewej, a potem wpisz dania.</p>
+          ) : (
+            <>
+              <div className="flex flex-wrap items-center gap-2">
+                <div className="grow"><CardTitle>{selected.name}</CardTitle></div>
+                <Btn variant="ghost" size="sm" onClick={() => renameSection(selected)}>Zmień nazwę</Btn>
+                <Btn variant="danger" size="sm" onClick={() => deleteSection(selected)}>Usuń sekcję</Btn>
               </div>
-            </div>
-            <div className="flex items-center justify-between py-1">
-              <span className="text-sm text-[#1a1a1a]">✅ Dostępne</span>
-              <button onClick={() => setItemModal(m => ({ ...m, is_available: !m.is_available }))} className={`w-10 h-5 rounded-full transition-colors relative ${itemModal.is_available ? 'bg-[#D4892A]' : 'bg-gray-200'}`}>
-                <span className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-all ${itemModal.is_available ? 'left-5' : 'left-0.5'}`} />
-              </button>
-            </div>
-            <div className="flex gap-2 pt-1">
-              <button onClick={() => setItemModal(m => ({ ...m, open: false }))} className="flex-1 py-3 rounded-full bg-gray-100 text-sm font-semibold text-[#1a1a1a]">Anuluj</button>
-              <button onClick={saveItem} disabled={!itemModal.name.trim() || !itemModal.price.trim()} className="flex-1 py-3 rounded-full bg-[#1a1a1a] text-white text-sm font-semibold disabled:opacity-40">Zapisz</button>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
+
+              {selected.menu_items.length === 0 ? (
+                <p className="text-spoot-ink2">Ta sekcja jest pusta. Dodaj pierwsze danie poniżej.</p>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full min-w-[520px] border-collapse text-left">
+                    <thead>
+                      <tr className="font-display text-[11px] font-bold tracking-[0.5px]">
+                        <th scope="col" className="py-2 pr-3">DANIE</th>
+                        <th scope="col" className="px-3 py-2 text-right">CENA</th>
+                        <th scope="col" className="px-3 py-2">DOSTĘPNE</th>
+                        <th scope="col" className="py-2 text-right">AKCJE</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {selected.menu_items.map(item => (
+                        <tr key={item.id} className={`border-t border-spoot-line ${form?.editId === item.id ? 'bg-spoot-input' : ''}`}>
+                          <td className="py-3.5 pl-2 pr-3">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <span className="font-display font-bold">{item.name}</span>
+                              {item.is_vege && <span className="rounded-full bg-spoot-chip px-2 py-px font-display text-[10px] font-bold tracking-[0.5px]">WEGE</span>}
+                              {item.spice_level > 0 && <span className="rounded-full bg-spoot-tint px-2 py-px font-display text-[10px] font-bold tracking-[0.5px]">{SPICE_LABELS[item.spice_level].toUpperCase()}</span>}
+                              {!item.is_available && <span className="text-xs text-spoot-ink2">· niedostępne</span>}
+                            </div>
+                            {item.description && <div className="text-xs text-spoot-ink2">{item.description}</div>}
+                          </td>
+                          <td className="whitespace-nowrap px-3 py-3.5 text-right font-display font-bold">{formatPrice(item.price)}</td>
+                          <td className="px-3 py-3.5">
+                            <input type="checkbox" checked={item.is_available} onChange={() => toggleAvailable(item)} aria-label={`${item.name} — dostępne`} className={checkCls} />
+                          </td>
+                          <td className="whitespace-nowrap py-3.5 text-right">
+                            <Btn variant="ghost" size="sm" onClick={() => openEdit(item)}>Edytuj</Btn>
+                            <Btn variant="danger" size="sm" onClick={() => deleteItem(item)}>Usuń</Btn>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+
+              <form onSubmit={quickAdd} className="flex flex-wrap items-end gap-2 border-t border-spoot-line pt-4">
+                <label className={`${labelCls} flex-[3_1_200px]`}>
+                  Szybkie dodawanie
+                  <input value={quick.name} onChange={e => setQuick(q => ({ ...q, name: e.target.value }))} placeholder="Nazwa dania" maxLength={80} className={inputCls} />
+                </label>
+                <label className={`${labelCls} flex-[1_1_100px]`}>
+                  Cena
+                  <input value={quick.price} onChange={e => setQuick(q => ({ ...q, price: e.target.value }))} placeholder="np. 38" inputMode="decimal" className={inputCls} />
+                </label>
+                <Btn type="submit" disabled={!quick.name.trim() || !quick.price.trim()}>Dodaj danie</Btn>
+              </form>
+            </>
+          )}
+        </Card>
+
+        {/* Edycja dania */}
+        {form && (
+          <Card className="min-w-0 flex-[1_1_280px]">
+            <form onSubmit={saveForm} className="flex flex-col gap-4">
+              <CardTitle>{form.editId ? 'Edytuj danie' : 'Nowe danie'}</CardTitle>
+              <label className={labelCls}>
+                Nazwa dania *
+                <input autoFocus required value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} placeholder="Nazwa dania" maxLength={80} className={inputCls} />
+              </label>
+              <label className={labelCls}>
+                Cena (zł) *
+                <input required value={form.price} onChange={e => setForm({ ...form, price: e.target.value })} placeholder="np. 38" inputMode="decimal" className={inputCls} />
+              </label>
+              <label className={labelCls}>
+                Opis
+                <textarea value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} placeholder="Krótki opis zwiększa apetyt" maxLength={240} rows={3} className={`${inputCls} h-auto resize-y py-3`} />
+              </label>
+              <label className={labelCls}>
+                Sekcja
+                <select value={form.sectionId} onChange={e => setForm({ ...form, sectionId: e.target.value })} className={inputCls}>
+                  {sections.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                </select>
+              </label>
+              <label className={labelCls}>
+                Ostrość
+                <select value={form.spice_level} onChange={e => setForm({ ...form, spice_level: Number(e.target.value) as 0 | 1 | 2 | 3 })} className={inputCls}>
+                  {SPICE_LABELS.map((l, i) => <option key={l} value={i}>{l}</option>)}
+                </select>
+              </label>
+              <div className="flex flex-col">
+                <label className="flex min-h-11 items-center gap-2.5">
+                  <input type="checkbox" checked={form.is_vege} onChange={e => setForm({ ...form, is_vege: e.target.checked })} className={checkCls} />
+                  Wegetariańskie
+                </label>
+                <label className="flex min-h-11 items-center gap-2.5">
+                  <input type="checkbox" checked={form.is_available} onChange={e => setForm({ ...form, is_available: e.target.checked })} className={checkCls} />
+                  Dostępne
+                </label>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <Btn type="submit" disabled={!form.name.trim() || !form.price.trim()}>Zapisz</Btn>
+                <Btn variant="outline" onClick={() => setForm(null)}>Anuluj</Btn>
+              </div>
+            </form>
+          </Card>
+        )}
+      </div>
+    </>
   );
 }

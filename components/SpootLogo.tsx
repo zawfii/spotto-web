@@ -17,15 +17,15 @@ export function Sygnet({ d, ring = GREEN, animated = false }: { d: number; ring?
   );
 }
 
-export function Wordmark({ size }: { size: number }) {
+export function Wordmark({ size, color = GREEN }: { size: number; color?: string }) {
   return (
     <span
       role="img"
       aria-label="Spoot"
-      style={{ display: 'inline-flex', alignItems: 'baseline', fontFamily: 'var(--font-manrope), sans-serif', fontWeight: 700, fontSize: size, lineHeight: 1, letterSpacing: '-0.02em', color: GREEN }}
+      style={{ display: 'inline-flex', alignItems: 'baseline', fontFamily: 'var(--font-manrope), sans-serif', fontWeight: 700, fontSize: size, lineHeight: 1, letterSpacing: '-0.02em', color }}
     >
       <span aria-hidden="true">sp</span>
-      <span style={{ margin: '0 1px' }}><Sygnet d={0.654 * size} /></span>
+      <span style={{ margin: '0 1px' }}><Sygnet d={0.654 * size} ring={color} /></span>
       <span aria-hidden="true">t</span>
     </span>
   );
