@@ -117,7 +117,7 @@ export async function getPlaceExtras(placeId: string) {
       .limit(50),
     supabase
       .from('menu_sections')
-      .select('id, name, source, source_url, updated_at, menu_items(id, name, price, description, is_vege, image_url, allergens)')
+      .select('id, name, source, source_url, updated_at, menu_items(id, name, price, description, is_vege, image_url, allergens, is_available)')
       .eq('place_id', placeId)
       .order('position', { ascending: true })
       .order('position', { ascending: true, referencedTable: 'menu_items' }),
@@ -158,7 +158,10 @@ export async function getPlaceExtras(placeId: string) {
     .map((sec) => ({
       id: sec.id,
       name: sec.name,
-      items: ((sec.menu_items ?? []) as PlaceMenuSection['items']).map((it) => ({ ...it, image_url: safeUrl(it.image_url) })),
+      // Pozycje wyłączone przez właściciela („niedostępne”) nie pokazują się gościom.
+      items: ((sec.menu_items ?? []) as (PlaceMenuSection['items'][number] & { is_available: boolean | null })[])
+        .filter((it) => it.is_available !== false)
+        .map(({ is_available: _hidden, ...it }) => ({ ...it, image_url: safeUrl(it.image_url) })),
     }))
     .filter((sec) => sec.items.length > 0);
 
