@@ -27,6 +27,8 @@ const LOGIN = '/owner/login';
 const MAIL = 'info@spootme.pl';
 // Lokal pokazowy: jego strona (pakiet Strona Plus) służy za przykład, a ekrany panelu noszą jego dane.
 const DEMO_SITE = 'bistropokazowe';
+// Karta lokalu pokazowego — ta sama strona, którą otwiera link z aplikacji i kod QR ze stolika.
+const DEMO_MENU = '/place/4b8c7b23-b94b-4387-bfd9-e4294dffa851/menu';
 
 // Zrzuty to statyczne kopie ekranów panelu z danymi przykładowymi (public/demo-panel/*.html),
 // pokazane w pomniejszonej ramce. --w: szerokość widoku, --iw: szerokość ekranu w ramce,
@@ -93,7 +95,7 @@ const BTN = 'inline-flex min-h-[50px] items-center justify-center rounded-full p
 const GUTTER = 'px-[clamp(16px,5vw,80px)]';
 const WRAP = 'mx-auto max-w-[1160px]';
 
-const BENEFITS: { eyebrow: string; title: string; text: string; bullets: string[]; note?: string; file: string; shot: string; wide?: boolean }[] = [
+const BENEFITS: { eyebrow: string; title: string; text: string; bullets: string[]; note?: string; link?: { href: string; label: string }; file: string; shot: string; wide?: boolean }[] = [
   {
     eyebrow: 'Oferty dnia',
     title: 'Zapełnij wtorek, nie tylko sobotę',
@@ -129,6 +131,7 @@ const BENEFITS: { eyebrow: string; title: string; text: string; bullets: string[
       'Kod QR na stoliki: jeden wydruk, zawsze aktualna karta',
       'Nie masz czasu przepisywać? Wprowadzimy menu za Ciebie',
     ],
+    link: { href: DEMO_MENU, label: 'Zobacz menu tak, jak widzi je gość' },
     file: 'menu',
     shot: 'Podgląd panelu: edycja karty dań z cenami, alergenami i dostępnością',
   },
@@ -231,6 +234,11 @@ export default function DlaRestauracjiPage() {
                   <h2 className={H2}>{b.title}</h2>
                   <p className="text-lg text-spoot-ink2">{b.text}</p>
                   <Bullets items={b.bullets} />
+                  {b.link && (
+                    <a href={b.link.href} target="_blank" rel="noopener" className={`${BTN} min-h-[44px] self-start border-[1.5px] border-spoot-ink bg-spoot-card px-5 text-sm`}>
+                      {b.link.label}
+                    </a>
+                  )}
                   {b.note && <p className="rounded-2xl bg-spoot-tint px-4 py-3 font-display text-sm font-bold">{b.note}</p>}
                 </div>
                 <div className="max-w-full overflow-hidden">
