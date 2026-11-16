@@ -1,0 +1,202 @@
+<!doctype html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<meta name="robots" content="noindex">
+<meta name="viewport" content="width=device-width">
+<title>Pieczątki — panel właściciela (podgląd z danymi przykładowymi)</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600&display=swap">
+<style>
+body{margin:0}
+a{color:#03271a}
+.btn{display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box;border:1px solid transparent;border-radius:16px;font-family:Manrope,sans-serif;font-weight:700;white-space:nowrap}
+.btn-sm{padding:8px 16px;min-height:34px;font-size:13px;line-height:18px}
+.btn-md{padding:12px 20px;min-height:44px;font-size:14px;line-height:20px}
+.btn-lg{padding:16px 24px;min-height:50px;font-size:16px;line-height:22px}
+.btn-primary{background:#03271a;color:#fff}
+.btn-accent{background:#ff751f;color:#fff}
+.btn-light{background:#fff;color:#03271a}
+.btn-outline{background:#eae5de;color:#03271a;border:1.5px solid #03271a}
+.btn-ghost{background:transparent;color:#03271a}
+.chip{display:inline-flex;align-items:center;padding:10px 16px;border-radius:999px;background:#eae5de;color:#03271a;border:1.5px solid transparent;font:700 13px/18px Manrope,sans-serif}
+.chip-sm{padding:6px 12px}
+.chip-fill{background:#d3cdc5}
+.chip-sheet{border:1px solid rgba(3,39,26,0.15)}
+.chip.on{background:#03271a;color:#fff}
+.pill{display:inline-flex;align-items:center;padding:3px 12px;border-radius:999px;border:1px solid transparent;font:700 11px/16px Manrope,sans-serif;letter-spacing:0.4px;white-space:nowrap}
+.pill-sponsored{background:rgba(30,30,30,0.75);color:rgba(255,255,255,0.7)}
+.pill-open{background:#e8f5e9;color:#2e7d32}
+.pill-muted{background:#eae5de;color:#03271a;border-color:rgba(3,39,26,0.15)}
+.pill-closed{background:#eae5de;color:#1e3028}
+.av{flex:none;width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:#03271a;color:#fff;font:700 16px/22px Manrope,sans-serif}
+</style>
+</head>
+<body>
+<div style="display: flex; flex-wrap: wrap; min-height: 1240px; background: #fdf5ec; color: #03271a; font-family: 'Plus Jakarta Sans', system-ui, sans-serif; font-size: 14px; line-height: 20px">
+
+<nav aria-label="Panel właściciela" style="flex: 1 0 240px; box-sizing: border-box; background: #03271a; color: #ffffff; padding: 24px 16px; display: flex; flex-direction: column; gap: 24px">
+  <div style="padding: 0 12px; display: flex; flex-direction: column; gap: 6px">
+    <span style="display:inline-flex;align-items:baseline;font:700 26px/1 Manrope,sans-serif;letter-spacing:-0.02em;color:#fff">sp<span style="position:relative;display:inline-block;width:26px;height:17px;margin:0 1px"><span style="position:absolute;left:0;top:0;width:17px;height:17px;border-radius:50%;background:#ff751f"></span><span style="position:absolute;left:9px;top:0;width:17px;height:17px;border-radius:50%;box-sizing:border-box;border:1px solid #fff"></span></span>t</span>
+    <span style="font: 700 10px/14px Manrope, sans-serif; letter-spacing: 1.5px; color: rgba(255,255,255,0.8)">DLA RESTAURACJI</span>
+  </div>
+  <div style="background: rgba(255,255,255,0.15); border-radius: 16px; padding: 12px; display: flex; flex-direction: column; gap: 2px">
+    <span style="font: 700 14px/20px Manrope, sans-serif">Bistro Zielnik</span>
+    <span style="font-size: 12px; line-height: 16px; color: rgba(255,255,255,0.8)">Mokotów, Warszawa</span>
+  </div>
+  <div style="display: flex; flex-direction: column; gap: 4px">
+    <a style="display: flex; align-items: center; gap: 12px; min-height: 44px; padding: 0 12px; border-radius: 12px; color: rgba(255,255,255,0.8); text-decoration: none; font: 600 14px/20px Manrope, sans-serif"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="9" rx="1.5"></rect><rect x="14" y="3" width="7" height="5" rx="1.5"></rect><rect x="14" y="12" width="7" height="9" rx="1.5"></rect><rect x="3" y="16" width="7" height="5" rx="1.5"></rect></svg><span>Pulpit</span></a>
+    <a style="display: flex; align-items: center; gap: 12px; min-height: 44px; padding: 0 12px; border-radius: 12px; color: rgba(255,255,255,0.8); text-decoration: none; font: 600 14px/20px Manrope, sans-serif"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 3v18M4 3v5a3 3 0 0 0 6 0V3M17 21V3c-2 2-3 4.5-3 8h3"></path></svg><span>Menu</span></a>
+    <a style="display: flex; align-items: center; gap: 12px; min-height: 44px; padding: 0 12px; border-radius: 12px; color: rgba(255,255,255,0.8); text-decoration: none; font: 600 14px/20px Manrope, sans-serif"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12V4a1 1 0 0 1 1-1h8l9 9-9 9z"></path><circle cx="8" cy="8" r="1.5"></circle></svg><span style="flex-grow: 1">Oferty</span><span style="background: #ff751f; color: #03271a; border-radius: 999px; padding: 0 8px; font: 700 11px/20px Manrope, sans-serif">1</span></a>
+    <a aria-current="page" style="display: flex; align-items: center; gap: 12px; min-height: 44px; padding: 0 12px; border-radius: 12px; background: rgba(255,255,255,0.15); color: #ffffff; text-decoration: none; font: 600 14px/20px Manrope, sans-serif"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2.5"></rect><circle cx="8.5" cy="12" r="1.5"></circle><circle cx="13.5" cy="12" r="1.5"></circle></svg><span>Pieczątki</span></a>
+    <a style="display: flex; align-items: center; gap: 12px; min-height: 44px; padding: 0 12px; border-radius: 12px; color: rgba(255,255,255,0.8); text-decoration: none; font: 600 14px/20px Manrope, sans-serif"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 20V10M11 20V4M17 20v-7M2 20h20"></path></svg><span>Statystyki</span></a>
+    <a style="display: flex; align-items: center; gap: 12px; min-height: 44px; padding: 0 12px; border-radius: 12px; color: rgba(255,255,255,0.8); text-decoration: none; font: 600 14px/20px Manrope, sans-serif"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 10v10h16V10M3 10l2-6h14l2 6M10 20v-5h4v5"></path></svg><span>Profil lokalu</span></a>
+    <a style="display: flex; align-items: center; gap: 12px; min-height: 44px; padding: 0 12px; border-radius: 12px; color: rgba(255,255,255,0.8); text-decoration: none; font: 600 14px/20px Manrope, sans-serif"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l2.7 5.6 6.1.8-4.5 4.3 1.1 6.1-5.4-2.9-5.4 2.9 1.1-6.1L3.2 9.4l6.1-.8z"></path></svg><span>Wyróżnienie</span></a>
+  </div>
+  <div style="margin-top: auto; padding: 12px; border-top: 1px solid rgba(255,255,255,0.5); display: flex; flex-direction: column; gap: 2px">
+    <span style="font: 600 13px/18px Manrope, sans-serif">Marta Zielińska</span>
+    <span style="font-size: 12px; line-height: 16px; color: rgba(255,255,255,0.8)">Konto właściciela</span>
+  </div>
+</nav>
+
+<main style="flex: 999 1 560px; min-width: 0; box-sizing: border-box; padding: 32px 40px 48px">
+<div style="max-width: 1120px; margin: 0 auto; display: flex; flex-direction: column; gap: 24px">
+
+  <header style="display: flex; flex-wrap: wrap; align-items: flex-end; gap: 16px">
+    <div style="flex: 1 1 320px; display: flex; flex-direction: column; gap: 4px">
+      <span style="font: 700 11px/16px Manrope, sans-serif; letter-spacing: 0.5px">PIECZĄTKI</span>
+      <h1 style="margin: 0; font: 700 32px/40px Manrope, sans-serif">Karta stałego gościa</h1>
+      <span style="color: #1e3028">Goście zbierają pieczątki w aplikacji, Ty ustalasz progi i nagrody.</span>
+    </div>
+    <span class="btn btn-primary btn-md">Skanuj kartę gościa</span>
+  </header>
+
+  <div style="display: flex; flex-wrap: wrap; gap: 24px; align-items: flex-start">
+
+    <div style="flex: 1 1 400px; min-width: 0; display: flex; flex-direction: column; gap: 24px">
+
+      <form style="background: #eae5de; border-radius: 16px; padding: 20px; display: flex; flex-direction: column; gap: 16px">
+        <div style="display: flex; align-items: center; gap: 12px">
+          <h2 style="margin: 0; flex-grow: 1; font: 700 18px/24px Manrope, sans-serif">Ustawienia programu</h2>
+          <label style="display: flex; align-items: center; gap: 8px; min-height: 44px; font: 600 14px/20px Manrope, sans-serif"><input type="checkbox" checked style="width: 20px; height: 20px; accent-color: #03271a"><span>Włączony</span></label>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 8px">
+          <div style="display: flex; gap: 8px; align-items: center">
+            <input type="number" value="5" aria-label="Próg 1: liczba pieczątek" style="box-sizing: border-box; width: 76px; height: 44px; padding: 0 12px; border: 1px solid rgba(3,39,26,0.15); border-radius: 12px; background: #fffcf8; color: #03271a; font: 700 14px/20px Manrope, sans-serif">
+            <input type="text" value="Kawa gratis" aria-label="Próg 1: nagroda" style="box-sizing: border-box; flex: 1; min-width: 0; height: 44px; padding: 0 14px; border: 1px solid rgba(3,39,26,0.15); border-radius: 12px; background: #fffcf8; color: #03271a; font: 400 14px/20px 'Plus Jakarta Sans', sans-serif">
+            <button type="button" aria-label="Usuń próg 1" style="width: 44px; height: 44px; border: 0; border-radius: 999px; background: transparent; color: #03271a; cursor: pointer"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"></path></svg></button>
+          </div>
+          <div style="display: flex; gap: 8px; align-items: center">
+            <input type="number" value="10" aria-label="Próg 2: liczba pieczątek" style="box-sizing: border-box; width: 76px; height: 44px; padding: 0 12px; border: 1px solid rgba(3,39,26,0.15); border-radius: 12px; background: #fffcf8; color: #03271a; font: 700 14px/20px Manrope, sans-serif">
+            <input type="text" value="Deser dnia do obiadu" aria-label="Próg 2: nagroda" style="box-sizing: border-box; flex: 1; min-width: 0; height: 44px; padding: 0 14px; border: 1px solid rgba(3,39,26,0.15); border-radius: 12px; background: #fffcf8; color: #03271a; font: 400 14px/20px 'Plus Jakarta Sans', sans-serif">
+            <button type="button" aria-label="Usuń próg 2" style="width: 44px; height: 44px; border: 0; border-radius: 999px; background: transparent; color: #03271a; cursor: pointer"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"></path></svg></button>
+          </div>
+        </div>
+        <div style="display: flex; flex-wrap: wrap; gap: 8px">
+          <span class="btn btn-outline btn-md">Dodaj próg nagrody</span>
+          <span class="btn btn-primary btn-md">Zapisz zmiany</span>
+        </div>
+      </form>
+
+      <section style="background: #eae5de; border-radius: 16px; padding: 20px 20px 4px">
+        <div style="display: flex; align-items: center; gap: 12px; padding-bottom: 12px">
+          <h2 style="margin: 0; flex-grow: 1; font: 700 18px/24px Manrope, sans-serif">Klienci z pieczątkami</h2>
+          <span style="font-size: 12px; line-height: 16px; color: #1e3028">37 osób</span>
+        </div>
+        <ul style="list-style: none; margin: 0; padding: 0">
+          <li style="display: flex; gap: 12px; padding: 14px 0; border-top: 1px solid rgba(3,39,26,0.15)">
+            <span class="av">K</span>
+            <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px">
+              <div style="display: flex; gap: 8px"><span style="flex-grow: 1; font: 700 14px/20px Manrope, sans-serif">Kasia W.</span><span style="font: 700 12px/20px Manrope, sans-serif">8/10</span></div>
+              <div role="img" aria-label="8 z 10 pieczątek" style="display: flex; flex-wrap: wrap; gap: 6px">
+                <span style="width: 18px; height: 18px; border-radius: 999px; background: #03271a"></span><span style="width: 18px; height: 18px; border-radius: 999px; background: #03271a"></span><span style="width: 18px; height: 18px; border-radius: 999px; background: #03271a"></span><span style="width: 18px; height: 18px; border-radius: 999px; background: #03271a"></span><span style="width: 18px; height: 18px; border-radius: 999px; background: #03271a"></span><span style="width: 18px; height: 18px; border-radius: 999px; background: #03271a"></span><span style="width: 18px; height: 18px; border-radius: 999px; background: #03271a"></span><span style="width: 18px; height: 18px; border-radius: 999px; background: #03271a"></span><span style="box-sizing: border-box; width: 18px; height: 18px; border-radius: 999px; background: #d3cdc5"></span><span style="box-sizing: border-box; width: 18px; height: 18px; border-radius: 999px; background: #d3cdc5; border: 2px solid #ff751f"></span>
+              </div>
+            </div>
+          </li>
+          <li style="display: flex; gap: 12px; padding: 14px 0; border-top: 1px solid rgba(3,39,26,0.15)">
+            <span class="av">B</span>
+            <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px">
+              <div style="display: flex; gap: 8px"><span style="flex-grow: 1; font: 700 14px/20px Manrope, sans-serif">Bartek S.</span><span style="font: 700 12px/20px Manrope, sans-serif">4/10</span></div>
+              <div role="img" aria-label="4 z 10 pieczątek" style="display: flex; flex-wrap: wrap; gap: 6px">
+                <span style="width: 18px; height: 18px; border-radius: 999px; background: #03271a"></span><span style="width: 18px; height: 18px; border-radius: 999px; background: #03271a"></span><span style="width: 18px; height: 18px; border-radius: 999px; background: #03271a"></span><span style="width: 18px; height: 18px; border-radius: 999px; background: #03271a"></span><span style="box-sizing: border-box; width: 18px; height: 18px; border-radius: 999px; background: #d3cdc5; border: 2px solid #ff751f"></span><span style="width: 18px; height: 18px; border-radius: 999px; background: #d3cdc5"></span><span style="width: 18px; height: 18px; border-radius: 999px; background: #d3cdc5"></span><span style="width: 18px; height: 18px; border-radius: 999px; background: #d3cdc5"></span><span style="width: 18px; height: 18px; border-radius: 999px; background: #d3cdc5"></span><span style="box-sizing: border-box; width: 18px; height: 18px; border-radius: 999px; background: #d3cdc5; border: 2px solid #ff751f"></span>
+              </div>
+            </div>
+          </li>
+          <li style="display: flex; gap: 12px; padding: 14px 0; border-top: 1px solid rgba(3,39,26,0.15)">
+            <span class="av">O</span>
+            <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px">
+              <div style="display: flex; gap: 8px"><span style="flex-grow: 1; font: 700 14px/20px Manrope, sans-serif">Ola M.</span><span style="font: 700 12px/20px Manrope, sans-serif">2/10</span></div>
+              <div role="img" aria-label="2 z 10 pieczątek" style="display: flex; flex-wrap: wrap; gap: 6px">
+                <span style="width: 18px; height: 18px; border-radius: 999px; background: #03271a"></span><span style="width: 18px; height: 18px; border-radius: 999px; background: #03271a"></span><span style="width: 18px; height: 18px; border-radius: 999px; background: #d3cdc5"></span><span style="width: 18px; height: 18px; border-radius: 999px; background: #d3cdc5"></span><span style="box-sizing: border-box; width: 18px; height: 18px; border-radius: 999px; background: #d3cdc5; border: 2px solid #ff751f"></span><span style="width: 18px; height: 18px; border-radius: 999px; background: #d3cdc5"></span><span style="width: 18px; height: 18px; border-radius: 999px; background: #d3cdc5"></span><span style="width: 18px; height: 18px; border-radius: 999px; background: #d3cdc5"></span><span style="width: 18px; height: 18px; border-radius: 999px; background: #d3cdc5"></span><span style="box-sizing: border-box; width: 18px; height: 18px; border-radius: 999px; background: #d3cdc5; border: 2px solid #ff751f"></span>
+              </div>
+            </div>
+          </li>
+        </ul>
+        <p style="margin: 0; padding: 12px 0 16px; border-top: 1px solid rgba(3,39,26,0.15); font-size: 12px; line-height: 16px; color: #1e3028">Pomarańczowa obwódka oznacza próg z nagrodą.</p>
+      </section>
+    </div>
+
+    <form style="flex: 1 1 400px; min-width: 0; background: #eae5de; border-radius: 16px; padding: 20px; display: flex; flex-direction: column; gap: 20px">
+      <div style="display: flex; flex-direction: column; gap: 4px">
+        <h2 style="margin: 0; font: 700 18px/24px Manrope, sans-serif">Wygląd karty</h2>
+        <span style="color: #1e3028">Tak goście zobaczą Twoją kartę w Spoot</span>
+      </div>
+
+      <div style="align-self: center; box-sizing: border-box; width: 100%; max-width: 380px; aspect-ratio: 1.6; background: #164938; color: #ffffff; border-radius: 24px; padding: 24px; display: flex; flex-direction: column; gap: 12px">
+        <div style="display: flex; align-items: center; gap: 12px">
+          <span style="width: 44px; height: 44px; border-radius: 12px; background: #ff751f; color: #03271a; display: flex; align-items: center; justify-content: center; font: 700 16px/20px Manrope, sans-serif">BZ</span>
+          <span style="display: flex; flex-direction: column"><span style="font: 700 18px/24px Manrope, sans-serif">Bistro Zielnik</span><span style="font-size: 12px; line-height: 16px; color: rgba(255,255,255,0.8)">Karta stałego gościa</span></span>
+        </div>
+        <div aria-hidden="true" style="margin-top: auto; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px">
+          <span style="aspect-ratio: 1; border-radius: 999px; background: #ffffff"></span><span style="aspect-ratio: 1; border-radius: 999px; background: #ffffff"></span><span style="aspect-ratio: 1; border-radius: 999px; background: #ffffff"></span><span style="aspect-ratio: 1; border-radius: 999px; border: 1.5px solid rgba(255,255,255,0.5)"></span><span style="aspect-ratio: 1; border-radius: 999px; border: 1.5px solid #ff751f"></span>
+          <span style="aspect-ratio: 1; border-radius: 999px; border: 1.5px solid rgba(255,255,255,0.5)"></span><span style="aspect-ratio: 1; border-radius: 999px; border: 1.5px solid rgba(255,255,255,0.5)"></span><span style="aspect-ratio: 1; border-radius: 999px; border: 1.5px solid rgba(255,255,255,0.5)"></span><span style="aspect-ratio: 1; border-radius: 999px; border: 1.5px solid rgba(255,255,255,0.5)"></span><span style="aspect-ratio: 1; border-radius: 999px; border: 1.5px solid #ff751f"></span>
+        </div>
+      </div>
+
+      <fieldset style="margin: 0; padding: 0; border: 0">
+        <legend style="padding: 0 0 8px; font: 700 11px/16px Manrope, sans-serif; letter-spacing: 0.5px">WZÓR</legend>
+        <div style="display: flex; flex-wrap: wrap; gap: 8px">
+          <span class="chip chip-fill chip-sm">Zdjęcie</span>
+          <span class="chip chip-fill chip-sm">Logo</span>
+          <span class="chip chip-fill chip-sm on">Kropki</span>
+          <span class="chip chip-fill chip-sm">Napis</span>
+          <span class="chip chip-fill chip-sm">Pieczątka</span>
+          <span class="chip chip-fill chip-sm">Pasy</span>
+          <span class="chip chip-fill chip-sm">Kratka</span>
+          <span class="chip chip-fill chip-sm">Pół na pół</span>
+          <span class="chip chip-fill chip-sm">Słońce</span>
+        </div>
+      </fieldset>
+
+      <fieldset style="margin: 0; padding: 0; border: 0">
+        <legend style="padding: 0 0 8px; font: 700 11px/16px Manrope, sans-serif; letter-spacing: 0.5px">PALETA</legend>
+        <div style="display: flex; flex-wrap: wrap; gap: 4px">
+          <button type="button" aria-label="Zielona" aria-pressed="true" style="width: 44px; height: 44px; padding: 0; border: 0; background: transparent; cursor: pointer"><span style="display: block; box-sizing: border-box; width: 36px; height: 36px; margin: 4px; border-radius: 999px; background: #164938; border: 3px solid #ff751f"></span></button>
+          <button type="button" aria-label="Granatowa" style="width: 44px; height: 44px; padding: 0; border: 0; background: transparent; cursor: pointer"><span style="display: block; width: 36px; height: 36px; margin: 4px; border-radius: 999px; background: #1f2a44"></span></button>
+          <button type="button" aria-label="Brzoskwiniowa" style="width: 44px; height: 44px; padding: 0; border: 0; background: transparent; cursor: pointer"><span style="display: block; width: 36px; height: 36px; margin: 4px; border-radius: 999px; background: #f2ddc4"></span></button>
+          <button type="button" aria-label="Pomarańczowa" style="width: 44px; height: 44px; padding: 0; border: 0; background: transparent; cursor: pointer"><span style="display: block; width: 36px; height: 36px; margin: 4px; border-radius: 999px; background: #ff751f"></span></button>
+          <button type="button" aria-label="Różowa" style="width: 44px; height: 44px; padding: 0; border: 0; background: transparent; cursor: pointer"><span style="display: block; width: 36px; height: 36px; margin: 4px; border-radius: 999px; background: #e9a6b4"></span></button>
+          <button type="button" aria-label="Kremowa" style="width: 44px; height: 44px; padding: 0; border: 0; background: transparent; cursor: pointer"><span style="display: block; box-sizing: border-box; width: 36px; height: 36px; margin: 4px; border-radius: 999px; background: #fdf5ec; border: 1px solid rgba(3,39,26,0.15)"></span></button>
+          <button type="button" aria-label="Maślana" style="width: 44px; height: 44px; padding: 0; border: 0; background: transparent; cursor: pointer"><span style="display: block; width: 36px; height: 36px; margin: 4px; border-radius: 999px; background: #f3d98b"></span></button>
+          <button type="button" aria-label="Ceglasta" style="width: 44px; height: 44px; padding: 0; border: 0; background: transparent; cursor: pointer"><span style="display: block; width: 36px; height: 36px; margin: 4px; border-radius: 999px; background: #a8452e"></span></button>
+        </div>
+      </fieldset>
+
+      <div style="display: flex; flex-direction: column">
+        <div style="display: flex; align-items: center; gap: 12px; padding: 12px 0; border-top: 1px solid rgba(3,39,26,0.15)">
+          <span style="flex-grow: 1; display: flex; flex-direction: column"><span style="font: 700 14px/20px Manrope, sans-serif">Zdjęcie karty</span><span style="font-size: 12px; line-height: 16px; color: #1e3028">Używane we wzorze „Zdjęcie”</span></span>
+          <span class="btn btn-outline btn-sm">Zmień</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 12px; padding: 12px 0; border-top: 1px solid rgba(3,39,26,0.15)">
+          <span style="flex-grow: 1; display: flex; flex-direction: column"><span style="font: 700 14px/20px Manrope, sans-serif">Logo</span><span style="font-size: 12px; line-height: 16px; color: #1e3028">Kwadratowe. Bez logo pokażemy inicjały.</span></span>
+          <span class="btn btn-outline btn-sm">Wgraj</span>
+        </div>
+      </div>
+      <span class="btn btn-primary btn-md">Zapisz wygląd</span>
+    </form>
+
+  </div>
+</div>
+</main>
+</div>
+</body>
+</html>
