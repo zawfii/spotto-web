@@ -235,7 +235,7 @@ export default function DlaRestauracjiPage() {
                   <p className="text-lg text-spoot-ink2">{b.text}</p>
                   <Bullets items={b.bullets} />
                   {b.link && (
-                    <a href={b.link.href} target="_blank" rel="noopener" className={`${BTN} min-h-[44px] self-start border-[1.5px] border-spoot-ink bg-spoot-card px-5 text-sm`}>
+                    <a href={b.link.href} target="_blank" rel="noopener" className={`${BTN} min-h-[44px] self-start bg-spoot-orange px-5 text-sm text-spoot-ink`}>
                       {b.link.label}
                     </a>
                   )}
@@ -263,7 +263,7 @@ export default function DlaRestauracjiPage() {
               <Shot src={`/${DEMO_SITE}`} address={`spootme.pl/${DEMO_SITE}`} title="Podgląd strony lokalu: Bistro Pokazowe" chrome />
               <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-center">
                 <p className="text-spoot-ink2">Tak może wyglądać Twoja strona. To działająca Strona Plus naszego lokalu pokazowego.</p>
-                <a href={`/${DEMO_SITE}`} target="_blank" rel="noopener" className={`${BTN} min-h-[44px] border-[1.5px] border-spoot-ink bg-spoot-card px-5 text-sm`}>
+                <a href={`/${DEMO_SITE}`} target="_blank" rel="noopener" className={`${BTN} min-h-[44px] bg-spoot-orange px-5 text-sm text-spoot-ink`}>
                   Otwórz stronę Bistro Pokazowego
                 </a>
               </div>
