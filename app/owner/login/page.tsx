@@ -128,8 +128,8 @@ function OwnerLoginForm() {
           </>
         )}
 
-        <p className="border-t border-spoot-line pt-4 text-xs text-spoot-ink2">
-          Dostęp mają zweryfikowani właściciele lokali. Pierwsze zgłoszenie składasz w aplikacji Spoot.
+        <p className="border-t border-spoot-line pt-4 text-spoot-ink2">
+          Nie masz konta? <a href="register" className="font-semibold text-spoot-ink underline underline-offset-2">Załóż konto właściciela</a>
         </p>
       </div>
     </div>

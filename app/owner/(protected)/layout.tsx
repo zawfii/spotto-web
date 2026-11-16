@@ -7,6 +7,9 @@ import OwnerShell from '@/components/owner/OwnerShell';
 import LogoutButton from '@/components/owner/LogoutButton';
 import { Wordmark } from '@/components/SpootLogo';
 
+const APP_STORE_URL = 'https://apps.apple.com/pl/app/id6822473524';
+const PLAY_URL = 'https://play.google.com/store/apps/details?id=com.spoot.app';
+
 // Stany sprzed wejścia do panelu — te same co w apce (app/owner-panel.tsx).
 const GATE: Record<string, { title: string; text: string }> = {
   none: {
@@ -50,6 +53,12 @@ export default async function ProtectedLayout({ children }: { children: React.Re
           <Wordmark size={28} />
           <h1 className="font-display text-[26px] font-bold leading-[34px]">{gate.title}</h1>
           <p className="text-spoot-ink2">{gate.text}</p>
+          {gate === GATE.none && (
+            <div className="flex flex-wrap gap-2">
+              <a href={APP_STORE_URL} className="h-11 flex-[1_1_140px] rounded-2xl bg-spoot-ink px-4 text-center font-display font-bold leading-[44px] text-white hover:bg-spoot-green">App Store</a>
+              <a href={PLAY_URL} className="h-11 flex-[1_1_140px] rounded-2xl bg-spoot-ink px-4 text-center font-display font-bold leading-[44px] text-white hover:bg-spoot-green">Google Play</a>
+            </div>
+          )}
           {claim?.status === 'rejected' && claim.admin_note && (
             <p className="rounded-xl bg-spoot-input p-3 text-spoot-ink2">
               <strong className="font-display text-spoot-ink">Powód: </strong>{claim.admin_note}

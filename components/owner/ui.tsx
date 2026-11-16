@@ -123,6 +123,7 @@ export const NAV_ICONS = {
   tag: <><path d="M3 12V4a1 1 0 0 1 1-1h8l9 9-9 9z" /><circle cx="8" cy="8" r="1.5" /></>,
   card: <><rect x="3" y="5" width="18" height="14" rx="2.5" /><circle cx="8.5" cy="12" r="1.5" /><circle cx="13.5" cy="12" r="1.5" /></>,
   rocket: <><path d="M5 15c-1 1-1.5 3.5-1.5 5.5 2 0 4.5-.5 5.5-1.5" /><path d="M9 15l-3-3 3-3c3-3 7-5 12-5 0 5-2 9-5 12l-3 3-3-3z" /><circle cx="15" cy="9" r="1.5" /></>,
+  globe: <><circle cx="12" cy="12" r="9" /><path d="M3 12h18M12 3c2.5 2.5 3.8 5.5 3.8 9s-1.3 6.5-3.8 9c-2.5-2.5-3.8-5.5-3.8-9S9.5 5.5 12 3z" /></>,
   chevron: <path d="M9 5l7 7-7 7" />,
   plus: <path d="M12 5v14M5 12h14" />,
   close: <path d="M6 6l12 12M18 6L6 18" />,

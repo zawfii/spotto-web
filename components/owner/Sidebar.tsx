@@ -15,6 +15,7 @@ const NAV = [
   { path: '/reviews', label: 'Opinie', icon: NAV_ICONS.star },
   { path: '/settings', label: 'Profil lokalu', icon: NAV_ICONS.store },
   { path: '/promote', label: 'Wyróżnienie', icon: NAV_ICONS.rocket },
+  { path: '/website', label: 'Strona dla lokalu', icon: NAV_ICONS.globe, badge: 'NOWE' },
 ];
 
 type Props = { base: string; venueName: string; venueMeta: string; userEmail: string };
@@ -50,7 +51,8 @@ export default function Sidebar({ base, venueName, venueMeta, userEmail }: Props
               className={`flex min-h-11 items-center gap-3 rounded-xl px-3 font-display text-sm font-semibold transition-colors ${active ? 'bg-white/15 text-white' : 'text-white/80 hover:bg-white/10'}`}
             >
               <NavIcon>{item.icon}</NavIcon>
-              {item.label}
+              <span className="grow">{item.label}</span>
+              {'badge' in item && <span className="rounded-full bg-spoot-orange px-2 font-display text-[10px] font-bold leading-5 tracking-[0.5px] text-spoot-ink">{item.badge}</span>}
             </Link>
           );
         })}
