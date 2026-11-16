@@ -89,7 +89,7 @@ const BTN = 'inline-flex min-h-[50px] items-center justify-center rounded-full p
 const GUTTER = 'px-[clamp(16px,5vw,80px)]';
 const WRAP = 'mx-auto max-w-[1160px]';
 
-const BENEFITS: { eyebrow: string; title: string; text: string; bullets: string[]; file: string; shot: string; wide?: boolean }[] = [
+const BENEFITS: { eyebrow: string; title: string; text: string; bullets: string[]; note?: string; file: string; shot: string; wide?: boolean }[] = [
   {
     eyebrow: 'Oferty dnia',
     title: 'Zapełnij wtorek, nie tylko sobotę',
@@ -111,6 +111,7 @@ const BENEFITS: { eyebrow: string; title: string; text: string; bullets: string[
       'Widzisz, kto jest o krok od nagrody',
       'Zero druku, zero kartoników, zero podrabianych stempli',
     ],
+    note: 'Pierwsze lokale mają pieczątki za darmo przez rok. Potem 39 zł miesięcznie — albo w cenie jednego z pakietów strony.',
     file: 'pieczatki',
     shot: 'Podgląd panelu: ustawienia karty stałego gościa i lista gości z pieczątkami',
     wide: true,
@@ -144,7 +145,7 @@ const BENEFITS: { eyebrow: string; title: string; text: string; bullets: string[
 const FACTS = [
   ['16 miast', 'w których ludzie szukają jedzenia przez Spoot'],
   ['43 tys. lokali', 'już w aplikacji — Twój najpewniej też, tylko bez gospodarza'],
-  ['0 zł', 'za profil i cały panel. Płacisz tylko za dodatki, które sam włączysz'],
+  ['0 zł', 'za profil, menu, oferty i statystyki. Pieczątki: pierwszy rok gratis dla pierwszych lokali'],
 ];
 
 const STEPS = [
@@ -154,7 +155,7 @@ const STEPS = [
 ];
 
 const FAQ = [
-  ['Naprawdę za darmo? Gdzie jest haczyk?', 'Nie ma. Profil, menu, oferty, pieczątki i statystyki są bezpłatne. Płatne są tylko dodatki, o które sam poprosisz: strona internetowa dla lokalu i wyróżnienie w aplikacji.'],
+  ['Naprawdę za darmo? Gdzie jest haczyk?', 'Nie ma. Profil, menu, oferty i statystyki są bezpłatne. Pieczątki są za darmo przez rok dla pierwszych lokali, potem 39 zł miesięcznie albo w cenie jednego z pakietów strony. Płatne są też dodatki, o które sam poprosisz: strona internetowa dla lokalu i wyróżnienie w aplikacji.'],
   ['Mojego lokalu nie ma w Spoot. Co teraz?', `Napisz na ${MAIL} — dodamy go do katalogu, a potem zgłosisz go jako swój.`],
   ['Jak wygląda weryfikacja?', 'Każde zgłoszenie sprawdza człowiek. Stan zgłoszenia widzisz po zalogowaniu, a gdy je zatwierdzimy, panel otworzy się na Twoim koncie.'],
   ['Czy mogę usunąć słabą ocenę?', 'Nie — i to działa na Twoją korzyść. Goście ufają ocenom, bo nikt ich nie czyści. Na opinię możesz odpowiedzieć, a treść łamiącą regulamin zgłosić.'],
@@ -191,7 +192,7 @@ export default function DlaRestauracjiPage() {
                 Goście wybierają w Spoot, gdzie dziś zjedzą. Bądź na ich liście.
               </h1>
               <p className="max-w-[640px] text-[clamp(17px,1.6vw,20px)] text-spoot-ink2">
-                Przejmij profil swojego lokalu i jednym panelem ogarnij menu, oferty dnia, kartę stałego gościa i statystyki. Za darmo.
+                Przejmij profil swojego lokalu i jednym panelem ogarnij menu, oferty dnia, kartę stałego gościa i statystyki. Zaczynasz za darmo.
               </p>
               <div className="flex flex-wrap justify-center gap-3">
                 <a href={REGISTER} className={`${BTN} bg-spoot-ink text-white`}>Zgłoś swój lokal</a>
@@ -226,6 +227,7 @@ export default function DlaRestauracjiPage() {
                   <h2 className={H2}>{b.title}</h2>
                   <p className="text-lg text-spoot-ink2">{b.text}</p>
                   <Bullets items={b.bullets} />
+                  {b.note && <p className="rounded-2xl bg-spoot-tint px-4 py-3 font-display text-sm font-bold">{b.note}</p>}
                 </div>
                 <div className="max-w-full overflow-hidden">
                   <Shot file={b.file} title={b.shot} className={`rs-f ${b.wide ? 'rs-wide' : ''} ${b.file === 'statystyki' ? 'rs-tall' : ''}`} />
@@ -331,7 +333,7 @@ export default function DlaRestauracjiPage() {
         <div className={`${WRAP} flex flex-col gap-16`}>
           <div className="flex flex-col items-center gap-6 text-center">
             <h2 className="max-w-[820px] font-display text-[clamp(32px,4.6vw,60px)] font-bold leading-[1.05] tracking-[-0.02em]">Twój lokal już tu jest. Brakuje tylko Ciebie.</h2>
-            <p className="text-lg text-white/85">Zgłoszenie zajmuje kilka minut. Panel jest bezpłatny.</p>
+            <p className="text-lg text-white/85">Zgłoszenie zajmuje kilka minut. Zaczynasz za darmo.</p>
             <a href={REGISTER} className={`${BTN} bg-white text-spoot-ink`}>Zgłoś swój lokal</a>
           </div>
           <div className="flex flex-wrap items-center justify-between gap-x-8 gap-y-4 border-t border-white/50 pt-6">
