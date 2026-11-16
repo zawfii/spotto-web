@@ -25,6 +25,8 @@ export const metadata: Metadata = {
 const REGISTER = '/owner/register';
 const LOGIN = '/owner/login';
 const MAIL = 'info@spootme.pl';
+// Strona aplikacji dla gości — żeby właściciel mógł zobaczyć, czym jest Spoot od drugiej strony.
+const APP_SITE = 'https://www.spootme.pl/';
 // Lokal pokazowy: jego strona (pakiet Strona Plus) służy za przykład, a ekrany panelu noszą jego dane.
 const DEMO_SITE = 'bistropokazowe';
 // Karta lokalu pokazowego — ta sama strona, którą otwiera link z aplikacji i kod QR ze stolika.
@@ -307,6 +309,9 @@ export default function DlaRestauracjiPage() {
                 W Spoot każdy gość buduje własny ranking z tego, co sam zjadł i ocenił. Miejsca w czyimś guście nie da się kupić — da się na nie
                 zapracować jedzeniem.
               </p>
+              <a href={APP_SITE} target="_blank" rel="noopener" className={`${BTN} self-start bg-spoot-orange text-spoot-ink`}>
+                Zobacz Spoot oczami gościa
+              </a>
             </div>
             <div className="flex min-w-0 flex-[1_1_320px] flex-col gap-3">
               <div className="rounded-2xl bg-white/15 p-5">
@@ -364,6 +369,7 @@ export default function DlaRestauracjiPage() {
           <div className="flex flex-wrap items-center justify-between gap-x-8 gap-y-4 border-t border-white/50 pt-6">
             <Wordmark size={26} color="#ffffff" />
             <div className="flex flex-wrap gap-x-6 gap-y-2 text-sm">
+              <a href={APP_SITE} className="py-3 underline">Aplikacja Spoot</a>
               <a href={LOGIN} className="py-3 underline">Panel właściciela</a>
               <a href={`mailto:${MAIL}`} className="py-3 underline">{MAIL}</a>
               <a href="/regulamin" className="py-3 underline">Regulamin</a>
