@@ -4,6 +4,7 @@ import { Manrope } from 'next/font/google';
 import Link from 'next/link';
 import { getPlaceExtras, supabase, type PlaceReview } from '@/lib/supabase';
 import { dishName, formatPrice, ratingColor as circleColor, relativePl } from '@/lib/format';
+import { allergenLabels } from '@/lib/owner';
 import { Wordmark } from '@/components/SpootLogo';
 import { AppBridge, OpenAppButton, StoreLink } from '@/components/AppBridge';
 import { Avatar } from '@/components/ui';
@@ -241,6 +242,7 @@ export default async function PlacePage({ params }: PlacePageProps) {
                                 {it.is_vege && <span style={{ marginLeft: 6, padding: '1px 7px', borderRadius: 999, background: '#dcebd9', color: '#2e7d32', fontSize: 11, fontWeight: 700, verticalAlign: 2 }}>wege</span>}
                               </span>
                               {it.description && <span style={{ fontSize: 13, lineHeight: '18px', color: INK2 }}>{it.description}</span>}
+                              {!!it.allergens?.length && <span style={{ fontSize: 12, lineHeight: '16px', color: INK2 }}><strong>Alergeny:</strong> {allergenLabels(it.allergens)}</span>}
                             </div>
                             {Number(it.price) > 0 && (
                               <span style={{ fontFamily: MANROPE, fontWeight: 700, fontSize: 14, lineHeight: '20px', whiteSpace: 'nowrap', flexShrink: 0 }}>{formatPrice(it.price)}</span>

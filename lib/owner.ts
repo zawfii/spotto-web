@@ -81,7 +81,32 @@ export type MenuItem = {
   spice_level: 0 | 1 | 2 | 3;
   is_available: boolean;
   position: number;
+  image_url: string | null;
+  allergens: AllergenKey[];
 };
+
+// 14 alergenów, które restauracje w UE muszą podawać — klucze jak w menu_items.allergens.
+export const ALLERGENS = [
+  { key: 'gluten', label: 'Gluten' },
+  { key: 'jaja', label: 'Jaja' },
+  { key: 'mleko', label: 'Mleko' },
+  { key: 'orzechy', label: 'Orzechy' },
+  { key: 'orzeszki_ziemne', label: 'Orzeszki ziemne' },
+  { key: 'soja', label: 'Soja' },
+  { key: 'ryby', label: 'Ryby' },
+  { key: 'skorupiaki', label: 'Skorupiaki' },
+  { key: 'mieczaki', label: 'Mięczaki' },
+  { key: 'seler', label: 'Seler' },
+  { key: 'gorczyca', label: 'Gorczyca' },
+  { key: 'sezam', label: 'Sezam' },
+  { key: 'lubin', label: 'Łubin' },
+  { key: 'siarczyny', label: 'Siarczyny' },
+] as const;
+
+export type AllergenKey = (typeof ALLERGENS)[number]['key'];
+
+export const allergenLabels = (keys: readonly string[]) =>
+  ALLERGENS.filter(a => keys.includes(a.key)).map(a => a.label.toLowerCase()).join(', ');
 
 export type MenuItemInput = Omit<MenuItem, 'id' | 'section_id' | 'position'>;
 
@@ -263,7 +288,7 @@ export async function fetchMenu(
 ): Promise<MenuSection[]> {
   const { data: sections } = await supabase
     .from('menu_sections')
-    .select('id, name, position, menu_items(id, section_id, name, price, description, is_vege, spice_level, is_available, position)')
+    .select('id, name, position, menu_items(id, section_id, name, price, description, is_vege, spice_level, is_available, position, image_url, allergens)')
     .eq('place_id', placeId)
     .order('position', { ascending: true });
 

@@ -2,9 +2,12 @@
 
 import { createBrowserClient } from '@supabase/ssr';
 import { useEffect, useState, useCallback, useMemo } from 'react';
-import type { MenuSection, MenuItem } from '@/lib/owner';
+import type { AllergenKey, MenuSection, MenuItem } from '@/lib/owner';
+import { ALLERGENS, allergenLabels } from '@/lib/owner';
 import { formatPrice, pluralPl } from '@/lib/format';
 import { Btn, Card, CardTitle, Eyebrow, Loading, PageHeader, checkCls, inputCls, labelCls } from '@/components/owner/ui';
+import MenuQr from '@/components/owner/MenuQr';
+import MenuEntryRequest from '@/components/owner/MenuEntryRequest';
 
 // Jak getPresetSections w apce (app/owner-panel.tsx).
 const DEFAULT_PRESETS = ['Przystawki', 'Zupy', 'Dania główne', 'Desery', 'Napoje', 'Inne'];
@@ -32,13 +35,14 @@ const PRESETS: Record<string, string[]> = {
   'Bliski Wschód': ['Meze', 'Kebaby', 'Dania główne', 'Sałatki', 'Desery', 'Napoje'],
 };
 
-const ITEM_COLUMNS = 'id, section_id, name, price, description, is_vege, spice_level, is_available, position';
+const ITEM_COLUMNS = 'id, section_id, name, price, description, is_vege, spice_level, is_available, position, image_url, allergens';
 const SPICE_LABELS = ['Brak', 'Łagodne', 'Ostre', 'Bardzo ostre'];
 
 type ItemForm = {
   editId: string | null; sectionId: string;
   name: string; price: string; description: string;
   is_vege: boolean; spice_level: 0 | 1 | 2 | 3; is_available: boolean;
+  image_url: string | null; allergens: AllergenKey[];
 };
 
 const parsePrice = (s: string) => parseFloat(s.replace(',', '.'));
@@ -53,6 +57,8 @@ export default function MenuPage() {
   );
 
   const [placeId, setPlaceId] = useState<string | null>(null);
+  const [userId, setUserId] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
   const [category, setCategory] = useState('');
   const [sections, setSections] = useState<MenuSection[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -65,6 +71,7 @@ export default function MenuPage() {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
+      setUserId(user.id);
 
       const { data: vd } = await supabase.from('venue_details').select('place_id').eq('owner_id', user.id).maybeSingle();
       if (!vd) return;
@@ -153,6 +160,7 @@ export default function MenuPage() {
     if (!selected || !quick.name.trim() || isNaN(price) || price <= 0) return;
     const ok = await insertItem(selected.id, {
       name: quick.name.trim(), price, description: null, is_vege: false, spice_level: 0, is_available: true,
+      image_url: null, allergens: [],
     });
     if (ok) setQuick({ name: '', price: '' });
   }
@@ -166,6 +174,7 @@ export default function MenuPage() {
       name: form.name.trim(), price,
       description: form.description.trim() || null,
       is_vege: form.is_vege, spice_level: form.spice_level, is_available: form.is_available,
+      image_url: form.image_url, allergens: form.allergens,
     };
 
     if (!form.editId) {
@@ -211,11 +220,36 @@ export default function MenuPage() {
 
   const openNew = () => selected && setForm({
     editId: null, sectionId: selected.id, name: '', price: '', description: '', is_vege: false, spice_level: 0, is_available: true,
+    image_url: null, allergens: [],
   });
   const openEdit = (item: MenuItem) => setForm({
     editId: item.id, sectionId: item.section_id, name: item.name, price: String(item.price),
     description: item.description ?? '', is_vege: item.is_vege, spice_level: item.spice_level, is_available: item.is_available,
+    image_url: item.image_url, allergens: item.allergens ?? [],
   });
+
+  // Zdjęcie trafia do storage od razu; do dania zapisuje się razem z formularzem.
+  async function uploadDishPhoto(e: React.ChangeEvent<HTMLInputElement>) {
+    const input = e.target;
+    const file = input.files?.[0];
+    if (!file || !userId || !form) return;
+    setUploading(true);
+    try {
+      const ext = (file.name.split('.').pop() ?? 'jpg').toLowerCase();
+      const path = `${userId}/dish-${Date.now()}.${ext}`;
+      const { error } = await supabase.storage.from('venue-photos').upload(path, file, { contentType: `image/${ext === 'jpg' ? 'jpeg' : ext}` });
+      if (error) { alert('Nie udało się wgrać zdjęcia: ' + error.message); return; }
+      const url = supabase.storage.from('venue-photos').getPublicUrl(path).data.publicUrl;
+      setForm(f => (f ? { ...f, image_url: url } : f));
+    } finally {
+      setUploading(false);
+      input.value = '';
+    }
+  }
+
+  const toggleAllergen = (key: AllergenKey) => setForm(f => f && ({
+    ...f, allergens: f.allergens.includes(key) ? f.allergens.filter(a => a !== key) : [...f.allergens, key],
+  }));
 
   if (loading) return <Loading />;
 
@@ -298,6 +332,12 @@ export default function MenuPage() {
                       {selected.menu_items.map(item => (
                         <tr key={item.id} className={`border-t border-spoot-line ${form?.editId === item.id ? 'bg-spoot-input' : ''}`}>
                           <td className="py-3.5 pl-2 pr-3">
+                            <div className="flex gap-3">
+                            {item.image_url
+                              // eslint-disable-next-line @next/next/no-img-element
+                              ? <img src={item.image_url} alt="" className="h-12 w-12 shrink-0 rounded-xl object-cover" />
+                              : <span aria-hidden="true" className="h-12 w-12 shrink-0 rounded-xl bg-spoot-chip" />}
+                            <div className="min-w-0">
                             <div className="flex flex-wrap items-center gap-2">
                               <span className="font-display font-bold">{item.name}</span>
                               {item.is_vege && <span className="rounded-full bg-spoot-chip px-2 py-px font-display text-[10px] font-bold tracking-[0.5px]">WEGE</span>}
@@ -305,6 +345,11 @@ export default function MenuPage() {
                               {!item.is_available && <span className="text-xs text-spoot-ink2">· niedostępne</span>}
                             </div>
                             {item.description && <div className="text-xs text-spoot-ink2">{item.description}</div>}
+                            {item.allergens?.length
+                              ? <div className="text-xs text-spoot-ink2"><strong>Alergeny:</strong> {allergenLabels(item.allergens)}</div>
+                              : <div className="text-xs font-bold text-spoot-danger">Alergeny nieuzupełnione</div>}
+                            </div>
+                            </div>
                           </td>
                           <td className="whitespace-nowrap px-3 py-3.5 text-right font-display font-bold">{formatPrice(item.price)}</td>
                           <td className="px-3 py-3.5">
@@ -353,6 +398,54 @@ export default function MenuPage() {
                 Opis
                 <textarea value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} placeholder="Krótki opis zwiększa apetyt" maxLength={240} rows={3} className={`${inputCls} h-auto resize-y py-3`} />
               </label>
+              <div className="flex flex-col gap-1.5">
+                <Eyebrow>Zdjęcie dania</Eyebrow>
+                <div className="flex items-center gap-3">
+                  {form.image_url
+                    // eslint-disable-next-line @next/next/no-img-element
+                    ? <img src={form.image_url} alt="Zdjęcie dania" className="h-[88px] w-[88px] shrink-0 rounded-xl object-cover" />
+                    : <span aria-hidden="true" className="h-[88px] w-[88px] shrink-0 rounded-xl bg-spoot-chip" />}
+                  <div className="flex flex-col items-start gap-1">
+                    <label className="inline-flex h-9 cursor-pointer items-center rounded-xl border border-spoot-ink px-3 font-display text-[13px] font-bold hover:bg-spoot-chip/50">
+                      {uploading ? 'Wgrywam…' : form.image_url ? 'Zmień zdjęcie' : 'Dodaj zdjęcie'}
+                      <input type="file" accept="image/*" className="sr-only" onChange={uploadDishPhoto} disabled={uploading} />
+                    </label>
+                    {form.image_url && <Btn variant="danger" size="sm" onClick={() => setForm({ ...form, image_url: null })}>Usuń</Btn>}
+                  </div>
+                </div>
+                <span className="text-xs text-spoot-ink2">Goście zobaczą je przy daniu w karcie.</span>
+              </div>
+              <fieldset>
+                <legend className="pb-2"><Eyebrow>Alergeny</Eyebrow></legend>
+                <div className="flex flex-wrap gap-1.5">
+                  {ALLERGENS.map(a => {
+                    const on = form.allergens.includes(a.key);
+                    return (
+                      <button
+                        key={a.key}
+                        type="button"
+                        aria-pressed={on}
+                        onClick={() => toggleAllergen(a.key)}
+                        className={`min-h-9 rounded-full px-3 font-display text-xs font-bold ${on ? 'bg-spoot-ink text-white' : 'border border-spoot-line bg-spoot-input hover:bg-spoot-chip/70'}`}
+                      >
+                        {a.label}
+                      </button>
+                    );
+                  })}
+                </div>
+                <span className="mt-2 block text-xs text-spoot-ink2">Zaznacz wszystko, co jest w daniu. Goście zobaczą alergeny przy pozycji w karcie.</span>
+              </fieldset>
+              <div className="flex flex-col gap-2.5 rounded-xl bg-spoot-input p-3.5">
+                <div className="flex items-center gap-2">
+                  <span className="grow font-display font-bold">Kalorie liczone przez Spoot</span>
+                  <span className="rounded-full bg-spoot-orange px-2 py-0.5 font-display text-[10px] font-bold tracking-[0.5px]">WKRÓTCE</span>
+                </div>
+                <span className="text-xs text-spoot-ink2">Podasz gramatury składników, a my policzymy kalorie i pokażemy je gościom przy daniu.</span>
+                <label className={labelCls}>
+                  Gramatura porcji (g)
+                  <input disabled placeholder="Dostępne wkrótce" className={inputCls} />
+                </label>
+              </div>
               <label className={labelCls}>
                 Sekcja
                 <select value={form.sectionId} onChange={e => setForm({ ...form, sectionId: e.target.value })} className={inputCls}>
@@ -383,6 +476,13 @@ export default function MenuPage() {
           </Card>
         )}
       </div>
+
+      {placeId && (
+        <div className="flex flex-wrap items-stretch gap-6">
+          <MenuQr placeId={placeId} />
+          <MenuEntryRequest placeId={placeId} />
+        </div>
+      )}
     </>
   );
 }

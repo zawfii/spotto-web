@@ -25,6 +25,16 @@ const EMPTY: Form = {
   startTime: '', endTime: '', dishType: 'inne', dishTypeTouched: false,
 };
 
+type PromoPackage = '3d' | '7d' | '14d';
+type DealPromotion = { id: string; deal_id: string; package: PromoPackage; status: string; active_until: string | null; admin_note: string | null };
+
+// Ceny promocji oferty dnia — propozycja z projektu panelu (2026-11-16).
+const PROMO_PACKAGES: { id: PromoPackage; label: string; price: string }[] = [
+  { id: '3d', label: '3 dni', price: '29 zł' },
+  { id: '7d', label: '7 dni', price: '59 zł' },
+  { id: '14d', label: '14 dni', price: '99 zł' },
+];
+
 const parsePrice = (s: string) => parseFloat(s.replace(',', '.'));
 const toDbTime = (t: string) => (t ? `${t}:00` : null);
 const dayShorts = (days: DayKey[]) => DAYS.filter(d => days.includes(d.key)).map(d => d.short).join(', ');
@@ -45,17 +55,46 @@ export default function DealsPage() {
   const [loading, setLoading] = useState(true);
   const [form, setForm] = useState<Form>(EMPTY);
   const [saving, setSaving] = useState(false);
+  const [promos, setPromos] = useState<DealPromotion[]>([]);
+  const [promoDeal, setPromoDeal] = useState('');
+  const [promoPkg, setPromoPkg] = useState<PromoPackage>('7d');
+  const [promoSending, setPromoSending] = useState(false);
 
   const load = useCallback(async () => {
     if (!venue) return;
-    const { data } = await supabase
-      .from('deals')
-      .select('id, dish_name, price, original_price, days_of_week, valid_until, start_time, end_time, dish_category, status, source, admin_note, created_at')
-      .eq('place_id', venue.place_id)
-      .order('created_at', { ascending: false });
+    const [{ data }, { data: promoRows }] = await Promise.all([
+      supabase
+        .from('deals')
+        .select('id, dish_name, price, original_price, days_of_week, valid_until, start_time, end_time, dish_category, status, source, admin_note, created_at')
+        .eq('place_id', venue.place_id)
+        .order('created_at', { ascending: false }),
+      supabase
+        .from('deal_promotions')
+        .select('id, deal_id, package, status, active_until, admin_note')
+        .eq('place_id', venue.place_id)
+        .order('created_at', { ascending: false }),
+    ]);
     setDeals((data as Deal[]) ?? []);
+    setPromos((promoRows as DealPromotion[]) ?? []);
     setLoading(false);
   }, [supabase, venue]);
+
+  const promoFor = (dealId: string) => {
+    const rows = promos.filter(p => p.deal_id === dealId);
+    return rows.find(p => p.status === 'approved' && p.active_until && new Date(p.active_until) > new Date())
+      ?? rows.find(p => p.status === 'pending');
+  };
+
+  async function sendPromo(e: React.FormEvent) {
+    e.preventDefault();
+    if (!venue || !userId || !promoDeal) return;
+    setPromoSending(true);
+    const { error } = await supabase.from('deal_promotions').insert({ deal_id: promoDeal, place_id: venue.place_id, owner_id: userId, package: promoPkg });
+    setPromoSending(false);
+    if (error) { alert('Nie udało się wysłać prośby. Spróbuj ponownie.'); return; }
+    setPromoDeal('');
+    load();
+  }
 
   useEffect(() => { load(); }, [load]);
 
@@ -203,8 +242,28 @@ export default function DealsPage() {
                               </div>
                             )}
                           </td>
-                          <td className="px-3 py-3.5"><StatusPill deal={deal} /></td>
+                          <td className="px-3 py-3.5">
+                            {(() => {
+                              const p = promoFor(deal.id);
+                              if (!p) return <StatusPill deal={deal} />;
+                              return (
+                                <div className="flex flex-col items-start gap-1">
+                                  <span className="whitespace-nowrap rounded-full bg-spoot-orange px-2.5 py-0.5 font-display text-[11px] font-bold">
+                                    {p.status === 'pending' ? 'Promocja czeka' : 'Promowana'}
+                                  </span>
+                                  {p.active_until && p.status === 'approved' && (
+                                    <span className="text-xs text-spoot-ink2">do {new Date(p.active_until).toLocaleDateString('pl-PL', { day: 'numeric', month: 'numeric' })}</span>
+                                  )}
+                                </div>
+                              );
+                            })()}
+                          </td>
                           <td className="whitespace-nowrap py-3.5 text-right">
+                            {deal.status === 'approved' && !promoFor(deal.id) && (
+                              <Btn variant="outline" size="sm" onClick={() => { setPromoDeal(deal.id); document.getElementById('promuj')?.scrollIntoView({ behavior: 'smooth' }); }}>
+                                Promuj
+                              </Btn>
+                            )}
                             <Btn variant="ghost" size="sm" onClick={() => edit(deal)}>Edytuj</Btn>
                             <Btn variant="danger" size="sm" onClick={() => remove(deal)}>Usuń</Btn>
                           </td>
@@ -216,6 +275,53 @@ export default function DealsPage() {
               </div>
             )}
           </Card>
+
+          {own.some(d => d.status === 'approved' && !promoFor(d.id)) && (
+            <form id="promuj" onSubmit={sendPromo} className="flex flex-col gap-4 rounded-3xl bg-spoot-green p-6 text-white">
+              <div className="flex flex-col gap-1">
+                <Eyebrow className="text-white/80">Płatna promocja</Eyebrow>
+                <h2 className="font-display text-[22px] font-bold leading-7">Promuj ofertę dnia</h2>
+                <p className="text-white/80">Promowana oferta wyświetla się na samej górze Ofert dnia u gości w Twojej okolicy. Zawsze z etykietą „Sponsorowane”.</p>
+              </div>
+              <label className="flex flex-col gap-1.5 font-display text-[11px] font-bold uppercase tracking-[0.5px]">
+                Która oferta
+                <select value={promoDeal} onChange={e => setPromoDeal(e.target.value)} required className="h-11 rounded-xl bg-spoot-input px-3 font-body text-sm font-normal normal-case tracking-normal text-spoot-ink">
+                  <option value="">Wybierz ofertę</option>
+                  {own.filter(d => d.status === 'approved' && !promoFor(d.id)).map(d => (
+                    <option key={d.id} value={d.id}>{d.dish_name} — {formatPrice(d.price)} · {dayShorts(d.days_of_week)}</option>
+                  ))}
+                </select>
+              </label>
+              <fieldset>
+                <legend className="pb-2 font-display text-[11px] font-bold uppercase tracking-[0.5px]">Na jak długo</legend>
+                <div className="grid grid-cols-[repeat(auto-fit,minmax(140px,1fr))] gap-3">
+                  {PROMO_PACKAGES.map(p => (
+                    <label key={p.id} className={`flex cursor-pointer flex-col gap-1.5 rounded-2xl border-2 bg-spoot-input p-3.5 text-spoot-ink ${promoPkg === p.id ? 'border-spoot-orange' : 'border-transparent'}`}>
+                      <span className="flex items-center gap-2">
+                        <input type="radio" name="promo-pkg" checked={promoPkg === p.id} onChange={() => setPromoPkg(p.id)} className="h-5 w-5 accent-spoot-ink" />
+                        <span className="font-display font-bold">{p.label}</span>
+                      </span>
+                      <span className="font-display text-[22px] font-bold leading-7">{p.price}</span>
+                    </label>
+                  ))}
+                </div>
+              </fieldset>
+              <div className="flex flex-wrap items-center gap-4 border-t border-white/50 pt-4">
+                <div className="flex flex-[1_1_200px] flex-col">
+                  <span className="text-xs text-white/80">Do zapłaty</span>
+                  <span className="font-display text-[26px] font-bold leading-[34px]">{PROMO_PACKAGES.find(p => p.id === promoPkg)!.price}</span>
+                </div>
+                <button
+                  type="submit"
+                  disabled={!promoDeal || promoSending}
+                  className="h-12 rounded-2xl bg-spoot-orange px-6 font-display font-bold text-spoot-ink hover:opacity-90 disabled:opacity-50"
+                >
+                  {promoSending ? 'Wysyłam…' : 'Wyślij prośbę o promocję'}
+                </button>
+              </div>
+              <p className="text-xs text-white/80">Prośba czeka na zatwierdzenie — odezwiemy się w sprawie płatności. Promocja działa tylko w dni i godziny oferty.</p>
+            </form>
+          )}
         </div>
 
         <Card className="min-w-0 flex-[1_1_320px]">
