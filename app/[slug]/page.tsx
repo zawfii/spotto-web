@@ -186,11 +186,6 @@ export default async function SitePage({ params }: Props) {
         </div>
       </section>
 
-      {site.photos[0] && (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img src={site.photos[0]} alt={`Zdjęcie: ${site.name}`} style={{ display: 'block', width: '100%', height: 'clamp(260px, 48vw, 620px)', objectFit: 'cover', background: NAVY2 }} />
-      )}
-
       {/* ── Pomarańcz: oferty. Skośna krawędź jak płaszczyzny w znaku. ── */}
       {site.deals.length > 0 && (
         <div id="oferty" style={{ background: ORANGE, color: NAVY, clipPath: `polygon(0 ${SLANT}, 100% 0, 100% 100%, 0 100%)`, marginTop: `calc(-1 * ${SLANT})` }}>
@@ -247,12 +242,14 @@ export default async function SitePage({ params }: Props) {
         </div>
       )}
 
-      {site.photos.length > 1 && (
+      {/* Zdjęcia z Profilu lokalu: równe kafle 4:3 w siatce, nigdy na całą szerokość —
+          przycięty baner z dowolnego zdjęcia (np. logo) wyglądał źle. */}
+      {site.photos.length > 0 && (
         <div style={{ background: PAPER, padding: '0 24px', paddingBottom: PAD }}>
-          <div style={{ ...s.wrap, display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 260px), 1fr))', gap: 12 }}>
-            {site.photos.slice(1).map((url) => (
+          <div style={{ ...s.wrap, display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 260px), 1fr))', gap: 12 }}>
+            {site.photos.map((url) => (
               // eslint-disable-next-line @next/next/no-img-element
-              <img key={url} src={url} alt={`Zdjęcie: ${site.name}`} loading="lazy" style={{ width: '100%', height: 320, objectFit: 'cover', background: CREAM }} />
+              <img key={url} src={url} alt={`Zdjęcie: ${site.name}`} loading="lazy" style={{ width: '100%', aspectRatio: '4 / 3', objectFit: 'cover', background: CREAM }} />
             ))}
           </div>
         </div>
