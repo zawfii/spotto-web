@@ -84,7 +84,7 @@ export default function OwnerRegisterPage() {
                 Link wysłaliśmy na <strong className="text-spoot-ink">{email}</strong>. Otwórz go na tym urządzeniu — konto założy się samo i wejdziesz do panelu.
               </p>
               <p className="text-spoot-ink2">
-                Na tym samym e-mailu zalogujesz się w aplikacji Spoot. Tam zgłosisz swój lokal i dokończysz resztę.
+                W panelu wskażesz swój lokal. Po naszej akceptacji masz pełny dostęp — tutaj i w aplikacji Spoot, na tym samym e-mailu.
               </p>
               <button
                 type="button"
@@ -99,7 +99,7 @@ export default function OwnerRegisterPage() {
               <div className="flex flex-col gap-1">
                 <span className="font-display text-[11px] font-bold tracking-[0.5px]">REJESTRACJA</span>
                 <h2 className="font-display text-[32px] font-bold leading-10">Załóż konto właściciela</h2>
-                <p className="text-spoot-ink2">Trzy pola i gotowe. Bez hasła — logujesz się linkiem z e-maila. Resztę danych uzupełnisz w aplikacji.</p>
+                <p className="text-spoot-ink2">Trzy pola i gotowe. Bez hasła — logujesz się linkiem z e-maila. Potem wskażesz swój lokal, a my go zweryfikujemy.</p>
               </div>
               <form onSubmit={handleSubmit} className="flex flex-col gap-3" noValidate>
                 <label className={labelCls}>

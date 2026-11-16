@@ -5,16 +5,14 @@ import { getOwnerVenue } from '@/lib/owner';
 import { panelBase } from '@/lib/owner-server';
 import OwnerShell from '@/components/owner/OwnerShell';
 import LogoutButton from '@/components/owner/LogoutButton';
+import ClaimVenue from '@/components/owner/ClaimVenue';
 import { Wordmark } from '@/components/SpootLogo';
-
-const APP_STORE_URL = 'https://apps.apple.com/pl/app/id6822473524';
-const PLAY_URL = 'https://play.google.com/store/apps/details?id=com.spoot.app';
 
 // Stany sprzed wejścia do panelu — te same co w apce (app/owner-panel.tsx).
 const GATE: Record<string, { title: string; text: string }> = {
   none: {
     title: 'Zgłoś swój lokal',
-    text: 'Żeby wejść do panelu, zgłoś lokal w aplikacji Spoot. Po weryfikacji zalogujesz się tutaj tym samym adresem e-mail.',
+    text: 'Znajdź swój lokal i podaj dane firmy. Sprawdzimy zgłoszenie, a po akceptacji panel otworzy się na tym koncie.',
   },
   pending: {
     title: 'Czekamy na weryfikację',
@@ -22,7 +20,7 @@ const GATE: Record<string, { title: string; text: string }> = {
   },
   rejected: {
     title: 'Zgłoszenie odrzucone',
-    text: 'Twoje zgłoszenie nie zostało zatwierdzone. Nowe złożysz w aplikacji Spoot.',
+    text: 'Twoje zgłoszenie nie zostało zatwierdzone. Możesz wysłać nowe poniżej.',
   },
 };
 
@@ -49,20 +47,20 @@ export default async function ProtectedLayout({ children }: { children: React.Re
 
     return (
       <div className="flex min-h-screen items-center justify-center p-4">
-        <div className="flex w-full max-w-md flex-col gap-4 rounded-3xl bg-spoot-card p-8">
+        <div className="flex w-full max-w-lg flex-col gap-4 rounded-3xl bg-spoot-card p-6 sm:p-8">
           <Wordmark size={28} />
           <h1 className="font-display text-[26px] font-bold leading-[34px]">{gate.title}</h1>
           <p className="text-spoot-ink2">{gate.text}</p>
-          {gate === GATE.none && (
-            <div className="flex flex-wrap gap-2">
-              <a href={APP_STORE_URL} className="h-11 flex-[1_1_140px] rounded-2xl bg-spoot-ink px-4 text-center font-display font-bold leading-[44px] text-white hover:bg-spoot-green">App Store</a>
-              <a href={PLAY_URL} className="h-11 flex-[1_1_140px] rounded-2xl bg-spoot-ink px-4 text-center font-display font-bold leading-[44px] text-white hover:bg-spoot-green">Google Play</a>
-            </div>
-          )}
           {claim?.status === 'rejected' && claim.admin_note && (
             <p className="rounded-xl bg-spoot-input p-3 text-spoot-ink2">
               <strong className="font-display text-spoot-ink">Powód: </strong>{claim.admin_note}
             </p>
+          )}
+          {claim?.status !== 'pending' && (
+            <ClaimVenue
+              userId={user.id}
+              defaultPhone={typeof user.user_metadata?.phone === 'string' ? user.user_metadata.phone : ''}
+            />
           )}
           <p className="flex flex-wrap items-center gap-x-2 border-t border-spoot-line pt-4 text-xs text-spoot-ink2">
             Zalogowano jako {user.email}
