@@ -137,6 +137,12 @@ export default async function SitePage({ params }: Props) {
   if (site.menu.length) nav.push(['#menu', 'Menu']);
   if (site.hours) nav.push(['#godziny', 'Godziny']);
   nav.push(['#kontakt', 'Kontakt']);
+  // Rozmiar nazwy tak, żeby najdłuższe słowo mieściło się w kolumnie w jednej linii, a podpis w jednej linii
+  // z kreskami po bokach. 0.82 i 0.9 em to szerokość znaku w Jost (wersaliki 800 / 500 ze spacjowaniem 0.24em).
+  // ponytail: przybliżenie po liczbie znaków; bardzo długie słowo zejdzie do 34 px i dopiero wtedy się złamie.
+  const longest = Math.max(...site.name.split(/\s+/).map((w) => w.length), 4);
+  const titleCqi = (100 / (longest * 0.82)).toFixed(2);
+  const eyebrowCqi = (76 / (Math.max(site.eyebrow.length, 12) * 0.9)).toFixed(2);
   let no = 0;
   const next = () => String(++no).padStart(2, '0');
 
@@ -158,13 +164,14 @@ export default async function SitePage({ params }: Props) {
       </header>
 
       <section id="top" style={{ ...s.wrap, padding: `clamp(32px, 6vw, 88px) 24px ${PAD}`, display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 'clamp(32px, 5vw, 72px)' }}>
-        <div style={{ flex: '3 1 340px', minWidth: 0, display: 'flex', flexDirection: 'column', gap: 24 }}>
-          <h1 style={{ margin: 0, fontWeight: 800, fontSize: 'clamp(46px, 8.4vw, 112px)', lineHeight: 0.9, letterSpacing: '0.01em', textTransform: 'uppercase', overflowWrap: 'anywhere' }}>{site.name}</h1>
+        {/* Kolumna jest kontenerem: nazwa i podpis skalują się do JEJ szerokości (cqi), nie do okna. */}
+        <div style={{ flex: '3 1 340px', minWidth: 0, containerType: 'inline-size', display: 'flex', flexDirection: 'column', gap: 24 }}>
+          <h1 style={{ margin: 0, fontWeight: 800, fontSize: `clamp(34px, ${titleCqi}cqi, 112px)`, lineHeight: 0.9, letterSpacing: '0.01em', textTransform: 'uppercase', overflowWrap: 'break-word' }}>{site.name}</h1>
           {site.eyebrow && (
-            <p style={{ margin: 0, maxWidth: 560, display: 'flex', alignItems: 'center', gap: 16, fontWeight: 500, fontSize: 'clamp(12px, 3.4vw, 15px)', letterSpacing: 'clamp(0.14em, 1vw, 0.32em)', textTransform: 'uppercase' }}>
-              <span aria-hidden="true" style={{ flex: '1 1 24px', height: 1.5, background: CREAM }} />
+            <p style={{ margin: 0, maxWidth: 560, display: 'flex', alignItems: 'center', gap: 16, fontWeight: 500, fontSize: `clamp(10px, ${eyebrowCqi}cqi, 15px)`, letterSpacing: '0.24em', whiteSpace: 'nowrap', textTransform: 'uppercase' }}>
+              <span aria-hidden="true" style={{ flex: '1 1 0', minWidth: 16, height: 1.5, background: CREAM }} />
               {site.eyebrow}
-              <span aria-hidden="true" style={{ flex: '1 1 24px', height: 1.5, background: CREAM }} />
+              <span aria-hidden="true" style={{ flex: '1 1 0', minWidth: 16, height: 1.5, background: CREAM }} />
             </p>
           )}
           {site.description && <p style={{ margin: 0, maxWidth: 520, fontSize: 21, lineHeight: 1.4, color: SOFT }}>{site.description}</p>}
@@ -175,7 +182,7 @@ export default async function SitePage({ params }: Props) {
           </div>
         </div>
         <div style={{ flex: '2 1 220px', minWidth: 0, display: 'flex', justifyContent: 'center' }}>
-          <Mark size="min(100%, 440px)" />
+          <Mark size="min(72%, 440px)" />
         </div>
       </section>
 
