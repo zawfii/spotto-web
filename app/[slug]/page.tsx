@@ -161,7 +161,7 @@ export default async function SitePage({ params }: Props) {
         <div style={{ flex: '3 1 340px', minWidth: 0, display: 'flex', flexDirection: 'column', gap: 24 }}>
           <h1 style={{ margin: 0, fontWeight: 800, fontSize: 'clamp(46px, 8.4vw, 112px)', lineHeight: 0.9, letterSpacing: '0.01em', textTransform: 'uppercase', overflowWrap: 'anywhere' }}>{site.name}</h1>
           {site.eyebrow && (
-            <p style={{ margin: 0, maxWidth: 560, display: 'flex', alignItems: 'center', gap: 16, fontWeight: 500, fontSize: 15, letterSpacing: '0.32em', textTransform: 'uppercase' }}>
+            <p style={{ margin: 0, maxWidth: 560, display: 'flex', alignItems: 'center', gap: 16, fontWeight: 500, fontSize: 'clamp(12px, 3.4vw, 15px)', letterSpacing: 'clamp(0.14em, 1vw, 0.32em)', textTransform: 'uppercase' }}>
               <span aria-hidden="true" style={{ flex: '1 1 24px', height: 1.5, background: CREAM }} />
               {site.eyebrow}
               <span aria-hidden="true" style={{ flex: '1 1 24px', height: 1.5, background: CREAM }} />
