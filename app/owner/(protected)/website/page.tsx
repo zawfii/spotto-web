@@ -206,7 +206,7 @@ export default function WebsitePage() {
 
           <Card className="flex flex-col gap-3">
             <div className="flex flex-col gap-0.5">
-              <CardTitle>W budowie</CardTitle>
+              <CardTitle>Wkrótce</CardTitle>
               <span className="text-[13px] text-spoot-ink2">Dołożymy to do Twojej strony, gdy będzie gotowe.</span>
             </div>
             <ul className="grid grid-cols-[repeat(auto-fit,minmax(240px,1fr))] gap-3">
@@ -214,7 +214,7 @@ export default function WebsitePage() {
                 <li key={title} className="flex flex-col gap-1.5 rounded-2xl bg-spoot-input p-4">
                   <span className="flex flex-wrap items-center gap-2">
                     <span className="grow font-display font-bold">{title}</span>
-                    <span className="rounded-full bg-spoot-chip px-2 py-0.5 font-display text-[10px] font-bold tracking-[0.5px]">W BUDOWIE</span>
+                    <span className="rounded-full bg-spoot-chip px-2 py-0.5 font-display text-[10px] font-bold tracking-[0.5px]">WKRÓTCE</span>
                   </span>
                   <span className="text-[13px] text-spoot-ink2">{text}</span>
                 </li>
@@ -242,7 +242,7 @@ export default function WebsitePage() {
             ))}
             {q && (
               <div className="flex items-baseline gap-3 border-t border-white/50 py-3">
-                <dt className="grow text-white/80">Do zapłaty teraz, netto</dt>
+                <dt className="grow text-white/80">Koszt na start, netto</dt>
                 <dd className="font-display text-[32px] font-bold leading-10">{zl(q.dueNow)}</dd>
               </div>
             )}

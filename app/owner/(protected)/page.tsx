@@ -30,13 +30,13 @@ export default async function DashboardPage() {
     { label: 'Edytuj opis i godziny', href: `${base}/settings` },
     { label: 'Dodaj danie do menu', href: `${base}/menu` },
     { label: 'Dodaj ofertę dnia', href: `${base}/deals` },
-    { label: 'Skanuj kartę gościa', href: `${base}/loyalty` },
+    { label: 'Skanuj kartę gościa', href: `${base}/loyalty?scan=1` },
   ];
   const promoText = activePromo
     ? { title: 'Wyróżnienie aktywne', sub: `Do ${new Date(activePromo.active_until!).toLocaleDateString('pl-PL', { day: 'numeric', month: 'long' })}` }
     : pendingPromo
       ? { title: 'Prośba w toku', sub: 'Wyróżnienie czeka na zatwierdzenie' }
-      : { title: 'Wyróżnij restaurację', sub: 'Wkrótce' };
+      : null; // wyróżnienie jeszcze nie ruszyło — bez kafelka, który prowadzi donikąd
 
   return (
     <>
@@ -50,7 +50,7 @@ export default async function DashboardPage() {
         <StatCard label="Zapisane" value={stats.savedCount > 999 ? `${(stats.savedCount / 1000).toFixed(1)}k` : stats.savedCount} hint="tyle osób ma Cię na liście" />
         <StatCard label="Ocena" value={stats.avgRating > 0 ? stats.avgRating : '—'} hint="średnia w Spoot, skala 1–10" />
         <StatCard label="Opinie" value={stats.reviewCount} />
-        <StatCard label="Wyświetlenia profilu" value={analytics.views_30d.toLocaleString('pl-PL')} hint="w ostatnich 30 dniach" />
+        <StatCard label="Wyświetlenia profilu" value={analytics.views.toLocaleString('pl-PL')} hint="w ostatnich 30 dniach" />
       </section>
 
       <div className="flex flex-wrap items-start gap-6">
@@ -86,7 +86,7 @@ export default async function DashboardPage() {
               <div className="grow"><CardTitle>Wyświetlenia według dnia tygodnia</CardTitle></div>
               <Link href={`${base}/stats`} className="py-2"><Eyebrow>Statystyki</Eyebrow></Link>
             </div>
-            {analytics.views_30d === 0 ? (
+            {analytics.views === 0 ? (
               <p className="text-spoot-ink2">Zbieramy dane. Wróć za kilka dni — wykres pojawi się, gdy przyjdą pierwsi odwiedzający.</p>
             ) : (
               <WeekdayBars days={analytics.best_days} height={120} />
@@ -95,7 +95,7 @@ export default async function DashboardPage() {
         </div>
 
         <div className="flex min-w-0 flex-[1_1_320px] flex-col gap-6">
-          <Link href={`${base}/promote`} className="flex items-center gap-4 rounded-2xl bg-spoot-green p-5 text-white hover:bg-spoot-ink">
+          {promoText && <Link href={`${base}/promote`} className="flex items-center gap-4 rounded-2xl bg-spoot-green p-5 text-white hover:bg-spoot-ink">
             <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-spoot-orange text-spoot-ink">
               <NavIcon>{NAV_ICONS.rocket}</NavIcon>
             </span>
@@ -104,7 +104,7 @@ export default async function DashboardPage() {
               <span className="text-[13px] text-white/80">{promoText.sub}</span>
             </span>
             <NavIcon>{NAV_ICONS.chevron}</NavIcon>
-          </Link>
+          </Link>}
 
           {submissions > 0 && (
             <Link href={`${base}/deals`} className="flex flex-col gap-1 rounded-2xl bg-spoot-tint p-5 hover:bg-[#ffd8bf]">

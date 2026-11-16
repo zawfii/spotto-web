@@ -51,7 +51,7 @@ export default function LoyaltyPage() {
       ? await supabase.from('profiles').select('id, display_name').in('id', ids)
       : { data: [] as { id: string; display_name: string | null }[] };
     const names = Object.fromEntries((profiles ?? []).map(p => [p.id, p.display_name]));
-    setCardholders(rows.map(r => ({ user_id: r.user_id, display_name: names[r.user_id] || 'Klient', stamp_count: r.stamp_count })));
+    setCardholders(rows.map(r => ({ user_id: r.user_id, display_name: names[r.user_id] || 'Gość', stamp_count: r.stamp_count })));
     setRedeemed(redemptionsRes.count ?? 0);
   }, [supabase, venue]);
 
@@ -141,6 +141,11 @@ export default function LoyaltyPage() {
     return () => window.removeEventListener('keydown', onKey);
   }, [scan]);
 
+  // Pulpit → „Skanuj kartę gościa” otwiera skaner od razu (?scan=1).
+  useEffect(() => {
+    if (programLive && new URLSearchParams(window.location.search).has('scan')) setScan({ step: 'scanning' });
+  }, [programLive]);
+
   if (venueLoading) return <Loading />;
 
   const fullCount = cardholders.filter(c => required > 0 && c.stamp_count >= required).length;
@@ -149,7 +154,7 @@ export default function LoyaltyPage() {
     <>
       <PageHeader eyebrow="Pieczątki" title="Karta stałego gościa" sub="Goście zbierają pieczątki w aplikacji Spoot, Ty ustalasz progi i nagrody.">
         <span role="status" className="self-center font-display text-[13px] font-bold">{saved ? 'Zapisano' : ''}</span>
-        <Btn variant="outline" onClick={() => setScan({ step: 'scanning' })} disabled={!programLive}>Skanuj kartę gościa</Btn>
+        <Btn variant="outline" onClick={() => setScan({ step: 'scanning' })} disabled={!programLive} title={programLive ? undefined : 'Najpierw włącz program, dodaj próg nagrody i zapisz'}>Skanuj kartę gościa</Btn>
         <Btn onClick={save} disabled={saving}>{saving ? 'Zapisuję…' : 'Zapisz zmiany'}</Btn>
       </PageHeader>
 
@@ -198,6 +203,7 @@ export default function LoyaltyPage() {
               </>
             )}
             {!enabled && <p className="text-spoot-ink2">Włącz program i zapisz, żeby goście mogli zbierać pieczątki.</p>}
+            {!programLive && <p className="text-xs text-spoot-ink2">Skanowanie kart odblokuje się po zapisaniu włączonego programu z co najmniej jednym progiem.</p>}
           </Card>
 
           {programLive && (
@@ -210,7 +216,7 @@ export default function LoyaltyPage() {
 
               <Card className="pb-1">
                 <div className="flex items-center gap-3 pb-3">
-                  <div className="grow"><CardTitle>Klienci z pieczątkami</CardTitle></div>
+                  <div className="grow"><CardTitle>Goście z pieczątkami</CardTitle></div>
                   <span className="text-xs text-spoot-ink2">{cardholders.length} {pluralPl(cardholders.length, 'osoba', 'osoby', 'osób')}</span>
                 </div>
                 {cardholders.length === 0 ? (
@@ -355,7 +361,7 @@ export default function LoyaltyPage() {
                 <Initial name={scan.customer.display_name} />
                 <span className="font-display text-lg font-bold">{scan.customer.display_name}</span>
                 <span className="text-spoot-ink2">
-                  {scan.customer.stamp_count >= required ? 'Karta pełna' : `${scan.customer.stamp_count}/${required} wizyt`}
+                  {scan.customer.stamp_count >= required ? 'Karta pełna' : `${scan.customer.stamp_count}/${required} pieczątek`}
                 </span>
                 <Btn onClick={() => confirmStamp(scan.customer)}>
                   {scan.customer.stamp_count >= required ? 'Odbierz nagrodę' : 'Dodaj pieczątkę'}
@@ -369,7 +375,7 @@ export default function LoyaltyPage() {
                   {scan.result.is_final ? 'Nagroda odebrana!' : scan.result.redeemed ? 'Próg osiągnięty!' : 'Pieczątka dodana'}
                 </span>
                 <span className="text-spoot-ink2">
-                  {scan.result.redeemed ? scan.result.reward_description || 'Klient może odebrać nagrodę.' : `${scan.result.stamp_count}/${scan.result.max_stamps} wizyt`}
+                  {scan.result.redeemed ? scan.result.reward_description || 'Gość może odebrać nagrodę.' : `${scan.result.stamp_count}/${scan.result.max_stamps} pieczątek`}
                 </span>
                 <Btn onClick={() => setScan({ step: 'scanning' })}>Skanuj następnego</Btn>
               </div>

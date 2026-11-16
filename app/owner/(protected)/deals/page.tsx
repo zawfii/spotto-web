@@ -79,7 +79,7 @@ export default function DealsPage() {
   useEffect(() => { load(); }, [load]);
 
   const submissions = deals.filter(d => d.status === 'pending' && d.source === 'user');
-  const own = deals.filter(d => !(d.status === 'pending' && d.source === 'user'));
+  const own = deals.filter(d => d.source !== 'user' || d.status === 'approved');
 
   function setName(dishName: string) {
     setForm(f => ({

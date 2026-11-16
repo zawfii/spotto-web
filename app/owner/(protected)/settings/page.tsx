@@ -43,6 +43,7 @@ export default function SettingsPage() {
   const [instagram, setInstagram] = useState('');
   const [menuUrl, setMenuUrl] = useState('');
   const [hours, setHours] = useState<Hours>(DEFAULT_HOURS);
+  // Rezerwacji jeszcze nie ma — przełącznik zniknął z ekranu, wartość z bazy przepisujemy bez zmian.
   const [reservationNotif, setReservationNotif] = useState(true);
   // PIN żyje w venue_staff_pins (widoczny tylko dla właściciela); savedPin = stan w bazie.
   const [staffPin, setStaffPin] = useState('');
@@ -270,8 +271,11 @@ export default function SettingsPage() {
               <input value={address} onChange={e => setAddress(e.target.value)} placeholder="ul. Przykładowa 1, Warszawa" className={inputCls} />
             </label>
             <label className={labelCls}>
-              Link do menu
+              Menu na Twojej stronie (opcjonalnie)
               <input type="url" value={menuUrl} onChange={e => setMenuUrl(e.target.value)} placeholder="https://..." className={inputCls} />
+              <span className="font-body text-xs font-normal normal-case tracking-normal text-spoot-ink2">
+                Masz kartę na własnej stronie albo w PDF? Wklej adres, a goście dostaną przycisk „Zobacz menu”. Zostaw puste, jeśli uzupełniasz zakładkę Menu.
+              </span>
             </label>
             <label className={labelCls}>
               Instagram
@@ -280,16 +284,9 @@ export default function SettingsPage() {
           </Card>
 
           <Card className="flex flex-col">
-            <div className="pb-3"><CardTitle>Powiadomienia i dostęp</CardTitle></div>
-            <label className="flex min-h-14 items-center gap-3 border-t border-spoot-line">
-              <span className="flex grow flex-col">
-                <span className="font-display font-bold">Powiadomienia rezerwacji</span>
-                <span className="text-xs text-spoot-ink2">Dajemy znać, gdy ktoś chce zarezerwować stolik</span>
-              </span>
-              <input type="checkbox" checked={reservationNotif} onChange={e => setReservationNotif(e.target.checked)} className={checkCls} />
-            </label>
+            <div className="pb-3"><CardTitle>Dostęp personelu</CardTitle></div>
             <label className={`${labelCls} border-t border-spoot-line pt-3`}>
-              Dostęp personelu — PIN
+              PIN
               <input value={staffPin} onChange={e => setStaffPin(e.target.value)} inputMode="numeric" maxLength={8} placeholder="PIN np. 1234 — puste = brak blokady" className={inputCls} />
               <span className="font-body text-xs font-normal normal-case tracking-normal text-spoot-ink2">
                 W aplikacji na wspólnym telefonie PIN blokuje Menu, Oferty, Statystyki i Ustawienia. Bez PIN-u personel skanuje karty i widzi pulpit.

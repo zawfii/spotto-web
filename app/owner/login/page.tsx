@@ -23,8 +23,8 @@ function OwnerLoginForm() {
   const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  // Hasło jak w aplikacji; link na e-mail dla kont z Google/Apple, które hasła nie mają.
-  const [mode, setMode] = useState<'password' | 'link'>('password');
+  // Hasło jak w aplikacji; link na e-mail dla kont bez hasła (rejestracja w panelu, Google, Apple).
+  const [mode, setMode] = useState<'password' | 'link'>(linkExpired ? 'link' : 'password');
   const [sent, setSent] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -89,7 +89,7 @@ function OwnerLoginForm() {
               <h1 className="font-display text-[26px] font-bold leading-[34px]">Panel właściciela</h1>
               <p className="text-spoot-ink2">
                 {mode === 'password'
-                  ? 'Zaloguj się tym samym e-mailem i hasłem co w aplikacji Spoot.'
+                  ? 'Zaloguj się e-mailem i hasłem z aplikacji Spoot. Nie masz hasła? Wyślemy link logowania.'
                   : 'Wpisz adres e-mail — wyślemy link do logowania. Bez hasła.'}
               </p>
             </div>
@@ -122,7 +122,7 @@ function OwnerLoginForm() {
               className="self-start py-2 font-display text-[13px] font-bold underline underline-offset-4"
             >
               {mode === 'password'
-                ? 'Logujesz się w aplikacji przez Google lub Apple? Dostaniesz link na e-mail'
+                ? 'Nie mam hasła — wyślij link na e-mail'
                 : 'Mam hasło — zaloguj się hasłem'}
             </button>
           </>

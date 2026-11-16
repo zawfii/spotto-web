@@ -84,7 +84,7 @@ export default function OwnerRegisterPage() {
                 Link wysłaliśmy na <strong className="text-spoot-ink">{email}</strong>. Otwórz go na tym urządzeniu — konto założy się samo i wejdziesz do panelu.
               </p>
               <p className="text-spoot-ink2">
-                W panelu wskażesz swój lokal. Po naszej akceptacji masz pełny dostęp — tutaj i w aplikacji Spoot, na tym samym e-mailu.
+                W panelu wskażesz swój lokal. Po naszej akceptacji masz pełny dostęp — tutaj i w aplikacji Spoot. W aplikacji wpisz ten sam e-mail i wybierz „Zapomniałem hasła”, żeby ustawić hasło.
               </p>
               <button
                 type="button"

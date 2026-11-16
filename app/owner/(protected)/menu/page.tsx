@@ -42,7 +42,7 @@ type ItemForm = {
   editId: string | null; sectionId: string;
   name: string; price: string; description: string;
   is_vege: boolean; spice_level: 0 | 1 | 2 | 3; is_available: boolean;
-  image_url: string | null; allergens: AllergenKey[];
+  image_url: string | null; allergens: AllergenKey[] | null; // null = nieuzupełnione, [] = brak alergenów
 };
 
 const parsePrice = (s: string) => parseFloat(s.replace(',', '.'));
@@ -66,6 +66,8 @@ export default function MenuPage() {
   const [newSection, setNewSection] = useState('');
   const [quick, setQuick] = useState({ name: '', price: '' });
   const [form, setForm] = useState<ItemForm | null>(null);
+  // Karta z importu (strona lokalu / zdjęcie) — goście ją widzą, dopóki właściciel nie doda własnej sekcji.
+  const [imported, setImported] = useState<{ source: string; items: number } | null>(null);
 
   const load = useCallback(async () => {
     try {
@@ -77,7 +79,7 @@ export default function MenuPage() {
       if (!vd) return;
       setPlaceId(vd.place_id);
 
-      const [{ data: place }, { data: sectionRows }] = await Promise.all([
+      const [{ data: place }, { data: sectionRows }, { data: importedRows }] = await Promise.all([
         supabase.from('places').select('category').eq('id', vd.place_id).maybeSingle(),
         supabase
           .from('menu_sections')
@@ -85,7 +87,11 @@ export default function MenuPage() {
           .eq('place_id', vd.place_id)
           .eq('source', 'owner') // import ze strony/zdjęcia nie jest edytowalny przez właściciela (RLS)
           .order('position', { ascending: true }),
+        supabase.from('menu_sections').select('source, menu_items(id)').eq('place_id', vd.place_id).neq('source', 'owner'),
       ]);
+      setImported(importedRows?.length
+        ? { source: importedRows[0].source, items: importedRows.reduce((n, s) => n + (s.menu_items?.length ?? 0), 0) }
+        : null);
       setCategory(place?.category ?? '');
       setSections(
         (sectionRows ?? []).map(s => ({
@@ -160,7 +166,7 @@ export default function MenuPage() {
     if (!selected || !quick.name.trim() || isNaN(price) || price <= 0) return;
     const ok = await insertItem(selected.id, {
       name: quick.name.trim(), price, description: null, is_vege: false, spice_level: 0, is_available: true,
-      image_url: null, allergens: [],
+      image_url: null, allergens: null,
     });
     if (ok) setQuick({ name: '', price: '' });
   }
@@ -220,12 +226,12 @@ export default function MenuPage() {
 
   const openNew = () => selected && setForm({
     editId: null, sectionId: selected.id, name: '', price: '', description: '', is_vege: false, spice_level: 0, is_available: true,
-    image_url: null, allergens: [],
+    image_url: null, allergens: null,
   });
   const openEdit = (item: MenuItem) => setForm({
     editId: item.id, sectionId: item.section_id, name: item.name, price: String(item.price),
     description: item.description ?? '', is_vege: item.is_vege, spice_level: item.spice_level, is_available: item.is_available,
-    image_url: item.image_url, allergens: item.allergens ?? [],
+    image_url: item.image_url, allergens: item.allergens,
   });
 
   // Zdjęcie trafia do storage od razu; do dania zapisuje się razem z formularzem.
@@ -247,9 +253,13 @@ export default function MenuPage() {
     }
   }
 
-  const toggleAllergen = (key: AllergenKey) => setForm(f => f && ({
-    ...f, allergens: f.allergens.includes(key) ? f.allergens.filter(a => a !== key) : [...f.allergens, key],
-  }));
+  // Odznaczenie ostatniego alergenu wraca do „nieuzupełnione” — „brak alergenów” trzeba wybrać świadomie.
+  const toggleAllergen = (key: AllergenKey) => setForm(f => {
+    if (!f) return f;
+    const cur = f.allergens ?? [];
+    const next = cur.includes(key) ? cur.filter(a => a !== key) : [...cur, key];
+    return { ...f, allergens: next.length ? next : null };
+  });
 
   if (loading) return <Loading />;
 
@@ -262,6 +272,13 @@ export default function MenuPage() {
       >
         <Btn onClick={openNew} disabled={!selected}>Dodaj danie</Btn>
       </PageHeader>
+
+      {imported && sections.length === 0 && (
+        <p role="status" className="rounded-2xl bg-spoot-tint p-4">
+          <strong className="font-display">Goście widzą teraz kartę {imported.source === 'website' ? 'pobraną z Twojej strony' : 'przepisaną ze zdjęcia'} ({imported.items} {pluralPl(imported.items, 'danie', 'dania', 'dań')}).</strong>{' '}
+          Tej karty nie da się tu edytować. Gdy dodasz pierwszą własną sekcję, goście zobaczą już tylko Twoją kartę — wpisz więc od razu całe menu albo poproś nas o to na dole strony.
+        </p>
+      )}
 
       <div className="flex flex-wrap items-start gap-6">
         {/* Sekcje */}
@@ -345,9 +362,9 @@ export default function MenuPage() {
                               {!item.is_available && <span className="text-xs text-spoot-ink2">· niedostępne</span>}
                             </div>
                             {item.description && <div className="text-xs text-spoot-ink2">{item.description}</div>}
-                            {item.allergens?.length
-                              ? <div className="text-xs text-spoot-ink2"><strong>Alergeny:</strong> {allergenLabels(item.allergens)}</div>
-                              : <div className="text-xs font-bold text-spoot-danger">Alergeny nieuzupełnione</div>}
+                            {item.allergens == null
+                              ? <div className="text-xs font-bold text-spoot-danger">Alergeny nieuzupełnione</div>
+                              : <div className="text-xs text-spoot-ink2">{item.allergens.length ? <><strong>Alergeny:</strong> {allergenLabels(item.allergens)}</> : 'Bez alergenów'}</div>}
                             </div>
                             </div>
                           </td>
@@ -419,7 +436,7 @@ export default function MenuPage() {
                 <legend className="pb-2"><Eyebrow>Alergeny</Eyebrow></legend>
                 <div className="flex flex-wrap gap-1.5">
                   {ALLERGENS.map(a => {
-                    const on = form.allergens.includes(a.key);
+                    const on = !!form.allergens?.includes(a.key);
                     return (
                       <button
                         key={a.key}
@@ -433,7 +450,16 @@ export default function MenuPage() {
                     );
                   })}
                 </div>
-                <span className="mt-2 block text-xs text-spoot-ink2">Zaznacz wszystko, co jest w daniu. Goście zobaczą alergeny przy pozycji w karcie.</span>
+                <label className="mt-2 flex min-h-11 items-center gap-2.5">
+                  <input
+                    type="checkbox"
+                    checked={form.allergens?.length === 0}
+                    onChange={e => setForm({ ...form, allergens: e.target.checked ? [] : null })}
+                    className={checkCls}
+                  />
+                  To danie nie zawiera żadnego z tych alergenów
+                </label>
+                <span className="block text-xs text-spoot-ink2">Zaznacz wszystko, co jest w daniu, albo potwierdź, że nie ma w nim alergenów. Goście zobaczą to przy pozycji w karcie.</span>
               </fieldset>
               <div className="flex flex-col gap-2.5 rounded-xl bg-spoot-input p-3.5">
                 <div className="flex items-center gap-2">

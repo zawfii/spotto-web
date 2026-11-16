@@ -46,8 +46,8 @@ export type VenueStats = {
 };
 
 export type VenueAnalytics = {
-  views_30d: number;
-  menu_clicks_30d: number;
+  views: number;
+  menu_clicks: number;
   saves_total: number;
   saves_tiktok: number;
   saves_instagram: number;
@@ -62,6 +62,8 @@ export type Review = {
   opinion: string | null;
   tags: string[];
   created_at: string;
+  /** Odpowiedź właściciela (rating_replies). */
+  reply: string | null;
 };
 
 export type MenuSection = {
@@ -82,7 +84,7 @@ export type MenuItem = {
   is_available: boolean;
   position: number;
   image_url: string | null;
-  allergens: AllergenKey[];
+  allergens: AllergenKey[] | null; // null = nieuzupełnione, [] = brak alergenów
 };
 
 // 14 alergenów, które restauracje w UE muszą podawać — klucze jak w menu_items.allergens.
@@ -187,76 +189,74 @@ export async function fetchStats(
   return { savedCount, avgRating, reviewCount };
 }
 
-/** Pobiera analitykę: wyświetlenia, kliknięcia menu, zapisy, źródła social. */
+export type StatsRange = { from: Date; to: Date };
+
+/** Ostatnie `days` dni, do teraz. */
+export const lastDays = (days: number): StatsRange => ({ from: new Date(Date.now() - days * 86400000), to: new Date() });
+
+/** Pobiera analitykę z wybranego okresu: wyświetlenia, kliknięcia menu; zapisy i źródła są łączne. */
 export async function fetchAnalytics(
   supabase: SupabaseClient,
-  placeId: string
+  placeId: string,
+  range: StatsRange = lastDays(30)
 ): Promise<VenueAnalytics> {
-  const since30d = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+  const from = range.from.toISOString();
+  const to = range.to.toISOString();
   const DAY_NAMES = ['Nd', 'Pon', 'Wt', 'Śr', 'Czw', 'Pt', 'Sob'];
+  const events = (type: string) =>
+    supabase.from('place_events').select('id', { count: 'exact', head: true })
+      .eq('place_id', placeId).eq('event_type', type).gte('created_at', from).lte('created_at', to);
 
-  const [viewsRes, menuRes, savesRes, socialRes, bestDaysRes] = await Promise.all([
-    supabase
-      .from('place_events')
-      .select('id', { count: 'exact', head: true })
-      .eq('place_id', placeId)
-      .eq('event_type', 'view')
-      .gte('created_at', since30d),
-    supabase
-      .from('place_events')
-      .select('id', { count: 'exact', head: true })
-      .eq('place_id', placeId)
-      .eq('event_type', 'menu_click')
-      .gte('created_at', since30d),
-    supabase
-      .from('spoot_list_places')
-      .select('id', { count: 'exact', head: true })
-      .eq('place_id', placeId),
-    supabase
-      .from('social_posts')
-      .select('source')
-      .eq('place_id', placeId)
-      .in('source', ['tiktok', 'instagram']),
-    supabase
-      .from('place_events')
-      .select('created_at')
-      .eq('place_id', placeId)
-      .eq('event_type', 'view')
-      .gte('created_at', since30d),
+  // Daty wyświetleń stronami po 1000 (limit API) — przy roku jedna strona nie wystarcza.
+  // ponytail: sufit 20 000 wyświetleń na wykres dni tygodnia; powyżej przenieść liczenie do funkcji w bazie.
+  async function viewDates() {
+    const out: string[] = [];
+    for (let page = 0; page < 20; page++) {
+      const { data } = await supabase.from('place_events').select('created_at')
+        .eq('place_id', placeId).eq('event_type', 'view').gte('created_at', from).lte('created_at', to)
+        .order('created_at').range(page * 1000, page * 1000 + 999);
+      out.push(...(data ?? []).map(r => r.created_at as string));
+      if (!data || data.length < 1000) break;
+    }
+    return out;
+  }
+
+  const [viewsRes, menuRes, savesRes, socialRes, dates] = await Promise.all([
+    events('view'),
+    events('menu_click'),
+    supabase.from('spoot_list_places').select('id', { count: 'exact', head: true }).eq('place_id', placeId),
+    supabase.from('social_posts').select('source').eq('place_id', placeId).in('source', ['tiktok', 'instagram']),
+    viewDates(),
   ]);
 
   const socialRows = socialRes.data ?? [];
-  const saves_tiktok = socialRows.filter(r => r.source === 'tiktok').length;
-  const saves_instagram = socialRows.filter(r => r.source === 'instagram').length;
-
-  const dayCounts: Record<number, number> = { 0: 0, 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0 };
-  (bestDaysRes.data ?? []).forEach(r => {
-    const dow = new Date(r.created_at).getDay();
-    dayCounts[dow] = (dayCounts[dow] ?? 0) + 1;
-  });
-  const best_days = DAY_NAMES.map((day, i) => ({ day, count: dayCounts[i] ?? 0 }));
+  const dayCounts = [0, 0, 0, 0, 0, 0, 0];
+  dates.forEach(d => { dayCounts[new Date(d).getDay()]++; });
 
   return {
-    views_30d: viewsRes.count ?? 0,
-    menu_clicks_30d: menuRes.count ?? 0,
+    views: viewsRes.count ?? 0,
+    menu_clicks: menuRes.count ?? 0,
     saves_total: savesRes.count ?? 0,
-    saves_tiktok,
-    saves_instagram,
-    best_days,
+    saves_tiktok: socialRows.filter(r => r.source === 'tiktok').length,
+    saves_instagram: socialRows.filter(r => r.source === 'instagram').length,
+    best_days: DAY_NAMES.map((day, i) => ({ day, count: dayCounts[i] })),
   };
 }
 
-/** Pobiera 20 ostatnich opinii z display_name z profiles. */
+/** Pobiera opinie lokalu (najnowsze pierwsze) z nazwą autora i odpowiedzią właściciela. */
 export async function fetchReviews(
   supabase: SupabaseClient,
   placeId: string
 ): Promise<Review[]> {
-  const { data: ratingRows } = await supabase
-    .from('ratings')
-    .select('id, user_id, rating, opinion, tags, created_at')
-    .eq('place_id', placeId)
-    .order('created_at', { ascending: false })
-    .limit(20);
+  const [{ data: ratingRows }, { data: replyRows }] = await Promise.all([
+    supabase
+      .from('ratings')
+      .select('id, user_id, rating, opinion, tags, created_at')
+      .eq('place_id', placeId)
+      .order('created_at', { ascending: false })
+      .limit(500),
+    supabase.from('rating_replies').select('rating_id, body').eq('place_id', placeId),
+  ]);
 
   if (!ratingRows || ratingRows.length === 0) return [];
 
@@ -269,6 +269,7 @@ export async function fetchReviews(
   const nameMap = Object.fromEntries(
     (profiles ?? []).map(p => [p.id, p.display_name])
   );
+  const replyMap = Object.fromEntries((replyRows ?? []).map(r => [r.rating_id, r.body as string]));
 
   return ratingRows.map(r => ({
     id: r.id,
@@ -278,6 +279,7 @@ export async function fetchReviews(
     opinion: r.opinion ?? null,
     tags: r.tags ?? [],
     created_at: r.created_at,
+    reply: replyMap[r.id] ?? null,
   }));
 }
 
