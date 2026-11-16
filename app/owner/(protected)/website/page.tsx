@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { useOwnerVenue } from '@/lib/owner-client';
 import { Card, CardTitle, Eyebrow, Loading, PageHeader, inputCls, labelCls } from '@/components/owner/ui';
 import {
-  SETUP_FEE, WEBSITE_PACKAGES, isValidSlug, quote, slugify, zl,
+  SETUP_FEE, WEBSITE_PACKAGES, isValidSlug, quote, slugify, slugTyping, zl,
   type WebsiteBilling, type WebsitePackage,
 } from '@/lib/website-packages';
 
@@ -25,6 +25,12 @@ const SOON = [
 
 const optionCls = (on: boolean) =>
   `flex cursor-pointer gap-3 rounded-2xl border-2 bg-spoot-input p-4 ${on ? 'border-spoot-ink' : 'border-transparent hover:border-spoot-line'}`;
+
+const CHECK = (
+  <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="mt-0.5 shrink-0 text-spoot-green">
+    <path d="M5 12.5l4.5 4.5L19 7.5" />
+  </svg>
+);
 
 const pkgLabel = (id: WebsitePackage) => WEBSITE_PACKAGES.find(p => p.id === id)?.label ?? id;
 
@@ -69,7 +75,7 @@ export default function WebsitePage() {
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     if (!venue || !userId) return;
-    if (!slugOk) { setError('Adres: 3–40 znaków, małe litery, cyfry i myślniki między słowami.'); return; }
+    if (!slugOk) { setError('Adres strony: 3–40 znaków, tylko małe litery, cyfry i myślnik między słowami.'); return; }
     setSubmitting(true);
     setError('');
     const { error } = await supabase.from('website_requests').insert({
@@ -157,23 +163,30 @@ export default function WebsitePage() {
           <Card>
             <fieldset className="flex flex-col gap-3">
               <legend className="pb-3"><CardTitle>Wybierz pakiet</CardTitle></legend>
-              <div className="grid grid-cols-[repeat(auto-fit,minmax(220px,1fr))] gap-3">
+              {/* Dwa pakiety z ceną obok siebie, strona na zamówienie pod nimi na całą szerokość. */}
+              <div className="grid grid-cols-[repeat(auto-fit,minmax(260px,1fr))] gap-3">
                 {WEBSITE_PACKAGES.map(p => (
-                  <label key={p.id} className={`${optionCls(pkg === p.id)} flex-col`}>
-                    <span className="flex items-center gap-2">
-                      <input type="radio" name="package" checked={pkg === p.id} onChange={() => setPkg(p.id)} className="h-5 w-5 accent-spoot-ink" />
-                      <span className="grow font-display text-base font-bold">{p.label}</span>
-                      {p.id === 'plus' && <span className="rounded-full bg-spoot-orange px-2 py-0.5 font-display text-[10px] font-bold tracking-[0.5px]">POLECANY</span>}
+                  <label key={p.id} className={`${optionCls(pkg === p.id)} flex-col gap-4 !p-5 ${p.monthly ? '' : 'col-span-full'}`}>
+                    <span className="flex flex-col gap-1">
+                      <span className="flex items-center gap-2">
+                        <input type="radio" name="package" checked={pkg === p.id} onChange={() => setPkg(p.id)} className="h-5 w-5 shrink-0 accent-spoot-ink" />
+                        <span className="grow font-display text-lg font-bold leading-6">{p.label}</span>
+                        {p.id === 'plus' && <span className="rounded-full bg-spoot-orange px-2 py-0.5 font-display text-[10px] font-bold tracking-[0.5px]">POLECANY</span>}
+                      </span>
+                      <span className="text-[13px] text-spoot-ink2">{p.tagline}</span>
                     </span>
-                    <span className="flex flex-col">
-                      <span className="font-display text-[26px] font-bold leading-[34px]">{p.monthly ? zl(p.monthly[billing]) : 'Wycena'}</span>
+                    <span className="flex flex-wrap items-baseline gap-x-2 border-y border-spoot-line py-3">
+                      <span className="font-display text-[28px] font-bold leading-9">{p.monthly ? zl(p.monthly[billing]) : 'Wycena indywidualna'}</span>
                       <span className="text-xs text-spoot-ink2">
-                        {!p.monthly ? 'indywidualna, po rozmowie' : billing === 'yearly' ? 'netto / mies., płatne z góry za 12 miesięcy' : 'netto / miesiąc'}
+                        {!p.monthly ? 'ustalamy po rozmowie' : billing === 'yearly' ? 'netto / mies., płatne z góry za rok' : 'netto / miesiąc'}
                       </span>
                     </span>
-                    <ul className="flex flex-col gap-1.5 text-[13px] text-spoot-ink2">
-                      {p.features.map(f => <li key={f}>{f}</li>)}
-                    </ul>
+                    <span className="flex flex-col gap-2">
+                      {p.includes && <span className="font-display text-[13px] font-bold">{p.includes}</span>}
+                      <ul className={`grid gap-x-6 gap-y-2 ${p.monthly ? '' : 'grid-cols-[repeat(auto-fit,minmax(220px,1fr))]'}`}>
+                        {p.features.map(f => <li key={f} className="flex gap-2">{CHECK}<span>{f}</span></li>)}
+                      </ul>
+                    </span>
                   </label>
                 ))}
               </div>
@@ -190,7 +203,9 @@ export default function WebsitePage() {
                   <span className="font-body text-sm font-normal normal-case tracking-normal text-spoot-ink2">spootme.pl/</span>
                   <input
                     value={slug}
-                    onChange={e => setSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '-'))}
+                    onChange={e => setSlug(slugTyping(e.target.value))}
+                    onBlur={() => setSlug(s => slugify(s))}
+                    autoCapitalize="none" autoCorrect="off" spellCheck={false}
                     required maxLength={40} aria-invalid={slug !== '' && !slugOk}
                     className={inputCls}
                   />
@@ -201,7 +216,13 @@ export default function WebsitePage() {
                 <input type="tel" value={phone} onChange={e => setPhone(e.target.value)} maxLength={30} placeholder="np. 600 100 200" className={inputCls} />
               </label>
             </div>
-            <span className="text-xs text-spoot-ink2">Adres potwierdzimy przed uruchomieniem strony — jeśli będzie zajęty, zaproponujemy inny.</span>
+            <span className={`text-xs ${slug !== '' && !slugOk ? 'font-bold text-spoot-danger' : 'text-spoot-ink2'}`}>
+              Tylko małe litery bez polskich znaków, cyfry i myślnik między słowami, 3–40 znaków — np. bistro-zielnik. Spacje i inne znaki zamieniamy na myślnik.
+            </span>
+            <span className="text-xs text-spoot-ink2">
+              Adres potwierdzimy przed uruchomieniem strony — jeśli będzie zajęty, zaproponujemy inny.
+              {pkg !== 'wizytowka' && ' Własną domenę ustalimy z Tobą, gdy się odezwiemy.'}
+            </span>
           </Card>
 
           <Card className="flex flex-col gap-3">
@@ -253,7 +274,7 @@ export default function WebsitePage() {
           {error && <p role="alert" className="rounded-xl bg-spoot-tint px-3 py-2.5 text-spoot-ink">{error}</p>}
           <button
             type="submit"
-            disabled={submitting || !slug}
+            disabled={submitting || !slugOk}
             className="h-12 rounded-2xl bg-spoot-orange font-display font-bold text-spoot-ink transition-opacity hover:opacity-90 disabled:opacity-50"
           >
             {submitting ? 'Wysyłam…' : custom ? 'Poproś o wycenę' : 'Wyślij prośbę'}
