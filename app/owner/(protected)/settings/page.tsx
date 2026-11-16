@@ -29,6 +29,8 @@ export default function SettingsPage() {
   const [venueId, setVenueId] = useState<string | null>(null);
   const [placeId, setPlaceId] = useState<string | null>(null);
   const [photos, setPhotos] = useState<VenuePhoto[]>([]);
+  // Zdjęcia z Google (place_photos, source='google') — import, właściciel ich nie edytuje.
+  const [googlePhotos, setGooglePhotos] = useState<{ id: string; url: string }[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
@@ -68,11 +70,13 @@ export default function SettingsPage() {
       setHours((vd.hours as Hours) ?? DEFAULT_HOURS);
       setReservationNotif(vd.reservation_notifications ?? true);
 
-      const [{ data: photoRows }, { data: pinRow }] = await Promise.all([
+      const [{ data: photoRows }, { data: pinRow }, { data: googleRows }] = await Promise.all([
         supabase.from('venue_photos').select('*').eq('owner_id', user.id).order('position', { ascending: true }),
         supabase.from('venue_staff_pins').select('pin').eq('venue_id', vd.id).maybeSingle(),
+        supabase.from('place_photos').select('id, url').eq('place_id', vd.place_id).eq('source', 'google').order('position'),
       ]);
       setPhotos((photoRows ?? []) as VenuePhoto[]);
+      setGooglePhotos(googleRows ?? []);
       setStaffPin(pinRow?.pin ?? '');
       setSavedPin(pinRow?.pin ?? '');
     } finally {
@@ -168,8 +172,9 @@ export default function SettingsPage() {
       <Card className="flex flex-col gap-4">
         <div className="flex flex-wrap items-center gap-3">
           <div className="grow"><CardTitle>Zdjęcia i profil</CardTitle></div>
-          <span className="text-xs text-spoot-ink2">{photos.length}/{MAX_PHOTOS} · pierwsze zdjęcie to okładka</span>
+          <span className="text-xs text-spoot-ink2">{photos.length}/{MAX_PHOTOS} · Twoje zdjęcia goście widzą jako pierwsze</span>
         </div>
+        <Eyebrow>Twoje zdjęcia</Eyebrow>
         <div className="grid grid-cols-[repeat(auto-fill,minmax(160px,1fr))] gap-3">
           {photos.map((photo, i) => (
             <div key={photo.id} className="relative h-40 overflow-hidden rounded-2xl bg-spoot-chip">
@@ -194,6 +199,22 @@ export default function SettingsPage() {
             </label>
           )}
         </div>
+        {googlePhotos.length > 0 && (
+          <div className="flex flex-col gap-3 border-t border-spoot-line pt-4">
+            <div className="flex flex-col gap-0.5">
+              <Eyebrow>Z Google · {googlePhotos.length}</Eyebrow>
+              <span className="text-xs text-spoot-ink2">Pobrane z wizytówki lokalu w Google. Goście widzą je w Spoot po Twoich zdjęciach i zdjęciach z ocen.</span>
+            </div>
+            <div className="grid grid-cols-[repeat(auto-fill,minmax(160px,1fr))] gap-3">
+              {googlePhotos.map((photo, i) => (
+                <div key={photo.id} className="h-40 overflow-hidden rounded-2xl bg-spoot-chip">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={photo.url} alt={`Zdjęcie z Google ${i + 1}`} className="h-full w-full object-cover" />
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
         <label className={labelCls}>
           Opis
           <textarea value={description} onChange={e => setDescription(e.target.value)} rows={4} placeholder="Opisz swoją restaurację..." className={`${inputCls} h-auto resize-y py-3`} />
