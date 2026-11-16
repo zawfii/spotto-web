@@ -10,19 +10,33 @@ export default async function DashboardPage() {
   if (!ctx) return null;
   const { supabase, venue, base } = ctx;
 
-  const [stats, analytics, reviews] = await Promise.all([
+  const [stats, analytics, reviews, submissionsRes, promoRes] = await Promise.all([
     fetchStats(supabase, venue.place_id),
     fetchAnalytics(supabase, venue.place_id),
     fetchReviews(supabase, venue.place_id),
+    supabase.from('deals').select('id', { count: 'exact', head: true })
+      .eq('place_id', venue.place_id).eq('status', 'pending').eq('source', 'user'),
+    supabase.from('promotions').select('status, active_until')
+      .eq('place_id', venue.place_id).order('created_at', { ascending: false }).limit(5),
   ]);
+  const submissions = submissionsRes.count ?? 0;
+  const promos = promoRes.data ?? [];
+  const activePromo = promos.find(p => p.status === 'approved' && p.active_until && new Date(p.active_until) > new Date());
+  const pendingPromo = promos.find(p => p.status === 'pending');
 
   const today = new Date().toLocaleDateString('pl-PL', { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'Europe/Warsaw' });
   const quickActions = [
     { label: 'Dodaj zdjęcie', href: `${base}/settings` },
     { label: 'Edytuj opis i godziny', href: `${base}/settings` },
     { label: 'Dodaj danie do menu', href: `${base}/menu` },
-    { label: 'Zobacz statystyki', href: `${base}/stats` },
+    { label: 'Dodaj ofertę dnia', href: `${base}/deals` },
+    { label: 'Skanuj kartę gościa', href: `${base}/loyalty` },
   ];
+  const promoText = activePromo
+    ? { title: 'Wyróżnienie aktywne', sub: `Do ${new Date(activePromo.active_until!).toLocaleDateString('pl-PL', { day: 'numeric', month: 'long' })}` }
+    : pendingPromo
+      ? { title: 'Prośba w toku', sub: 'Wyróżnienie czeka na zatwierdzenie' }
+      : { title: 'Wyróżnij restaurację', sub: 'Zwiększ widoczność w Spoot' };
 
   return (
     <>
@@ -80,15 +94,38 @@ export default async function DashboardPage() {
           </Card>
         </div>
 
-        <Card className="flex min-w-0 flex-[1_1_320px] flex-col pb-2">
-          <div className="pb-3"><CardTitle>Szybkie akcje</CardTitle></div>
-          {quickActions.map(a => (
-            <Link key={a.label} href={a.href} className="flex min-h-12 items-center gap-3 border-t border-spoot-line font-display font-semibold hover:text-spoot-green">
-              <span className="grow">{a.label}</span>
-              <NavIcon>{NAV_ICONS.chevron}</NavIcon>
+        <div className="flex min-w-0 flex-[1_1_320px] flex-col gap-6">
+          <Link href={`${base}/promote`} className="flex items-center gap-4 rounded-2xl bg-spoot-green p-5 text-white hover:bg-spoot-ink">
+            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-spoot-orange text-spoot-ink">
+              <NavIcon>{NAV_ICONS.rocket}</NavIcon>
+            </span>
+            <span className="flex grow flex-col gap-0.5">
+              <span className="font-display text-base font-bold">{promoText.title}</span>
+              <span className="text-[13px] text-white/80">{promoText.sub}</span>
+            </span>
+            <NavIcon>{NAV_ICONS.chevron}</NavIcon>
+          </Link>
+
+          {submissions > 0 && (
+            <Link href={`${base}/deals`} className="flex flex-col gap-1 rounded-2xl bg-spoot-tint p-5 hover:bg-[#ffd8bf]">
+              <Eyebrow>Czeka na Ciebie</Eyebrow>
+              <span className="font-display text-base font-bold">
+                {submissions === 1 ? 'Gość zgłosił ofertę dnia' : `Goście zgłosili oferty dnia: ${submissions}`}
+              </span>
+              <span className="text-[13px] text-spoot-ink2">Sprawdź i zatwierdź albo odrzuć w zakładce Oferty.</span>
             </Link>
-          ))}
-        </Card>
+          )}
+
+          <Card className="flex flex-col pb-2">
+            <div className="pb-3"><CardTitle>Szybkie akcje</CardTitle></div>
+            {quickActions.map(a => (
+              <Link key={a.label} href={a.href} className="flex min-h-12 items-center gap-3 border-t border-spoot-line font-display font-semibold hover:text-spoot-green">
+                <span className="grow">{a.label}</span>
+                <NavIcon>{NAV_ICONS.chevron}</NavIcon>
+              </Link>
+            ))}
+          </Card>
+        </div>
       </div>
     </>
   );

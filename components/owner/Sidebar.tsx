@@ -9,9 +9,12 @@ import { NavIcon, NAV_ICONS } from './ui';
 const NAV = [
   { path: '', label: 'Pulpit', icon: NAV_ICONS.home },
   { path: '/menu', label: 'Menu', icon: NAV_ICONS.menu },
+  { path: '/deals', label: 'Oferty', icon: NAV_ICONS.tag },
+  { path: '/loyalty', label: 'Pieczątki', icon: NAV_ICONS.card },
   { path: '/stats', label: 'Statystyki', icon: NAV_ICONS.stats },
   { path: '/reviews', label: 'Opinie', icon: NAV_ICONS.star },
   { path: '/settings', label: 'Profil lokalu', icon: NAV_ICONS.store },
+  { path: '/promote', label: 'Wyróżnienie', icon: NAV_ICONS.rocket },
 ];
 
 type Props = { base: string; venueName: string; venueMeta: string; userEmail: string };
