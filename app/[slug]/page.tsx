@@ -12,17 +12,23 @@ import { HoursList, OpenStatus, type Hours } from './SiteClient';
 // przy każdym wejściu czyta te same tabele, które zapisuje panel — zmiana ceny czy godzin widać od razu.
 // Świeżość danych zapewnia klient w lib/supabase.ts (fetch z cache: 'no-store').
 
-const ACCENT = '#8E1B3A';
-const INK = '#1B1A19';
-const INK2 = '#4A4640';
-const STONE = '#F1EFEA';
-const BLOCK = '#DAD6CD';
-const HAIR = 'rgba(27,26,25,0.18)';
-const DISPLAY = "'Bricolage Grotesque', system-ui, sans-serif";
+// Identyfikacja Bistro Pokazowego: granat, krem, pomarańcz, geometryczny znak, krój w duchu Futury.
+// ponytail: jedna paleta i jeden znak w kodzie; gdy dojdzie druga strona — motyw per lokal (kolumna w website_requests).
+const NAVY = '#0A1A3F';
+const NAVY2 = '#12265A';
+const CREAM = '#F8E6B8';
+const PAPER = '#FBF3DC';
+const ORANGE = '#E8431B';
+const SOFT = 'rgba(248,230,184,0.78)'; // krem na granacie, tekst drugorzędny
+const INK2 = 'rgba(10,26,63,0.78)'; // granat na kremie, tekst drugorzędny
+const HAIR_DARK = 'rgba(248,230,184,0.28)';
+const FONT = "'Jost', 'Futura', 'Century Gothic', system-ui, sans-serif";
+const PAD = 'clamp(64px, 9vw, 128px)';
+const SLANT = 'clamp(28px, 5vw, 72px)';
 
 type Props = { params: { slug: string } };
 
-export const viewport: Viewport = { width: 'device-width', initialScale: 1, viewportFit: 'cover', themeColor: STONE };
+export const viewport: Viewport = { width: 'device-width', initialScale: 1, viewportFit: 'cover', themeColor: NAVY };
 
 type Deal = {
   id: string; dish_name: string; description: string | null; price: number; original_price: number | null;
@@ -99,6 +105,27 @@ function dealWhen(d: Deal) {
 // „42 zł”, a gdy są grosze — „42,50 zł”.
 const price = (n: number) => (Number.isInteger(Number(n)) ? `${Number(n)} zł` : formatPrice(n));
 
+// Znak lokalu: dwie płaszczyzny i koło. Kolory z palety, więc działa na granacie i na pomarańczu.
+function Mark({ size, shape = CREAM, dot = ORANGE }: { size: number | string; shape?: string; dot?: string }) {
+  return (
+    <svg aria-hidden="true" viewBox="0 0 100 100" style={{ width: size, height: size, display: 'block', flexShrink: 0 }}>
+      <polygon points="4,0 62,22 62,36 38,36 38,90 4,100" fill={shape} />
+      <circle cx="52" cy="54" r="14" fill={dot} />
+      <polygon points="58,44 96,34 96,100 58,88" fill={shape} />
+    </svg>
+  );
+}
+
+// Nagłówek sekcji jak podpis w logotypie: wersaliki, szeroko, z numerem.
+function Heading({ n, children, color, sub, half }: { n: string; children: string; color: string; sub: string; half?: boolean }) {
+  return (
+    <h2 style={{ margin: 0, display: 'flex', alignItems: 'baseline', gap: 'clamp(12px, 2vw, 24px)', color, fontWeight: 800, fontSize: half ? 'clamp(40px, 5.4vw, 72px)' : 'clamp(44px, 9vw, 120px)', lineHeight: 0.9, letterSpacing: '0.02em', textTransform: 'uppercase' }}>
+      <span aria-hidden="true" style={{ fontWeight: 500, fontSize: 'clamp(18px, 2vw, 24px)', letterSpacing: '0.2em', color: sub }}>{n}</span>
+      {children}
+    </h2>
+  );
+}
+
 export default async function SitePage({ params }: Props) {
   const site = await getSite(params.slug);
   if (!site) notFound();
@@ -110,138 +137,164 @@ export default async function SitePage({ params }: Props) {
   if (site.menu.length) nav.push(['#menu', 'Menu']);
   if (site.hours) nav.push(['#godziny', 'Godziny']);
   nav.push(['#kontakt', 'Kontakt']);
+  let no = 0;
+  const next = () => String(++no).padStart(2, '0');
 
   return (
-    <main style={{ minHeight: '100vh', background: STONE, color: INK, fontFamily: "'Instrument Sans', system-ui, sans-serif", fontSize: 16, lineHeight: 1.5 }}>
+    <main style={{ minHeight: '100vh', background: NAVY, color: CREAM, fontFamily: FONT, fontSize: 17, lineHeight: 1.5, overflowX: 'clip' }}>
       {/* ponytail: zwykły <link> zamiast next/font — next/font 14.2 wywraca build na części rodzin z Google Fonts. */}
       {/* eslint-disable-next-line @next/next/no-page-custom-font */}
-      <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,700&family=Instrument+Sans:wght@400;600;700&display=swap" />
+      <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Jost:wght@400;500;600;800&display=swap" />
 
-      <header style={{ ...s.wrap, padding: '12px 24px', display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '4px 24px' }}>
-        <a href="#top" style={{ ...s.navLink, flexGrow: 1, fontFamily: DISPLAY, fontWeight: 700, fontSize: 20 }}>{site.name}</a>
-        <nav aria-label="Sekcje strony" style={{ display: 'flex', flexWrap: 'wrap', gap: '0 20px' }}>
+      {/* ── Granat: nagłówek i wejście ── */}
+      <header style={{ ...s.wrap, padding: '16px 24px', display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '4px 28px' }}>
+        <a href="#top" style={{ ...s.navLink, flexGrow: 1, gap: 12, fontWeight: 800, fontSize: 17, letterSpacing: '0.06em' }}>
+          <Mark size={32} />
+          {site.name}
+        </a>
+        <nav aria-label="Sekcje strony" style={{ display: 'flex', flexWrap: 'wrap', gap: '0 24px' }}>
           {nav.map(([href, label]) => <a key={href} href={href} style={s.navLink}>{label}</a>)}
         </nav>
       </header>
 
-      <section id="top" style={{ ...s.wrap, padding: '0 24px', display: 'flex', flexWrap: 'wrap', gap: 16 }}>
-        <div style={{ flex: '3 1 340px', minWidth: 0, boxSizing: 'border-box', padding: 'clamp(28px, 6vw, 72px)', borderRadius: 8, background: ACCENT, color: STONE, display: 'flex', flexDirection: 'column', gap: 20 }}>
-          {site.eyebrow && <span style={{ fontWeight: 600, fontSize: 13, letterSpacing: 1.4, textTransform: 'uppercase' }}>{site.eyebrow}</span>}
-          <h1 style={{ margin: 0, fontFamily: DISPLAY, fontWeight: 700, fontSize: 'clamp(52px, 10vw, 128px)', lineHeight: 0.92, letterSpacing: '-0.02em', overflowWrap: 'anywhere' }}>{site.name}</h1>
-          {site.description && <p style={{ margin: 0, maxWidth: 520, fontSize: 19, lineHeight: 1.45 }}>{site.description}</p>}
+      <section id="top" style={{ ...s.wrap, padding: `clamp(32px, 6vw, 88px) 24px ${PAD}`, display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 'clamp(32px, 5vw, 72px)' }}>
+        <div style={{ flex: '3 1 340px', minWidth: 0, display: 'flex', flexDirection: 'column', gap: 24 }}>
+          <h1 style={{ margin: 0, fontWeight: 800, fontSize: 'clamp(46px, 8.4vw, 112px)', lineHeight: 0.9, letterSpacing: '0.01em', textTransform: 'uppercase', overflowWrap: 'anywhere' }}>{site.name}</h1>
+          {site.eyebrow && (
+            <p style={{ margin: 0, maxWidth: 560, display: 'flex', alignItems: 'center', gap: 16, fontWeight: 500, fontSize: 15, letterSpacing: '0.32em', textTransform: 'uppercase' }}>
+              <span aria-hidden="true" style={{ flex: '1 1 24px', height: 1.5, background: CREAM }} />
+              {site.eyebrow}
+              <span aria-hidden="true" style={{ flex: '1 1 24px', height: 1.5, background: CREAM }} />
+            </p>
+          )}
+          {site.description && <p style={{ margin: 0, maxWidth: 520, fontSize: 21, lineHeight: 1.4, color: SOFT }}>{site.description}</p>}
           {site.hours && <OpenStatus hours={site.hours} />}
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, marginTop: 8 }}>
-            {site.menu.length > 0 && <a href="#menu" style={{ ...s.button, background: STONE, color: INK }}>Zobacz menu</a>}
-            {tel && <a href={tel} style={{ ...s.button, border: `1.5px solid ${STONE}` }}>Zadzwoń</a>}
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12 }}>
+            {site.menu.length > 0 && <a href="#menu" style={{ ...s.button, background: ORANGE, color: NAVY }}>Zobacz menu</a>}
+            {tel && <a href={tel} style={{ ...s.button, border: `2px solid ${CREAM}`, color: CREAM }}>Zadzwoń</a>}
           </div>
         </div>
-        {site.photos[0] && (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={site.photos[0]} alt={`Zdjęcie: ${site.name}`} style={{ flex: '2 1 300px', minWidth: 0, minHeight: 300, maxHeight: 640, borderRadius: 8, objectFit: 'cover', background: BLOCK }} />
-        )}
+        <div style={{ flex: '2 1 220px', minWidth: 0, display: 'flex', justifyContent: 'center' }}>
+          <Mark size="min(100%, 440px)" />
+        </div>
       </section>
 
-      {site.deals.length > 0 && (
-        <section id="oferty" style={s.section}>
-          <h2 style={s.h2}>Oferty</h2>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 300px), 1fr))', gap: 16 }}>
-            {site.deals.map((d) => (
-              <article key={d.id} style={{ padding: 24, borderRadius: 8, background: '#fff', display: 'flex', flexDirection: 'column', gap: 6 }}>
-                <span style={{ fontWeight: 600, fontSize: 13, letterSpacing: 1.2, textTransform: 'uppercase', color: ACCENT }}>{dealWhen(d)}</span>
-                <h3 style={{ margin: 0, fontFamily: DISPLAY, fontWeight: 700, fontSize: 26, lineHeight: 1.15 }}>{d.dish_name}</h3>
-                <p style={{ margin: 0, flexGrow: 1, color: INK2 }}>{d.description}</p>
-                <p style={{ margin: '12px 0 0', display: 'flex', alignItems: 'baseline', gap: 12, fontVariantNumeric: 'tabular-nums' }}>
-                  <span style={{ fontFamily: DISPLAY, fontWeight: 700, fontSize: 32, lineHeight: 1 }}>{price(d.price)}</span>
-                  {d.original_price != null && Number(d.original_price) > Number(d.price) && (
-                    <s style={{ color: INK2 }}><span style={s.srOnly}>zamiast </span>{price(d.original_price)}</s>
-                  )}
-                </p>
-              </article>
-            ))}
-          </div>
-        </section>
+      {site.photos[0] && (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={site.photos[0]} alt={`Zdjęcie: ${site.name}`} style={{ display: 'block', width: '100%', height: 'clamp(260px, 48vw, 620px)', objectFit: 'cover', background: NAVY2 }} />
       )}
 
-      {site.menu.length > 0 && (
-        <section id="menu" style={{ ...s.section, gap: 8 }}>
-          <h2 style={s.h2}>Menu</h2>
-          {site.menu.map((sec) => (
-            <div key={sec.id} style={{ display: 'flex', flexWrap: 'wrap', gap: '0 48px', paddingTop: 32 }}>
-              <h3 style={{ flex: '1 1 200px', margin: 0, padding: '16px 0 8px', borderTop: `2px solid ${INK}`, fontFamily: DISPLAY, fontWeight: 700, fontSize: 24, lineHeight: 1.2 }}>{sec.name}</h3>
-              <ul style={{ flex: '3 1 420px', minWidth: 0, listStyle: 'none', margin: 0, padding: 0, borderTop: `2px solid ${INK}` }}>
-                {sec.items.map((it) => (
-                  <li key={it.id} style={{ display: 'flex', alignItems: 'flex-start', gap: 16, padding: '16px 0', borderBottom: `1px solid ${HAIR}` }}>
-                    {it.image_url && <DishThumb src={it.image_url} />}
-                    <div style={{ flexGrow: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 2 }}>
-                      <span style={{ fontWeight: 600, fontSize: 18, lineHeight: 1.3 }}>
-                        {it.name}
-                        {it.is_vege && <span style={{ marginLeft: 8, padding: '2px 8px', borderRadius: 999, background: '#DDE9DD', color: '#1F5B3A', fontSize: 12, fontWeight: 700, verticalAlign: 2 }}>wege</span>}
-                      </span>
-                      {it.description && <span style={{ color: INK2 }}>{it.description}</span>}
-                      {!!it.allergens?.length && <span style={{ fontSize: 13, color: INK2 }}>Alergeny: {allergenLabels(it.allergens)}</span>}
-                    </div>
-                    {Number(it.price) > 0 && (
-                      <span style={{ flexShrink: 0, fontWeight: 700, fontSize: 18, lineHeight: 1.3, whiteSpace: 'nowrap', fontVariantNumeric: 'tabular-nums' }}>{price(it.price)}</span>
+      {/* ── Pomarańcz: oferty. Skośna krawędź jak płaszczyzny w znaku. ── */}
+      {site.deals.length > 0 && (
+        <div id="oferty" style={{ background: ORANGE, color: NAVY, clipPath: `polygon(0 ${SLANT}, 100% 0, 100% 100%, 0 100%)`, marginTop: `calc(-1 * ${SLANT})` }}>
+          <section style={{ ...s.section, paddingTop: `calc(${PAD} + ${SLANT})` }}>
+            <Heading n={next()} color={NAVY} sub={NAVY}>Oferty</Heading>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 320px), 1fr))', gap: 20 }}>
+              {site.deals.map((d) => (
+                <article key={d.id} style={{ padding: 'clamp(24px, 3vw, 40px)', background: NAVY, color: CREAM, display: 'flex', flexDirection: 'column', gap: 10 }}>
+                  <span style={{ fontWeight: 500, fontSize: 14, letterSpacing: '0.22em', textTransform: 'uppercase' }}>{dealWhen(d)}</span>
+                  <h3 style={{ margin: 0, fontWeight: 800, fontSize: 'clamp(26px, 3vw, 36px)', lineHeight: 1.05, textTransform: 'uppercase' }}>{d.dish_name}</h3>
+                  <p style={{ margin: 0, flexGrow: 1, color: SOFT }}>{d.description}</p>
+                  <p style={{ margin: '16px 0 0', display: 'flex', alignItems: 'center', gap: 16, fontVariantNumeric: 'tabular-nums' }}>
+                    <span style={{ minWidth: 104, height: 104, padding: '0 14px', boxSizing: 'border-box', borderRadius: 999, background: ORANGE, color: NAVY, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, fontSize: 28, whiteSpace: 'nowrap' }}>{price(d.price)}</span>
+                    {d.original_price != null && Number(d.original_price) > Number(d.price) && (
+                      <s style={{ color: SOFT, fontSize: 20 }}><span style={s.srOnly}>zamiast </span>{price(d.original_price)}</s>
                     )}
-                  </li>
-                ))}
-              </ul>
+                  </p>
+                </article>
+              ))}
             </div>
-          ))}
-        </section>
+          </section>
+        </div>
+      )}
+
+      {/* ── Krem: karta, jak papierowe menu na stoliku ── */}
+      {site.menu.length > 0 && (
+        <div id="menu" style={{ background: PAPER, color: NAVY }}>
+          <section style={s.section}>
+            <Heading n={next()} color={NAVY} sub={ORANGE}>Menu</Heading>
+            {site.menu.map((sec) => (
+              <div key={sec.id} style={{ display: 'flex', flexWrap: 'wrap', gap: '8px 56px', paddingTop: 16 }}>
+                <h3 style={{ flex: '1 1 220px', margin: 0, padding: '18px 0 0', borderTop: `3px solid ${NAVY}`, fontWeight: 800, fontSize: 24, lineHeight: 1.15, letterSpacing: '0.06em', textTransform: 'uppercase' }}>{sec.name}</h3>
+                <ul style={{ flex: '3 1 440px', minWidth: 0, listStyle: 'none', margin: 0, padding: 0, borderTop: `3px solid ${NAVY}` }}>
+                  {sec.items.map((it) => (
+                    <li key={it.id} style={{ display: 'flex', alignItems: 'flex-start', gap: 16, padding: '18px 0', borderBottom: '1px solid rgba(10,26,63,0.2)' }}>
+                      {it.image_url && <DishThumb src={it.image_url} />}
+                      <div style={{ flexGrow: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 2 }}>
+                        <span style={{ fontWeight: 600, fontSize: 21, lineHeight: 1.25 }}>
+                          {it.name}
+                          {it.is_vege && <span style={{ marginLeft: 10, padding: '1px 8px', border: `1.5px solid ${NAVY}`, borderRadius: 999, fontSize: 12, fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', verticalAlign: 3 }}>wege</span>}
+                        </span>
+                        {it.description && <span style={{ color: INK2 }}>{it.description}</span>}
+                        {!!it.allergens?.length && <span style={{ fontSize: 14, color: INK2 }}>Alergeny: {allergenLabels(it.allergens)}</span>}
+                      </div>
+                      {Number(it.price) > 0 && (
+                        <span style={{ flexShrink: 0, fontWeight: 800, fontSize: 21, lineHeight: 1.25, whiteSpace: 'nowrap', fontVariantNumeric: 'tabular-nums' }}>{price(it.price)}</span>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </section>
+        </div>
       )}
 
       {site.photos.length > 1 && (
-        <section style={s.section}>
-          <h2 style={s.h2}>Galeria</h2>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 240px), 1fr))', gap: 16 }}>
+        <div style={{ background: PAPER, padding: '0 24px', paddingBottom: PAD }}>
+          <div style={{ ...s.wrap, display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 260px), 1fr))', gap: 12 }}>
             {site.photos.slice(1).map((url) => (
               // eslint-disable-next-line @next/next/no-img-element
-              <img key={url} src={url} alt={`Zdjęcie: ${site.name}`} loading="lazy" style={{ width: '100%', height: 280, borderRadius: 8, objectFit: 'cover', background: BLOCK }} />
+              <img key={url} src={url} alt={`Zdjęcie: ${site.name}`} loading="lazy" style={{ width: '100%', height: 320, objectFit: 'cover', background: CREAM }} />
             ))}
           </div>
-        </section>
+        </div>
       )}
 
-      <section style={{ ...s.section, paddingBottom: 'clamp(56px, 8vw, 104px)', flexDirection: 'row', flexWrap: 'wrap', gap: 48 }}>
-        {site.hours && (
-          <div id="godziny" style={s.column}>
-            <h2 style={s.h2}>Godziny</h2>
-            <HoursList hours={site.hours} />
-          </div>
-        )}
-        <div id="kontakt" style={s.column}>
-          <h2 style={s.h2}>Kontakt</h2>
-          <address style={{ fontStyle: 'normal', borderTop: `2px solid ${INK}`, display: 'flex', flexDirection: 'column' }}>
-            {site.address && <span style={s.contactRow}>{[site.address, site.district].filter(Boolean).join(', ')}</span>}
-            {tel && <a href={tel} style={{ ...s.contactRow, fontWeight: 600 }}>{site.phone}</a>}
-            {site.instagram && (
-              <a href={`https://instagram.com/${encodeURIComponent(site.instagram)}`} target="_blank" rel="noopener noreferrer" style={{ ...s.contactRow, fontWeight: 600 }}>
-                Instagram: @{site.instagram}
-              </a>
+      {/* ── Granat: godziny i kontakt ── */}
+      <div style={{ background: PAPER }}>
+        <div style={{ background: NAVY, clipPath: `polygon(0 0, 100% ${SLANT}, 100% 100%, 0 100%)` }}>
+          <section style={{ ...s.section, paddingTop: `calc(${PAD} + ${SLANT})`, flexDirection: 'row', flexWrap: 'wrap', gap: 'clamp(48px, 6vw, 96px)' }}>
+            {site.hours && (
+              <div id="godziny" style={s.column}>
+                <Heading half n={next()} color={CREAM} sub={CREAM}>Godziny</Heading>
+                <HoursList hours={site.hours} />
+              </div>
             )}
-          </address>
-          {site.address && (
-            <>
-              {/* ponytail: embed Google bez klucza, jak w /place/[id] — gdyby przestał działać, Maps Embed API. */}
-              <iframe
-                title={`Mapa: ${site.name}`}
-                src={`https://maps.google.com/maps?q=${mapsQuery}&z=16&hl=pl&output=embed`}
-                loading="lazy"
-                style={{ display: 'block', width: '100%', height: 220, border: 0, borderRadius: 8, background: BLOCK }}
-              />
-              <a href={`https://www.google.com/maps/search/?api=1&query=${mapsQuery}`} target="_blank" rel="noopener noreferrer" style={{ ...s.button, alignSelf: 'flex-start', background: INK, color: STONE }}>
-                Wyznacz trasę
-              </a>
-            </>
-          )}
+            <div id="kontakt" style={s.column}>
+              <Heading half n={next()} color={CREAM} sub={CREAM}>Kontakt</Heading>
+              <address style={{ fontStyle: 'normal', borderTop: `3px solid ${CREAM}`, display: 'flex', flexDirection: 'column' }}>
+                {site.address && <span style={s.contactRow}>{[site.address, site.district].filter(Boolean).join(', ')}</span>}
+                {tel && <a href={tel} style={{ ...s.contactRow, fontWeight: 600 }}>{site.phone}</a>}
+                {site.instagram && (
+                  <a href={`https://instagram.com/${encodeURIComponent(site.instagram)}`} target="_blank" rel="noopener noreferrer" style={{ ...s.contactRow, fontWeight: 600 }}>
+                    Instagram: @{site.instagram}
+                  </a>
+                )}
+              </address>
+              {site.address && (
+                <>
+                  {/* ponytail: embed Google bez klucza, jak w /place/[id] — gdyby przestał działać, Maps Embed API. */}
+                  <iframe
+                    title={`Mapa: ${site.name}`}
+                    src={`https://maps.google.com/maps?q=${mapsQuery}&z=16&hl=pl&output=embed`}
+                    loading="lazy"
+                    style={{ display: 'block', width: '100%', height: 240, border: 0, background: NAVY2 }}
+                  />
+                  <a href={`https://www.google.com/maps/search/?api=1&query=${mapsQuery}`} target="_blank" rel="noopener noreferrer" style={{ ...s.button, alignSelf: 'flex-start', background: ORANGE, color: NAVY }}>
+                    Wyznacz trasę
+                  </a>
+                </>
+              )}
+            </div>
+          </section>
         </div>
-      </section>
+      </div>
 
-      <footer style={{ background: INK, color: STONE }}>
-        <div style={{ ...s.wrap, padding: '20px 24px calc(20px + env(safe-area-inset-bottom))', display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '4px 24px', fontSize: 14 }}>
-          <span style={{ flexGrow: 1 }}>© {new Date().getFullYear()} {site.name}</span>
-          <a href={`/place/${site.id}`} style={{ minHeight: 44, display: 'flex', alignItems: 'center', color: STONE, textDecoration: 'underline', textUnderlineOffset: 4 }}>
+      <footer style={{ borderTop: `1px solid ${HAIR_DARK}` }}>
+        <div style={{ ...s.wrap, padding: '24px 24px calc(24px + env(safe-area-inset-bottom))', display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '8px 24px', fontSize: 15 }}>
+          <span style={{ flexGrow: 1, display: 'flex', alignItems: 'center', gap: 12 }}><Mark size={28} />© {new Date().getFullYear()} {site.name}</span>
+          <a href={`/place/${site.id}`} style={{ minHeight: 44, display: 'flex', alignItems: 'center', color: CREAM, textDecoration: 'underline', textUnderlineOffset: 4 }}>
             Strona działa ze Spoot — zobacz opinie gości
           </a>
         </div>
@@ -251,12 +304,12 @@ export default async function SitePage({ params }: Props) {
 }
 
 const s: Record<string, CSSProperties> = {
-  wrap: { maxWidth: 1200, margin: '0 auto' },
-  section: { maxWidth: 1200, margin: '0 auto', padding: 'clamp(56px, 8vw, 104px) 24px 0', display: 'flex', flexDirection: 'column', gap: 24 },
-  column: { flex: '1 1 300px', minWidth: 0, display: 'flex', flexDirection: 'column', gap: 20 },
-  h2: { margin: 0, fontFamily: DISPLAY, fontWeight: 700, fontSize: 'clamp(34px, 5vw, 56px)', lineHeight: 1, letterSpacing: '-0.01em' },
-  navLink: { minHeight: 44, display: 'flex', alignItems: 'center', fontWeight: 600, fontSize: 15, color: INK, textDecoration: 'none' },
-  button: { minHeight: 52, padding: '0 28px', boxSizing: 'border-box', display: 'flex', alignItems: 'center', borderRadius: 999, fontWeight: 700, color: 'inherit', textDecoration: 'none' },
-  contactRow: { minHeight: 48, padding: '8px 0', boxSizing: 'border-box', display: 'flex', alignItems: 'center', borderBottom: `1px solid ${HAIR}`, fontSize: 17, color: INK },
+  wrap: { maxWidth: 1240, margin: '0 auto' },
+  section: { maxWidth: 1240, margin: '0 auto', padding: `${PAD} 24px`, display: 'flex', flexDirection: 'column', gap: 'clamp(28px, 4vw, 48px)' },
+  column: { flex: '1 1 320px', minWidth: 0, display: 'flex', flexDirection: 'column', gap: 28 },
+  navLink: { minHeight: 44, display: 'flex', alignItems: 'center', fontWeight: 500, fontSize: 14, letterSpacing: '0.18em', textTransform: 'uppercase', color: CREAM, textDecoration: 'none' },
+  // 19 px / 800: „duży tekst” wg WCAG, więc granat na pomarańczu (4:1) przechodzi.
+  button: { minHeight: 56, padding: '0 32px', boxSizing: 'border-box', display: 'flex', alignItems: 'center', fontWeight: 800, fontSize: 19, letterSpacing: '0.1em', textTransform: 'uppercase', textDecoration: 'none' },
+  contactRow: { minHeight: 52, padding: '10px 0', boxSizing: 'border-box', display: 'flex', alignItems: 'center', borderBottom: `1px solid ${HAIR_DARK}`, fontSize: 19, color: CREAM },
   srOnly: { position: 'absolute', width: 1, height: 1, overflow: 'hidden', clipPath: 'inset(50%)', whiteSpace: 'nowrap' },
 };

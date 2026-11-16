@@ -10,9 +10,10 @@ const DAYS = [
   ['fri', 'Piątek'], ['sat', 'Sobota'], ['sun', 'Niedziela'],
 ] as const;
 
-const INK = '#1B1A19';
-const STONE = '#F1EFEA';
-const HAIR = 'rgba(27,26,25,0.18)';
+const NAVY = '#0A1A3F';
+const CREAM = '#F8E6B8';
+const ORANGE = '#E8431B';
+const HAIR = 'rgba(248,230,184,0.28)';
 
 // Dzień i godzina w Warszawie, liczone w przeglądarce — po hydracji, żeby serwer i klient się nie rozjechały.
 function useNow() {
@@ -38,9 +39,12 @@ export function statusText(hours: Hours, day: string, hm: string): string {
 export function OpenStatus({ hours }: { hours: Hours }) {
   const now = useNow();
   if (!now) return null;
+  const text = statusText(hours, now.day, now.hm);
   return (
-    <span style={{ alignSelf: 'flex-start', padding: '8px 14px', borderRadius: 999, border: `1.5px solid ${STONE}`, fontWeight: 600, fontSize: 14 }}>
-      {statusText(hours, now.day, now.hm)}
+    <span style={{ alignSelf: 'flex-start', display: 'flex', alignItems: 'center', gap: 10, fontWeight: 600, fontSize: 17 }}>
+      {/* Koło ze znaku: pełne, gdy otwarte; sam obrys, gdy zamknięte — stan czytelny też bez koloru. */}
+      <span aria-hidden="true" style={{ width: 14, height: 14, boxSizing: 'border-box', borderRadius: 999, border: `2px solid ${ORANGE}`, background: text.startsWith('Otwarte') ? ORANGE : 'transparent' }} />
+      {text}
     </span>
   );
 }
@@ -48,15 +52,15 @@ export function OpenStatus({ hours }: { hours: Hours }) {
 export function HoursList({ hours }: { hours: Hours }) {
   const now = useNow();
   return (
-    <ul style={{ listStyle: 'none', margin: 0, padding: 0, borderTop: `2px solid ${INK}`, fontVariantNumeric: 'tabular-nums' }}>
+    <ul style={{ listStyle: 'none', margin: 0, padding: 0, borderTop: `3px solid ${CREAM}`, fontVariantNumeric: 'tabular-nums' }}>
       {DAYS.map(([key, name]) => {
         const t = hours[key];
         const today = now?.day === key;
         return (
-          <li key={key} style={{ display: 'flex', gap: 12, padding: '12px 0', borderBottom: `1px solid ${HAIR}`, fontSize: 17, fontWeight: today ? 700 : 400 }}>
-            <span style={{ flexGrow: 1 }}>
+          <li key={key} style={{ minHeight: 52, display: 'flex', alignItems: 'center', gap: 12, borderBottom: `1px solid ${HAIR}`, fontSize: 19, fontWeight: today ? 800 : 400 }}>
+            <span style={{ flexGrow: 1, display: 'flex', alignItems: 'center', gap: 10 }}>
               {name}
-              {today && <span style={{ marginLeft: 10, padding: '2px 8px', borderRadius: 999, background: INK, color: STONE, fontSize: 12 }}>dziś</span>}
+              {today && <span style={{ padding: '2px 10px', borderRadius: 999, background: CREAM, color: NAVY, fontSize: 14, fontWeight: 800, letterSpacing: '0.1em', textTransform: 'uppercase' }}>dziś</span>}
             </span>
             <span>{!t || t.closed ? 'zamknięte' : `${t.open}–${t.close}`}</span>
           </li>
