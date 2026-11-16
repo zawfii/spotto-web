@@ -14,7 +14,7 @@ const NAV = [
   { path: '/stats', label: 'Statystyki', icon: NAV_ICONS.stats },
   { path: '/reviews', label: 'Opinie', icon: NAV_ICONS.star },
   { path: '/settings', label: 'Profil lokalu', icon: NAV_ICONS.store },
-  { path: '/promote', label: 'Wyróżnienie', icon: NAV_ICONS.rocket },
+  { path: '/promote', label: 'Wyróżnienie', icon: NAV_ICONS.rocket, badge: 'WKRÓTCE' },
   { path: '/website', label: 'Strona dla lokalu', icon: NAV_ICONS.globe, badge: 'NOWE' },
 ];
 

@@ -36,7 +36,7 @@ export default async function DashboardPage() {
     ? { title: 'Wyróżnienie aktywne', sub: `Do ${new Date(activePromo.active_until!).toLocaleDateString('pl-PL', { day: 'numeric', month: 'long' })}` }
     : pendingPromo
       ? { title: 'Prośba w toku', sub: 'Wyróżnienie czeka na zatwierdzenie' }
-      : { title: 'Wyróżnij restaurację', sub: 'Zwiększ widoczność w Spoot' };
+      : { title: 'Wyróżnij restaurację', sub: 'Wkrótce' };
 
   return (
     <>
