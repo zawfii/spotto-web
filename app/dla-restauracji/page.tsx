@@ -258,6 +258,10 @@ export default function DlaRestauracjiPage() {
                 Gość, który wpisuje nazwę lokalu w Google, chce trzech rzeczy: menu, godzin i adresu. Na Twojej stronie będą zawsze aktualne, bo
                 czyta je prosto ze Spoot — niczego nie wpisujesz dwa razy.
               </p>
+              <p className="self-start rounded-2xl bg-spoot-orange px-5 py-4 font-display text-lg font-bold leading-snug text-spoot-ink">
+                Twoje menu jest od razu na stronie. Zmieniasz danie albo cenę w panelu — zmienia się wszędzie: na stronie, w aplikacji i pod
+                kodem QR na stoliku.
+              </p>
             </div>
             <div className="flex max-w-full flex-col items-center gap-4 overflow-hidden">
               <Shot src={`/${DEMO_SITE}`} address={`spootme.pl/${DEMO_SITE}`} title="Podgląd strony lokalu: Bistro Pokazowe" chrome />
