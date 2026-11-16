@@ -12,10 +12,10 @@ const jakarta = Plus_Jakarta_Sans({ subsets: ['latin', 'latin-ext'], weight: ['4
 export const metadata: Metadata = {
   title: 'Spoot dla restauracji — menu, oferty i stali goście w jednym panelu',
   description:
-    'Przejmij profil swojego lokalu w Spoot. Menu, oferty dnia, karta stałego gościa i statystyki w jednym bezpłatnym panelu.',
+    'Przejmij profil swojego lokalu w Spoot. Menu, oferty dnia, karta stałego gościa i statystyki w jednym panelu. Zaczynasz za darmo.',
   openGraph: {
     title: 'Spoot dla restauracji',
-    description: 'Goście wybierają w Spoot, gdzie dziś zjedzą. Bądź na ich liście — panel dla lokalu jest bezpłatny.',
+    description: 'Goście wybierają w Spoot, gdzie dziś zjedzą. Bądź na ich liście — zaczynasz za darmo.',
     url: 'https://spootme.pl/dla-restauracji',
     locale: 'pl_PL',
     type: 'website',
