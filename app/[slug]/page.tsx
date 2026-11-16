@@ -5,6 +5,7 @@ import { getPlaceExtras, isRealPhoto, supabase } from '@/lib/supabase';
 import { formatPrice } from '@/lib/format';
 import { allergenLabels } from '@/lib/owner';
 import { isValidSlug } from '@/lib/website-packages';
+import { Wordmark } from '@/components/SpootLogo';
 import { DishThumb } from '../place/[id]/PlaceClient';
 import { HoursList, OpenStatus, type Hours } from './SiteClient';
 
@@ -150,7 +151,7 @@ export default async function SitePage({ params }: Props) {
     <main style={{ minHeight: '100vh', background: NAVY, color: CREAM, fontFamily: FONT, fontSize: 17, lineHeight: 1.5, overflowX: 'clip' }}>
       {/* ponytail: zwykły <link> zamiast next/font — next/font 14.2 wywraca build na części rodzin z Google Fonts. */}
       {/* eslint-disable-next-line @next/next/no-page-custom-font */}
-      <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Jost:wght@400;500;600;800&display=swap" />
+      <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Jost:wght@400;500;600;800&family=Manrope:wght@700&display=swap" />
 
       {/* ── Granat: nagłówek i wejście ── */}
       <header style={{ ...s.wrap, padding: '16px 24px', display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '4px 28px' }}>
@@ -296,12 +297,20 @@ export default async function SitePage({ params }: Props) {
       </div>
 
       <footer style={{ borderTop: `1px solid ${HAIR_DARK}` }}>
-        <div style={{ ...s.wrap, padding: '24px 24px calc(24px + env(safe-area-inset-bottom))', display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '8px 24px', fontSize: 15 }}>
+        <div style={{ ...s.wrap, padding: '24px', display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '8px 24px', fontSize: 15 }}>
           <span style={{ flexGrow: 1, display: 'flex', alignItems: 'center', gap: 12 }}><Mark size={28} />© {new Date().getFullYear()} {site.name}</span>
           <a href={`/place/${site.id}`} style={{ minHeight: 44, display: 'flex', alignItems: 'center', color: CREAM, textDecoration: 'underline', textUnderlineOffset: 4 }}>
-            Strona działa ze Spoot — zobacz opinie gości
+            Zobacz opinie gości
           </a>
         </div>
+        {/* Wordmark bierze krój ze zmiennej --font-manrope; tu Manrope przychodzi z <link> wyżej. */}
+        <a
+          href="https://www.spootme.pl/"
+          style={{ ['--font-manrope' as string]: "'Manrope'", minHeight: 64, padding: '12px 24px calc(12px + env(safe-area-inset-bottom))', boxSizing: 'border-box', borderTop: `1px solid ${HAIR_DARK}`, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12, fontSize: 15, color: CREAM, textDecoration: 'none' }}
+        >
+          Stworzone w aplikacji
+          <Wordmark size={24} color="#fff" />
+        </a>
       </footer>
     </main>
   );
