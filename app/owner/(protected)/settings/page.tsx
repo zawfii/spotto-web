@@ -29,7 +29,7 @@ export default function SettingsPage() {
   const [venueId, setVenueId] = useState<string | null>(null);
   const [placeId, setPlaceId] = useState<string | null>(null);
   const [photos, setPhotos] = useState<VenuePhoto[]>([]);
-  // Zdjęcia z Google (place_photos, source='google') — import, właściciel ich nie edytuje.
+  // Zdjęcia z Google (place_photos, source='google') — import; właściciel może je usunąć.
   const [googlePhotos, setGooglePhotos] = useState<{ id: string; url: string }[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -152,6 +152,13 @@ export default function SettingsPage() {
     setPhotos(prev => prev.filter(p => p.id !== photo.id));
   }
 
+  async function deleteGooglePhoto(id: string) {
+    if (!confirm('Usunąć to zdjęcie z Google? Goście przestaną je widzieć w Spoot. Tego nie da się cofnąć.')) return;
+    const { error } = await supabase.rpc('delete_place_google_photo', { p_photo_id: id });
+    if (error) { alert('Nie udało się usunąć zdjęcia. Spróbuj ponownie.'); return; }
+    setGooglePhotos(prev => prev.filter(p => p.id !== id));
+  }
+
   function updateHour(day: DayKey, field: 'open' | 'close' | 'closed', value: string | boolean) {
     setHours(prev => ({ ...prev, [day]: { ...prev[day], [field]: value } }));
   }
@@ -203,13 +210,23 @@ export default function SettingsPage() {
           <div className="flex flex-col gap-3 border-t border-spoot-line pt-4">
             <div className="flex flex-col gap-0.5">
               <Eyebrow>Z Google · {googlePhotos.length}</Eyebrow>
-              <span className="text-xs text-spoot-ink2">Pobrane z wizytówki lokalu w Google. Goście widzą je w Spoot po Twoich zdjęciach i zdjęciach z ocen.</span>
+              <span className="text-xs text-spoot-ink2">
+                Pobrane z wizytówki lokalu w Google. Goście widzą je w Spoot po Twoich zdjęciach i zdjęciach z ocen. Możesz usunąć te, które Ci nie pasują. Zdjęć dodanych przez gości przy ocenach nie da się usunąć.
+              </span>
             </div>
             <div className="grid grid-cols-[repeat(auto-fill,minmax(160px,1fr))] gap-3">
               {googlePhotos.map((photo, i) => (
-                <div key={photo.id} className="h-40 overflow-hidden rounded-2xl bg-spoot-chip">
+                <div key={photo.id} className="relative h-40 overflow-hidden rounded-2xl bg-spoot-chip">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src={photo.url} alt={`Zdjęcie z Google ${i + 1}`} className="h-full w-full object-cover" />
+                  <button
+                    type="button"
+                    onClick={() => deleteGooglePhoto(photo.id)}
+                    aria-label={`Usuń zdjęcie z Google ${i + 1}`}
+                    className="absolute right-1 top-1 flex h-11 w-11 items-center justify-center rounded-full bg-black/60 text-white hover:bg-black/80"
+                  >
+                    <NavIcon>{NAV_ICONS.close}</NavIcon>
+                  </button>
                 </div>
               ))}
             </div>
