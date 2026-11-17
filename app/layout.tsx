@@ -2,8 +2,8 @@ import type { Metadata } from 'next';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'Spotto - Shared Lists',
-  description: 'View shared Spotto food lists',
+  title: 'Spoot',
+  description: 'Knajpy z rolek na Instagramie i TikToku w jednym miejscu.',
 };
 
 export default function RootLayout({
