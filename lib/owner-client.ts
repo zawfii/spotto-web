@@ -45,8 +45,8 @@ export function useOwnerVenue() {
         .eq('owner_id', user.id)
         .eq('place_id', placeId)
         .maybeSingle();
-      if (!vd) return;
-      setVenue(vd as OwnerVenueRow);
+      setVenue(vd as OwnerVenueRow | null);
+      if (!vd) { setPlace(null); return; } // brak lokalu — nie zostawiaj starego
       const { data: p } = await supabase.from('places').select('name, category, district, image_url').eq('id', vd.place_id).maybeSingle();
       setPlace(p as OwnerPlace | null);
     } finally {

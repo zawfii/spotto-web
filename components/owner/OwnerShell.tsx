@@ -16,7 +16,8 @@ export default function OwnerShell({ venue, venues, userEmail, base, children }:
       />
       <main className="min-w-0 flex-[999_1_560px] px-5 pb-12 pt-8 sm:px-10">
         <div className="mx-auto flex max-w-[1120px] flex-col gap-6">
-          <VenueProvider placeId={venue.place_id} venues={venues}>{children}</VenueProvider>
+          {/* key: zmiana lokalu przemontowuje stronę — stan i spóźnione odpowiedzi starego lokalu znikają */}
+          <VenueProvider key={venue.place_id} placeId={venue.place_id} venues={venues}>{children}</VenueProvider>
         </div>
       </main>
     </div>
