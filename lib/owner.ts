@@ -132,7 +132,7 @@ export type VenuePhoto = {
 
 // ─── Funkcje ─────────────────────────────────────────────────────────────────
 
-/** Zatwierdzone lokale właściciela, alfabetycznie po nazwie. */
+/** Zatwierdzone lokale właściciela, alfabetycznie po nazwie (remis → po place_id). */
 export async function getOwnerVenues(
   supabase: SupabaseClient,
   userId: string
@@ -154,7 +154,8 @@ export async function getOwnerVenues(
         place_category: p?.category ?? '',
       };
     })
-    .sort((a, b) => a.place_name.localeCompare(b.place_name, 'pl'));
+    // remis nazw (sieć) po id: venue_details bez ORDER BY, a „pierwszy” lokal nie może skakać
+    .sort((a, b) => a.place_name.localeCompare(b.place_name, 'pl') || a.place_id.localeCompare(b.place_id));
 }
 
 /** Pobiera venue_details + dane places wybranego lokalu (`wanted` z ciasteczka, jeśli należy

@@ -12,7 +12,7 @@ const CATEGORIES = ['Restauracja', 'Kawiarnia', 'Bar', 'Pub', 'Piekarnia', 'Cuki
 
 /** Zgłoszenie lokalu — jak app/claim-venue.tsx w aplikacji (tabela ownership_requests, akceptuje admin).
  *  Gdy lokalu nie ma w bazie, właściciel dodaje go (places, status pending) i od razu go zgłasza. */
-export default function ClaimVenue({ userId, defaultPhone }: { userId: string; defaultPhone: string }) {
+export default function ClaimVenue({ userId, defaultPhone, nextVenue }: { userId: string; defaultPhone: string; nextVenue?: boolean }) {
   const supabase = useSupabase();
   const router = useRouter();
   const [mode, setMode] = useState<'search' | 'new'>('search');
@@ -200,7 +200,11 @@ export default function ClaimVenue({ userId, defaultPhone }: { userId: string; d
           </label>
           {error && <p role="alert" className="text-spoot-danger">{error}</p>}
           <Btn type="submit" disabled={submitting}>{submitting ? 'Wysyłam…' : mode === 'new' ? 'Dodaj lokal i wyślij zgłoszenie' : 'Wyślij zgłoszenie'}</Btn>
-          <p className="text-xs text-spoot-ink2">Zgłoszenie sprawdzamy ręcznie — po akceptacji panel otworzy się na tym koncie.</p>
+          <p className="text-xs text-spoot-ink2">
+            {nextVenue
+              ? 'Po akceptacji lokal pojawi się na liście lokali w panelu.'
+              : 'Zgłoszenie sprawdzamy ręcznie — po akceptacji panel otworzy się na tym koncie.'}
+          </p>
         </>
       )}
     </form>

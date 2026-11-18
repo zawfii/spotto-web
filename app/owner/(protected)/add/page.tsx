@@ -40,6 +40,16 @@ export default async function AddVenuePage() {
         title="Dodaj lokal"
         sub="Zgłoś kolejny lokal. Po weryfikacji pojawi się na liście lokali w panelu."
       />
+      <Card className="max-w-2xl">
+        {/* key: po wysłanym zgłoszeniu (nowy wiersz) formularz startuje od zera */}
+        <ClaimVenue
+          key={data?.length ?? 0}
+          userId={user.id}
+          nextVenue
+          defaultPhone={typeof user.user_metadata?.phone === 'string' ? user.user_metadata.phone : ''}
+        />
+      </Card>
+      {/* pod formularzem: nowe zgłoszenie pojawia się tuż pod przyciskiem wysyłki */}
       {claims.length > 0 && (
         <Card className="flex max-w-2xl flex-col gap-2">
           <CardTitle>Twoje zgłoszenia</CardTitle>
@@ -62,14 +72,6 @@ export default async function AddVenuePage() {
           </ul>
         </Card>
       )}
-      <Card className="max-w-2xl">
-        {/* key: po wysłanym zgłoszeniu (nowy wiersz) formularz startuje od zera */}
-        <ClaimVenue
-          key={data?.length ?? 0}
-          userId={user.id}
-          defaultPhone={typeof user.user_metadata?.phone === 'string' ? user.user_metadata.phone : ''}
-        />
-      </Card>
     </>
   );
 }

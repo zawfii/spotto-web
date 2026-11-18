@@ -113,7 +113,8 @@ export default function MenuPage() {
     setCopyError(null);
     try {
       const { data, error } = await supabase.rpc('copy_owner_menu', { p_from: fromId, p_to: placeId });
-      if (error) { setCopyError(error.message); return; }
+      // np. „Ten lokal ma już menu” z innej karty — przeładowanie pokaże to menu zamiast pustego
+      if (error) { setCopyError(error.message); await load(); return; }
       setCopied(Number(data));
       await load();
     } finally {
@@ -294,6 +295,9 @@ export default function MenuPage() {
         </p>
       )}
 
+      {/* poza pustym stanem: błąd zostaje widoczny także, gdy przeładowanie pokaże menu */}
+      {copyError && <p role="alert" className="text-spoot-danger">{copyError}</p>}
+
       {imported && sections.length === 0 && (
         <p role="status" className="rounded-2xl bg-spoot-tint p-4">
           <strong className="font-display">Goście widzą teraz kartę {imported.source === 'website' ? 'pobraną z Twojej strony' : 'przepisaną ze zdjęcia'} ({imported.items} {pluralPl(imported.items, 'danie', 'dania', 'dań')}).</strong>{' '}
@@ -350,12 +354,11 @@ export default function MenuPage() {
                 <div className="flex flex-wrap gap-2">
                   {copySources.map(v => (
                     <Btn key={v.place_id} variant="outline" size="sm" disabled={copying} onClick={() => copyMenu(v.place_id)}>
-                      Skopiuj menu z: {v.place_name}
+                      Skopiuj menu z: {v.place_name}{v.place_district ? ` (${v.place_district})` : ''}
                     </Btn>
                   ))}
                 </div>
               )}
-              {copyError && <p role="alert" className="text-spoot-danger">{copyError}</p>}
             </>
           ) : (
             <>
