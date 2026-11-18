@@ -62,7 +62,7 @@ export default function SettingsPage() {
       setReservationNotif(vd.reservation_notifications ?? true);
 
       const [{ data: photoRows }, { data: pinRow }, { data: googleRows }] = await Promise.all([
-        supabase.from('venue_photos').select('*').eq('place_id', venue.place_id).order('position', { ascending: true }),
+        supabase.from('venue_photos').select('*').eq('owner_id', userId).eq('place_id', venue.place_id).order('position', { ascending: true }),
         supabase.from('venue_staff_pins').select('pin').eq('venue_id', venue.id).maybeSingle(),
         supabase.from('place_photos').select('id, url').eq('place_id', venue.place_id).eq('source', 'google').order('position'),
       ]);
