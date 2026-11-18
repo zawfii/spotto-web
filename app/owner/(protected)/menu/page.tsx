@@ -1,10 +1,11 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
-import type { AllergenKey, MenuSection, MenuItem } from '@/lib/owner';
+import type { AllergenKey, MenuSection, MenuItem, OwnerVenueRef } from '@/lib/owner';
 import { ALLERGENS, allergenLabels } from '@/lib/owner';
 import { formatPrice, pluralPl } from '@/lib/format';
 import { useOwnerVenue } from '@/lib/owner-client';
+import { useOwnerVenueList } from '@/components/owner/VenueContext';
 import { Btn, Card, CardTitle, Eyebrow, Loading, PageHeader, checkCls, inputCls, labelCls } from '@/components/owner/ui';
 import MenuQr from '@/components/owner/MenuQr';
 import MenuEntryRequest from '@/components/owner/MenuEntryRequest';
@@ -60,6 +61,12 @@ export default function MenuPage() {
   const [form, setForm] = useState<ItemForm | null>(null);
   // Karta z importu (strona lokalu / zdjęcie) — goście ją widzą, dopóki właściciel nie doda własnej sekcji.
   const [imported, setImported] = useState<{ source: string; items: number } | null>(null);
+  // Kopiowanie menu z innego lokalu konta — tylko gdy tu nie ma jeszcze menu właściciela.
+  const venues = useOwnerVenueList();
+  const [copySources, setCopySources] = useState<OwnerVenueRef[]>([]);
+  const [copying, setCopying] = useState(false);
+  const [copyError, setCopyError] = useState<string | null>(null);
+  const [copied, setCopied] = useState<number | null>(null);
 
   const load = useCallback(async () => {
     if (!venue) return;
@@ -88,6 +95,31 @@ export default function MenuPage() {
   }, [supabase, venue]);
 
   useEffect(() => { load(); }, [load]);
+
+  const menuEmpty = !loading && sections.length === 0;
+  useEffect(() => {
+    const others = venues.filter(v => v.place_id !== placeId).map(v => v.place_id);
+    if (!menuEmpty || others.length === 0) return;
+    supabase.from('menu_sections').select('place_id').eq('source', 'owner').in('place_id', others)
+      .then(({ data }) => {
+        const withMenu = new Set((data ?? []).map(r => r.place_id as string));
+        setCopySources(venues.filter(v => withMenu.has(v.place_id)));
+      });
+  }, [supabase, venues, placeId, menuEmpty]);
+
+  async function copyMenu(fromId: string) {
+    if (!placeId) return;
+    setCopying(true);
+    setCopyError(null);
+    try {
+      const { data, error } = await supabase.rpc('copy_owner_menu', { p_from: fromId, p_to: placeId });
+      if (error) { setCopyError(error.message); return; }
+      setCopied(Number(data));
+      await load();
+    } finally {
+      setCopying(false);
+    }
+  }
 
   const selected = sections.find(s => s.id === selectedId) ?? sections[0] ?? null;
   const itemCount = sections.reduce((n, s) => n + s.menu_items.length, 0);
@@ -256,6 +288,12 @@ export default function MenuPage() {
         <Btn onClick={openNew} disabled={!selected}>Dodaj danie</Btn>
       </PageHeader>
 
+      {copied !== null && (
+        <p role="status" className="rounded-2xl bg-spoot-tint p-4 font-display font-bold">
+          Skopiowano {copied} {pluralPl(copied, 'danie', 'dania', 'dań')}
+        </p>
+      )}
+
       {imported && sections.length === 0 && (
         <p role="status" className="rounded-2xl bg-spoot-tint p-4">
           <strong className="font-display">Goście widzą teraz kartę {imported.source === 'website' ? 'pobraną z Twojej strony' : 'przepisaną ze zdjęcia'} ({imported.items} {pluralPl(imported.items, 'danie', 'dania', 'dań')}).</strong>{' '}
@@ -306,7 +344,19 @@ export default function MenuPage() {
         {/* Dania w wybranej sekcji */}
         <Card className="flex min-w-0 flex-[3_1_440px] flex-col gap-4">
           {!selected ? (
-            <p className="text-spoot-ink2">Brak sekcji. Dodaj pierwszą po lewej, a potem wpisz dania.</p>
+            <>
+              <p className="text-spoot-ink2">Brak sekcji. Dodaj pierwszą po lewej, a potem wpisz dania.</p>
+              {copySources.length > 0 && (
+                <div className="flex flex-wrap gap-2">
+                  {copySources.map(v => (
+                    <Btn key={v.place_id} variant="outline" size="sm" disabled={copying} onClick={() => copyMenu(v.place_id)}>
+                      Skopiuj menu z: {v.place_name}
+                    </Btn>
+                  ))}
+                </div>
+              )}
+              {copyError && <p role="alert" className="text-spoot-danger">{copyError}</p>}
+            </>
           ) : (
             <>
               <div className="flex flex-wrap items-center gap-2">
