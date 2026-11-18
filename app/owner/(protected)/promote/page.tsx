@@ -18,25 +18,26 @@ const PACKAGE_LABELS: Record<PackageId, string> = { '7d': '7 dni', '14d': '14 dn
 // Płatne wyróżnienie jeszcze nie ruszyło: nowych próśb nie przyjmujemy,
 // pokazujemy tylko status tych, które już są w bazie.
 export default function PromotePage() {
-  const { supabase, userId, loading: venueLoading } = useOwnerVenue();
+  const { supabase, userId, venue, loading: venueLoading } = useOwnerVenue();
   const [promotions, setPromotions] = useState<Promotion[]>([]);
   const [loading, setLoading] = useState(true);
 
   const load = useCallback(async () => {
-    if (!userId) return;
+    if (!userId || !venue) return;
     const { data } = await supabase
       .from('promotions')
       .select('id, package, scope, status, active_until')
       .eq('owner_id', userId)
+      .eq('place_id', venue.place_id)
       .order('created_at', { ascending: false })
       .limit(5);
     setPromotions((data as Promotion[]) ?? []);
     setLoading(false);
-  }, [supabase, userId]);
+  }, [supabase, userId, venue]);
 
   useEffect(() => { load(); }, [load]);
 
-  if (venueLoading || loading) return <Loading />;
+  if (venueLoading || (venue && loading)) return <Loading />;
 
   const active = promotions.find(p => p.status === 'approved' && p.active_until && new Date(p.active_until) > new Date());
   const p = active ?? promotions.find(x => x.status === 'pending');

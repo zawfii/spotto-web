@@ -46,16 +46,17 @@ export default function WebsitePage() {
   const [error, setError] = useState('');
 
   const load = useCallback(async () => {
-    if (!userId) return;
+    if (!userId || !venue) return;
     const { data } = await supabase
       .from('website_requests')
       .select('id, package, billing, slug, status, admin_note, created_at')
       .eq('owner_id', userId)
+      .eq('place_id', venue.place_id)
       .order('created_at', { ascending: false })
       .limit(5);
     setRequests((data as WebsiteRequest[]) ?? []);
     setLoading(false);
-  }, [supabase, userId]);
+  }, [supabase, userId, venue]);
 
   useEffect(() => { load(); }, [load]);
 
@@ -91,7 +92,7 @@ export default function WebsitePage() {
     load();
   }
 
-  if (venueLoading || loading) return <Loading />;
+  if (venueLoading || (venue && loading)) return <Loading />;
 
   const header = (
     <PageHeader

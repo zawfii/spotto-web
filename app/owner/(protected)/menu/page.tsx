@@ -1,10 +1,10 @@
 'use client';
 
-import { createBrowserClient } from '@supabase/ssr';
-import { useEffect, useState, useCallback, useMemo } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import type { AllergenKey, MenuSection, MenuItem } from '@/lib/owner';
 import { ALLERGENS, allergenLabels } from '@/lib/owner';
 import { formatPrice, pluralPl } from '@/lib/format';
+import { useOwnerVenue } from '@/lib/owner-client';
 import { Btn, Card, CardTitle, Eyebrow, Loading, PageHeader, checkCls, inputCls, labelCls } from '@/components/owner/ui';
 import MenuQr from '@/components/owner/MenuQr';
 import MenuEntryRequest from '@/components/owner/MenuEntryRequest';
@@ -48,18 +48,10 @@ type ItemForm = {
 const parsePrice = (s: string) => parseFloat(s.replace(',', '.'));
 
 export default function MenuPage() {
-  const supabase = useMemo(
-    () => createBrowserClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-    ),
-    []
-  );
-
-  const [placeId, setPlaceId] = useState<string | null>(null);
-  const [userId, setUserId] = useState<string | null>(null);
+  const { supabase, userId, venue, place, loading: venueLoading } = useOwnerVenue();
+  const placeId = venue?.place_id ?? null;
+  const category = place?.category ?? '';
   const [uploading, setUploading] = useState(false);
-  const [category, setCategory] = useState('');
   const [sections, setSections] = useState<MenuSection[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -70,29 +62,20 @@ export default function MenuPage() {
   const [imported, setImported] = useState<{ source: string; items: number } | null>(null);
 
   const load = useCallback(async () => {
+    if (!venue) return;
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-      setUserId(user.id);
-
-      const { data: vd } = await supabase.from('venue_details').select('place_id').eq('owner_id', user.id).maybeSingle();
-      if (!vd) return;
-      setPlaceId(vd.place_id);
-
-      const [{ data: place }, { data: sectionRows }, { data: importedRows }] = await Promise.all([
-        supabase.from('places').select('category').eq('id', vd.place_id).maybeSingle(),
+      const [{ data: sectionRows }, { data: importedRows }] = await Promise.all([
         supabase
           .from('menu_sections')
           .select(`id, name, position, menu_items(${ITEM_COLUMNS})`)
-          .eq('place_id', vd.place_id)
+          .eq('place_id', venue.place_id)
           .eq('source', 'owner') // import ze strony/zdjęcia nie jest edytowalny przez właściciela (RLS)
           .order('position', { ascending: true }),
-        supabase.from('menu_sections').select('source, menu_items(id)').eq('place_id', vd.place_id).neq('source', 'owner'),
+        supabase.from('menu_sections').select('source, menu_items(id)').eq('place_id', venue.place_id).neq('source', 'owner'),
       ]);
       setImported(importedRows?.length
         ? { source: importedRows[0].source, items: importedRows.reduce((n, s) => n + (s.menu_items?.length ?? 0), 0) }
         : null);
-      setCategory(place?.category ?? '');
       setSections(
         (sectionRows ?? []).map(s => ({
           ...s,
@@ -102,7 +85,7 @@ export default function MenuPage() {
     } finally {
       setLoading(false);
     }
-  }, [supabase]);
+  }, [supabase, venue]);
 
   useEffect(() => { load(); }, [load]);
 
@@ -261,7 +244,7 @@ export default function MenuPage() {
     return { ...f, allergens: next.length ? next : null };
   });
 
-  if (loading) return <Loading />;
+  if (venueLoading || (venue && loading)) return <Loading />;
 
   return (
     <>

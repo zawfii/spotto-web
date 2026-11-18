@@ -1,9 +1,9 @@
 'use client';
 
-import { createBrowserClient } from '@supabase/ssr';
-import { useEffect, useState, useCallback, useMemo } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import type { VenuePhoto, Hours, DayKey } from '@/lib/owner';
 import { DEFAULT_HOURS } from '@/lib/owner';
+import { useOwnerVenue } from '@/lib/owner-client';
 import { Btn, Card, CardTitle, Eyebrow, Loading, NavIcon, NAV_ICONS, PageHeader, checkCls, inputCls, labelCls } from '@/components/owner/ui';
 
 const DAY_LABELS: { key: DayKey; label: string }[] = [
@@ -18,16 +18,9 @@ const DAY_LABELS: { key: DayKey; label: string }[] = [
 const MAX_PHOTOS = 10;
 
 export default function SettingsPage() {
-  const supabase = useMemo(
-    () => createBrowserClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-    ),
-    []
-  );
-
-  const [venueId, setVenueId] = useState<string | null>(null);
-  const [placeId, setPlaceId] = useState<string | null>(null);
+  const { supabase, userId, venue, loading: venueLoading } = useOwnerVenue();
+  const venueId = venue?.id ?? null;
+  const placeId = venue?.place_id ?? null;
   const [photos, setPhotos] = useState<VenuePhoto[]>([]);
   // Zdjęcia z Google (place_photos, source='google') — import; właściciel może je usunąć.
   const [googlePhotos, setGooglePhotos] = useState<{ id: string; url: string }[]>([]);
@@ -50,19 +43,16 @@ export default function SettingsPage() {
   const [savedPin, setSavedPin] = useState('');
 
   const load = useCallback(async () => {
+    if (!venue || !userId) return;
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-
       const { data: vd } = await supabase
         .from('venue_details')
-        .select('*')
-        .eq('owner_id', user.id)
+        .select('description, phone, address, instagram, menu_url, hours, reservation_notifications')
+        .eq('place_id', venue.place_id)
+        .eq('owner_id', userId)
         .maybeSingle();
       if (!vd) return;
 
-      setVenueId(vd.id);
-      setPlaceId(vd.place_id);
       setDescription(vd.description ?? '');
       setPhone(vd.phone ?? '');
       setAddress(vd.address ?? '');
@@ -72,9 +62,9 @@ export default function SettingsPage() {
       setReservationNotif(vd.reservation_notifications ?? true);
 
       const [{ data: photoRows }, { data: pinRow }, { data: googleRows }] = await Promise.all([
-        supabase.from('venue_photos').select('*').eq('owner_id', user.id).order('position', { ascending: true }),
-        supabase.from('venue_staff_pins').select('pin').eq('venue_id', vd.id).maybeSingle(),
-        supabase.from('place_photos').select('id, url').eq('place_id', vd.place_id).eq('source', 'google').order('position'),
+        supabase.from('venue_photos').select('*').eq('place_id', venue.place_id).order('position', { ascending: true }),
+        supabase.from('venue_staff_pins').select('pin').eq('venue_id', venue.id).maybeSingle(),
+        supabase.from('place_photos').select('id, url').eq('place_id', venue.place_id).eq('source', 'google').order('position'),
       ]);
       setPhotos((photoRows ?? []) as VenuePhoto[]);
       setGooglePhotos(googleRows ?? []);
@@ -83,7 +73,7 @@ export default function SettingsPage() {
     } finally {
       setLoading(false);
     }
-  }, [supabase]);
+  }, [supabase, userId, venue]);
 
   useEffect(() => { load(); }, [load]);
 
@@ -168,7 +158,7 @@ export default function SettingsPage() {
     setHours(prev => Object.fromEntries(DAY_LABELS.map(({ key }) => [key, { ...prev.mon }])) as Hours);
   }
 
-  if (loading) return <Loading />;
+  if (venueLoading || (venue && loading)) return <Loading />;
 
   return (
     <form onSubmit={handleSave} className="flex flex-col gap-6">
