@@ -1,5 +1,6 @@
 // lib/owner.ts
 import { SupabaseClient } from '@supabase/supabase-js';
+import { pickVenueId } from '@/lib/panel';
 
 // ─── Typy ────────────────────────────────────────────────────────────────────
 
@@ -37,6 +38,14 @@ export type VenueInfo = {
   hours: Hours;
   is_premium: boolean;
   reservation_notifications: boolean;
+};
+
+/** Lokal z listy lokali konta (przełącznik w panelu). */
+export type OwnerVenueRef = {
+  place_id: string;
+  place_name: string;
+  place_district: string | null;
+  place_category: string;
 };
 
 export type VenueStats = {
@@ -123,31 +132,54 @@ export type VenuePhoto = {
 
 // ─── Funkcje ─────────────────────────────────────────────────────────────────
 
-/** Pobiera venue_details + dane places dla zalogowanego właściciela.
- *  Zwraca null jeśli właściciel nie ma zatwierdzonego lokalu. */
-export async function getOwnerVenue(
+/** Zatwierdzone lokale właściciela, alfabetycznie po nazwie. */
+export async function getOwnerVenues(
   supabase: SupabaseClient,
   userId: string
-): Promise<VenueInfo | null> {
-  const { data: vd } = await supabase
-    .from('venue_details')
-    .select('*')
-    .eq('owner_id', userId)
-    .maybeSingle();
+): Promise<OwnerVenueRef[]> {
+  const { data: rows } = await supabase.from('venue_details').select('place_id').eq('owner_id', userId);
+  const ids = (rows ?? []).map(r => r.place_id as string);
+  if (ids.length === 0) return [];
 
+  const { data: places } = await supabase.from('places').select('id, name, category, district').in('id', ids);
+  const byId = new Map((places ?? []).map(p => [p.id as string, p]));
+
+  return ids
+    .map(id => {
+      const p = byId.get(id);
+      return {
+        place_id: id,
+        place_name: p?.name ?? 'Twój lokal',
+        place_district: p?.district ?? null,
+        place_category: p?.category ?? '',
+      };
+    })
+    .sort((a, b) => a.place_name.localeCompare(b.place_name, 'pl'));
+}
+
+/** Pobiera venue_details + dane places wybranego lokalu (`wanted` z ciasteczka, jeśli należy
+ *  do konta; inaczej pierwszy) i listę lokali konta. Null, gdy konto nie ma zatwierdzonego lokalu. */
+export async function getOwnerVenue(
+  supabase: SupabaseClient,
+  userId: string,
+  wanted?: string
+): Promise<{ venue: VenueInfo; venues: OwnerVenueRef[] } | null> {
+  const venues = await getOwnerVenues(supabase, userId);
+  const placeId = pickVenueId(venues.map(v => v.place_id), wanted);
+  if (!placeId) return null;
+
+  const [{ data: vd }, { data: place }] = await Promise.all([
+    supabase.from('venue_details').select('*').eq('place_id', placeId).eq('owner_id', userId).maybeSingle(),
+    supabase.from('places').select('image_url').eq('id', placeId).maybeSingle(),
+  ]);
   if (!vd) return null;
 
-  const { data: place } = await supabase
-    .from('places')
-    .select('name, category, district, image_url')
-    .eq('id', vd.place_id)
-    .maybeSingle();
-
-  return {
-    place_id: vd.place_id as string,
-    place_name: place?.name ?? 'Twój lokal',
-    place_category: place?.category ?? '',
-    place_district: place?.district ?? null,
+  const ref = venues.find(v => v.place_id === placeId)!;
+  const venue: VenueInfo = {
+    place_id: placeId,
+    place_name: ref.place_name,
+    place_category: ref.place_category,
+    place_district: ref.place_district,
     place_image_url: place?.image_url ?? null,
     description: vd.description ?? '',
     phone: vd.phone ?? '',
@@ -158,6 +190,7 @@ export async function getOwnerVenue(
     is_premium: vd.is_premium ?? false,
     reservation_notifications: vd.reservation_notifications ?? true,
   };
+  return { venue, venues };
 }
 
 /** Pobiera podstawowe statystyki lokalu: zapisania, ocena, liczba opinii. */

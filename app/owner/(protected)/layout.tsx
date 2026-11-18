@@ -1,8 +1,10 @@
 // app/owner/(protected)/layout.tsx
+import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { createSupabaseServerClient } from '@/lib/supabase-server';
 import { getOwnerVenue } from '@/lib/owner';
 import { panelBase } from '@/lib/owner-server';
+import { VENUE_COOKIE } from '@/lib/panel';
 import OwnerShell from '@/components/owner/OwnerShell';
 import LogoutButton from '@/components/owner/LogoutButton';
 import ClaimVenue from '@/components/owner/ClaimVenue';
@@ -33,9 +35,9 @@ export default async function ProtectedLayout({ children }: { children: React.Re
     redirect(`${base}/login`);
   }
 
-  const venue = await getOwnerVenue(supabase, user.id);
+  const found = await getOwnerVenue(supabase, user.id, cookies().get(VENUE_COOKIE)?.value);
 
-  if (!venue) {
+  if (!found) {
     const { data: claim } = await supabase
       .from('ownership_requests')
       .select('status, admin_note')
@@ -72,7 +74,7 @@ export default async function ProtectedLayout({ children }: { children: React.Re
   }
 
   return (
-    <OwnerShell venue={venue} userEmail={user.email ?? ''} base={base}>
+    <OwnerShell venue={found.venue} venues={found.venues} userEmail={user.email ?? ''} base={base}>
       {children}
     </OwnerShell>
   );

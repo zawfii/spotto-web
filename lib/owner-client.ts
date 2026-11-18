@@ -3,6 +3,7 @@
 import { createBrowserClient } from '@supabase/ssr';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { LoyaltyCardDesign, LoyaltyTier } from '@/lib/owner-loyalty';
+import { useSelectedPlaceId } from '@/components/owner/VenueContext';
 
 export type OwnerVenueRow = {
   id: string;
@@ -24,9 +25,10 @@ export function useSupabase() {
   );
 }
 
-/** Lokal zalogowanego właściciela po stronie przeglądarki (dostęp sprawdził już layout). */
+/** Wybrany lokal zalogowanego właściciela po stronie przeglądarki (dostęp sprawdził już layout). */
 export function useOwnerVenue() {
   const supabase = useSupabase();
+  const placeId = useSelectedPlaceId();
   const [userId, setUserId] = useState<string | null>(null);
   const [venue, setVenue] = useState<OwnerVenueRow | null>(null);
   const [place, setPlace] = useState<OwnerPlace | null>(null);
@@ -41,6 +43,7 @@ export function useOwnerVenue() {
         .from('venue_details')
         .select('id, place_id, loyalty_enabled, loyalty_tiers, loyalty_card_design')
         .eq('owner_id', user.id)
+        .eq('place_id', placeId)
         .maybeSingle();
       if (!vd) return;
       setVenue(vd as OwnerVenueRow);
@@ -49,7 +52,7 @@ export function useOwnerVenue() {
     } finally {
       setLoading(false);
     }
-  }, [supabase]);
+  }, [supabase, placeId]);
 
   useEffect(() => { reload(); }, [reload]);
 
