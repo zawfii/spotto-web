@@ -15,5 +15,5 @@ export async function requireVenue() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect(`${base}/login`);
   const found = await getOwnerVenue(supabase, user.id, cookies().get(VENUE_COOKIE)?.value);
-  return found ? { supabase, user, venue: found.venue, base } : null;
+  return found ? { supabase, user, venue: found.venue, venues: found.venues, base } : null;
 }

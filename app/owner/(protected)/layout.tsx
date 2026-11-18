@@ -74,7 +74,13 @@ export default async function ProtectedLayout({ children }: { children: React.Re
   }
 
   return (
-    <OwnerShell venue={found.venue} venues={found.venues} userEmail={user.email ?? ''} base={base}>
+    <OwnerShell
+      venue={found.venue}
+      venues={found.venues}
+      canAdd={process.env.ADD_VENUE_LIVE === '1'}
+      userEmail={user.email ?? ''}
+      base={base}
+    >
       {children}
     </OwnerShell>
   );
