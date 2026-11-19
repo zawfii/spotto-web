@@ -54,14 +54,15 @@ export type VenueCounts = {
   menu_clicks: number;
   saves_new: number;
   saves_total: number;
+  // osoby, których pierwszy zapis przyszedł z filmiku; reszta zapisała w apce
+  saves_tiktok: number;
+  saves_instagram: number;
   reviews_new: number;
   reviews_total: number;
   rating_avg: number | null;
 };
 
 export type VenueAnalytics = {
-  saves_tiktok: number;
-  saves_instagram: number;
   best_days: { day: string; count: number }[];
 };
 
@@ -225,7 +226,7 @@ export async function fetchCounts(
   return data as VenueCounts;
 }
 
-/** Wyświetlenia według dnia tygodnia z wybranego okresu i źródła zapisów (łącznie). Liczby — fetchCounts. */
+/** Wyświetlenia według dnia tygodnia z wybranego okresu. Liczby i źródła zapisów — fetchCounts. */
 export async function fetchAnalytics(
   supabase: SupabaseClient,
   placeId: string,
@@ -249,18 +250,11 @@ export async function fetchAnalytics(
     return out;
   }
 
-  const [socialRes, dates] = await Promise.all([
-    supabase.from('social_posts').select('source').eq('place_id', placeId).in('source', ['tiktok', 'instagram']),
-    viewDates(),
-  ]);
-
-  const socialRows = socialRes.data ?? [];
+  const dates = await viewDates();
   const dayCounts = [0, 0, 0, 0, 0, 0, 0];
   dates.forEach(d => { dayCounts[new Date(d).getDay()]++; });
 
   return {
-    saves_tiktok: socialRows.filter(r => r.source === 'tiktok').length,
-    saves_instagram: socialRows.filter(r => r.source === 'instagram').length,
     best_days: DAY_NAMES.map((day, i) => ({ day, count: dayCounts[i] })),
   };
 }

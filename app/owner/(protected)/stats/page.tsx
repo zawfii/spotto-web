@@ -44,10 +44,13 @@ export default async function StatsPage({ searchParams }: { searchParams: Search
   const hasViews = analytics.best_days.some(d => d.count > 0);
   const savesTotal = counts?.saves_total ?? 0;
   const best = analytics.best_days.reduce((b, d) => (d.count > b.count ? d : b), analytics.best_days[0]);
+  // te same osoby co saves_total, każda raz — części sumują się do całości
+  const tiktok = counts?.saves_tiktok ?? 0;
+  const instagram = counts?.saves_instagram ?? 0;
   const sources = [
-    { label: 'TikTok', count: analytics.saves_tiktok, color: '#010101' },
-    { label: 'Instagram', count: analytics.saves_instagram, color: '#c13584' },
-    { label: 'W aplikacji', count: Math.max(0, savesTotal - analytics.saves_tiktok - analytics.saves_instagram), color: '#03271a' },
+    { label: 'TikTok', count: tiktok, color: '#010101' },
+    { label: 'Instagram', count: instagram, color: '#c13584' },
+    { label: 'W aplikacji', count: savesTotal - tiktok - instagram, color: '#03271a' },
   ];
   const today = new Date().toISOString().slice(0, 10);
 
@@ -112,8 +115,7 @@ export default async function StatsPage({ searchParams }: { searchParams: Search
           {!counts ? (
             <p className="text-spoot-ink2">Brak danych o zapisach. Spróbuj odświeżyć stronę.</p>
           ) : sources.map(s => {
-            // ponytail: TikTok/Instagram to filmiki, saves_total to osoby — procent może przekroczyć 100, więc przycięty.
-            const pct = savesTotal > 0 ? Math.min(100, Math.round((s.count / savesTotal) * 100)) : 0;
+            const pct = savesTotal > 0 ? Math.round((s.count / savesTotal) * 100) : 0;
             return (
               <div key={s.label} className="flex flex-col gap-1.5">
                 <div className="flex gap-2 font-display">
