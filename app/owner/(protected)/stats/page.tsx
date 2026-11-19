@@ -109,15 +109,18 @@ export default async function StatsPage({ searchParams }: { searchParams: Search
             <CardTitle>Źródło zapisów</CardTitle>
             <p className="text-spoot-ink2">Skąd goście dodali Cię do zapisanych — łącznie, od początku</p>
           </div>
-          {sources.map(s => {
-            const pct = savesTotal > 0 ? Math.round((s.count / savesTotal) * 100) : 0;
+          {!counts ? (
+            <p className="text-spoot-ink2">Brak danych o zapisach. Spróbuj odświeżyć stronę.</p>
+          ) : sources.map(s => {
+            // ponytail: TikTok/Instagram to filmiki, saves_total to osoby — procent może przekroczyć 100, więc przycięty.
+            const pct = savesTotal > 0 ? Math.min(100, Math.round((s.count / savesTotal) * 100)) : 0;
             return (
               <div key={s.label} className="flex flex-col gap-1.5">
                 <div className="flex gap-2 font-display">
                   <span className="grow font-semibold">{s.label}</span>
                   <span className="font-bold">{s.count} · {pct}%</span>
                 </div>
-                <div className="h-2.5 rounded-full bg-spoot-chip">
+                <div className="h-2.5 overflow-hidden rounded-full bg-spoot-chip">
                   <div className="h-2.5 rounded-full" style={{ width: `${pct}%`, backgroundColor: s.color }} />
                 </div>
               </div>
