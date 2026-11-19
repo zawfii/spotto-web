@@ -1,8 +1,9 @@
 // app/owner/(protected)/page.tsx
 import Link from 'next/link';
-import { fetchStats, fetchAnalytics, fetchReviews } from '@/lib/owner';
+import { fetchAnalytics, fetchCounts, fetchReviews, lastDays, previousRange } from '@/lib/owner';
 import { requireVenue } from '@/lib/owner-server';
-import { relativePl } from '@/lib/format';
+import { pluralPl, relativePl } from '@/lib/format';
+import { statDelta } from '@/lib/statDelta';
 import { Card, CardTitle, Eyebrow, Initial, NavIcon, NAV_ICONS, PageHeader, RatingBadge, StatCard, WeekdayBars, btnCls } from '@/components/owner/ui';
 
 export default async function DashboardPage() {
@@ -10,9 +11,11 @@ export default async function DashboardPage() {
   if (!ctx) return null;
   const { supabase, venue, base } = ctx;
 
-  const [stats, analytics, reviews, submissionsRes, promoRes] = await Promise.all([
-    fetchStats(supabase, venue.place_id),
-    fetchAnalytics(supabase, venue.place_id),
+  const range = lastDays(30);
+  const [counts, prev, analytics, reviews, submissionsRes, promoRes] = await Promise.all([
+    fetchCounts(supabase, venue.place_id, range),
+    fetchCounts(supabase, venue.place_id, previousRange(range)),
+    fetchAnalytics(supabase, venue.place_id, range),
     fetchReviews(supabase, venue.place_id),
     supabase.from('deals').select('id', { count: 'exact', head: true })
       .eq('place_id', venue.place_id).eq('status', 'pending').eq('source', 'user'),
@@ -23,6 +26,8 @@ export default async function DashboardPage() {
   const promos = promoRes.data ?? [];
   const activePromo = promos.find(p => p.status === 'approved' && p.active_until && new Date(p.active_until) > new Date());
   const pendingPromo = promos.find(p => p.status === 'pending');
+  const viewsDelta = counts && prev ? statDelta(counts.views, prev.views, 'od poprzednich 30 dni') : null;
+  const hasViews = analytics.best_days.some(d => d.count > 0);
 
   const today = new Date().toLocaleDateString('pl-PL', { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'Europe/Warsaw' });
   const quickActions = [
@@ -47,10 +52,24 @@ export default async function DashboardPage() {
       </PageHeader>
 
       <section aria-label="Liczby" className="grid grid-cols-[repeat(auto-fit,minmax(200px,1fr))] gap-4">
-        <StatCard label="Zapisane" value={stats.savedCount > 999 ? `${(stats.savedCount / 1000).toFixed(1)}k` : stats.savedCount} hint="tyle osób ma Cię na liście" />
-        <StatCard label="Ocena" value={stats.avgRating > 0 ? stats.avgRating : '—'} hint="średnia w Spoot, skala 1–10" />
-        <StatCard label="Opinie" value={stats.reviewCount} />
-        <StatCard label="Wyświetlenia profilu" value={analytics.views.toLocaleString('pl-PL')} hint="w ostatnich 30 dniach" />
+        <StatCard
+          label="Zapisane"
+          value={!counts ? '—' : counts.saves_total > 999 ? `${(counts.saves_total / 1000).toFixed(1)}k` : counts.saves_total}
+          hint={counts && counts.saves_new > 0 ? `+${counts.saves_new} w 30 dni` : 'tyle osób ma Cię na liście'}
+          up={!!counts && counts.saves_new > 0}
+        />
+        <StatCard label="Ocena" value={counts?.rating_avg ?? '—'} hint="średnia w Spoot, skala 1–10" />
+        <StatCard
+          label="Opinie"
+          value={counts?.reviews_total ?? '—'}
+          hint={counts && counts.reviews_new > 0 ? `${counts.reviews_new} ${pluralPl(counts.reviews_new, 'nowa', 'nowe', 'nowych')} w 30 dni` : undefined}
+        />
+        <StatCard
+          label="Wyświetlenia profilu"
+          value={counts ? counts.views.toLocaleString('pl-PL') : '—'}
+          hint={viewsDelta?.text ?? 'w ostatnich 30 dniach'}
+          up={viewsDelta?.up}
+        />
       </section>
 
       <div className="flex flex-wrap items-start gap-6">
@@ -86,7 +105,7 @@ export default async function DashboardPage() {
               <div className="grow"><CardTitle>Wyświetlenia według dnia tygodnia</CardTitle></div>
               <Link href={`${base}/stats`} className="py-2"><Eyebrow>Statystyki</Eyebrow></Link>
             </div>
-            {analytics.views === 0 ? (
+            {!hasViews ? (
               <p className="text-spoot-ink2">Zbieramy dane. Wróć za kilka dni — wykres pojawi się, gdy przyjdą pierwsi odwiedzający.</p>
             ) : (
               <WeekdayBars days={analytics.best_days} height={120} />

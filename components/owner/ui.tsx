@@ -33,12 +33,13 @@ export function PageHeader({ eyebrow, title, sub, children }: { eyebrow: string;
   );
 }
 
-export function StatCard({ label, value, hint }: { label: string; value: ReactNode; hint?: string }) {
+// `up` — podpis to wzrost (zielony, pogrubiony).
+export function StatCard({ label, value, hint, up }: { label: string; value: ReactNode; hint?: string; up?: boolean }) {
   return (
     <div className="flex flex-col gap-1 rounded-2xl bg-spoot-card p-5">
       <Eyebrow>{label}</Eyebrow>
       <span className="font-display text-[32px] font-bold leading-10">{value}</span>
-      {hint && <span className="text-xs text-spoot-ink2">{hint}</span>}
+      {hint && <span className={`text-xs ${up ? 'text-spoot-green font-semibold' : 'text-spoot-ink2'}`}>{hint}</span>}
     </div>
   );
 }

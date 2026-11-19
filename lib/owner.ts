@@ -48,16 +48,18 @@ export type OwnerVenueRef = {
   place_category: string;
 };
 
-export type VenueStats = {
-  savedCount: number;
-  avgRating: number;
-  reviewCount: number;
+// owner_venue_counts za okres [p_from, p_to); *_total i rating_avg liczone od początku.
+export type VenueCounts = {
+  views: number;
+  menu_clicks: number;
+  saves_new: number;
+  saves_total: number;
+  reviews_new: number;
+  reviews_total: number;
+  rating_avg: number | null;
 };
 
 export type VenueAnalytics = {
-  views: number;
-  menu_clicks: number;
-  saves_total: number;
   saves_tiktok: number;
   saves_instagram: number;
   best_days: { day: string; count: number }[];
@@ -194,41 +196,36 @@ export async function getOwnerVenue(
   return { venue, venues };
 }
 
-/** Pobiera podstawowe statystyki lokalu: zapisania, ocena, liczba opinii. */
-export async function fetchStats(
-  supabase: SupabaseClient,
-  placeId: string
-): Promise<VenueStats> {
-  const [savedRes, ratingsRes] = await Promise.all([
-    supabase
-      .from('spoot_list_places')
-      .select('id', { count: 'exact', head: true })
-      .eq('place_id', placeId),
-    supabase
-      .from('ratings')
-      .select('id, rating')
-      .eq('place_id', placeId),
-  ]);
-
-  const savedCount = savedRes.count ?? 0;
-  const ratingRows = ratingsRes.data ?? [];
-  const reviewCount = ratingRows.length;
-  const avgRating =
-    reviewCount > 0
-      ? Math.round(
-          (ratingRows.reduce((s, r) => s + Number(r.rating), 0) / reviewCount) * 10
-        ) / 10
-      : 0;
-
-  return { savedCount, avgRating, reviewCount };
-}
-
 export type StatsRange = { from: Date; to: Date };
 
 /** Ostatnie `days` dni, do teraz. */
 export const lastDays = (days: number): StatsRange => ({ from: new Date(Date.now() - days * 86400000), to: new Date() });
 
-/** Pobiera analitykę z wybranego okresu: wyświetlenia, kliknięcia menu; zapisy i źródła są łączne. */
+/** Okres tej samej długości tuż przed `r` — do porównania „od poprzedniego okresu”. */
+export function previousRange(r: StatsRange): StatsRange {
+  const len = r.to.getTime() - r.from.getTime();
+  return { from: new Date(r.from.getTime() - len), to: r.from };
+}
+
+/** Liczby lokalu z okresu (owner_venue_counts). Błąd → null: kafelki pokazują „—”, reszta strony działa. */
+export async function fetchCounts(
+  supabase: SupabaseClient,
+  placeId: string,
+  range: StatsRange
+): Promise<VenueCounts | null> {
+  const { data, error } = await supabase.rpc('owner_venue_counts', {
+    p_place_id: placeId,
+    p_from: range.from.toISOString(),
+    p_to: range.to.toISOString(),
+  });
+  if (error) {
+    console.error('[owner] counts:', error.message);
+    return null;
+  }
+  return data as VenueCounts;
+}
+
+/** Wyświetlenia według dnia tygodnia z wybranego okresu i źródła zapisów (łącznie). Liczby — fetchCounts. */
 export async function fetchAnalytics(
   supabase: SupabaseClient,
   placeId: string,
@@ -237,9 +234,6 @@ export async function fetchAnalytics(
   const from = range.from.toISOString();
   const to = range.to.toISOString();
   const DAY_NAMES = ['Nd', 'Pon', 'Wt', 'Śr', 'Czw', 'Pt', 'Sob'];
-  const events = (type: string) =>
-    supabase.from('place_events').select('id', { count: 'exact', head: true })
-      .eq('place_id', placeId).eq('event_type', type).gte('created_at', from).lte('created_at', to);
 
   // Daty wyświetleń stronami po 1000 (limit API) — przy roku jedna strona nie wystarcza.
   // ponytail: sufit 20 000 wyświetleń na wykres dni tygodnia; powyżej przenieść liczenie do funkcji w bazie.
@@ -255,10 +249,7 @@ export async function fetchAnalytics(
     return out;
   }
 
-  const [viewsRes, menuRes, savesRes, socialRes, dates] = await Promise.all([
-    events('view'),
-    events('menu_click'),
-    supabase.from('spoot_list_places').select('id', { count: 'exact', head: true }).eq('place_id', placeId),
+  const [socialRes, dates] = await Promise.all([
     supabase.from('social_posts').select('source').eq('place_id', placeId).in('source', ['tiktok', 'instagram']),
     viewDates(),
   ]);
@@ -268,9 +259,6 @@ export async function fetchAnalytics(
   dates.forEach(d => { dayCounts[new Date(d).getDay()]++; });
 
   return {
-    views: viewsRes.count ?? 0,
-    menu_clicks: menuRes.count ?? 0,
-    saves_total: savesRes.count ?? 0,
     saves_tiktok: socialRows.filter(r => r.source === 'tiktok').length,
     saves_instagram: socialRows.filter(r => r.source === 'instagram').length,
     best_days: DAY_NAMES.map((day, i) => ({ day, count: dayCounts[i] })),
