@@ -213,6 +213,22 @@ export default function DlaRestauracjiPage() {
                 <a href="#korzysci" className={`${BTN} border-[1.5px] border-spoot-ink bg-spoot-card`}>Zobacz panel</a>
               </div>
               <p className="text-sm text-spoot-ink2">Bez umowy i bez karty. Dostęp dostaje tylko zweryfikowany właściciel.</p>
+              <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2">
+                <Eyebrow>Są z nami</Eyebrow>
+                <ul className="flex list-none flex-wrap justify-center gap-2">
+                  {VENUES.map(v => (
+                    <li key={v.url}>
+                      <a href={v.url} target="_blank" rel="noopener" className="flex items-center gap-3 rounded-full bg-spoot-card py-1.5 pl-1.5 pr-5 text-left transition-opacity hover:opacity-90">
+                        <img src={v.logo} alt={`Logo: ${v.name}`} width={44} height={44} className="h-11 w-11 shrink-0 rounded-full" />
+                        <span className="flex flex-col leading-tight">
+                          <span className="font-display font-bold">{v.name}</span>
+                          <span className="text-sm text-spoot-ink2">{v.kind} · <span className="font-semibold text-spoot-green underline">{v.site}</span></span>
+                        </span>
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              </div>
             </div>
             <div className="flex max-w-full flex-col items-center gap-3 overflow-hidden">
               <Shot file="pulpit" title="Podgląd panelu: pulpit z liczbami, opiniami i szybkimi akcjami" chrome eager />
@@ -229,30 +245,6 @@ export default function DlaRestauracjiPage() {
                 <div className="text-spoot-ink2">{label}</div>
               </div>
             ))}
-          </div>
-        </section>
-
-        <section className={`${GUTTER} pb-[104px]`}>
-          <div className={`${WRAP} flex flex-wrap items-center justify-between gap-x-14 gap-y-6`}>
-            <div className="flex min-w-0 flex-[1_1_340px] flex-col gap-3">
-              <Eyebrow>Są z nami</Eyebrow>
-              <h2 className={H2}>Te lokale już tu są</h2>
-              <p className="text-lg text-spoot-ink2">Restauracje i kawiarnie, które mają w Spoot swój profil i menu.</p>
-            </div>
-            <ul className="flex min-w-0 flex-[1_1_340px] list-none flex-col gap-3">
-              {VENUES.map(v => (
-                <li key={v.url}>
-                  <a href={v.url} target="_blank" rel="noopener" className="flex items-center gap-4 rounded-3xl bg-spoot-card p-4 transition-opacity hover:opacity-90">
-                    <img src={v.logo} alt={`Logo: ${v.name}`} width={72} height={72} loading="lazy" className="h-[72px] w-[72px] shrink-0 rounded-2xl" />
-                    <span className="flex min-w-0 flex-col">
-                      <span className="font-display text-xl font-bold leading-tight">{v.name}</span>
-                      <span className="text-spoot-ink2">{v.kind}</span>
-                      <span className="font-display text-sm font-bold text-spoot-green underline">{v.site}</span>
-                    </span>
-                  </a>
-                </li>
-              ))}
-            </ul>
           </div>
         </section>
 
