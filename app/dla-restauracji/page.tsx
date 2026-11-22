@@ -218,11 +218,11 @@ export default function DlaRestauracjiPage() {
                 <ul className="flex list-none flex-wrap justify-center gap-2">
                   {VENUES.map(v => (
                     <li key={v.url}>
-                      <a href={v.url} target="_blank" rel="noopener" className="flex items-center gap-3 rounded-full bg-spoot-card py-1.5 pl-1.5 pr-5 text-left transition-opacity hover:opacity-90">
+                      <a href={v.url} target="_blank" rel="noopener" className="flex items-center gap-3 rounded-[28px] bg-spoot-card py-1.5 pl-1.5 pr-5 text-left transition-opacity hover:opacity-90">
                         <img src={v.logo} alt={`Logo: ${v.name}`} width={44} height={44} className="h-11 w-11 shrink-0 rounded-full" />
                         <span className="flex flex-col leading-tight">
                           <span className="font-display font-bold">{v.name}</span>
-                          <span className="text-sm text-spoot-ink2">{v.kind} · <span className="font-semibold text-spoot-green underline">{v.site}</span></span>
+                          <span className="text-sm text-spoot-ink2">{v.kind}<span className="max-sm:hidden"> · </span><span className="font-semibold text-spoot-green underline max-sm:block">{v.site}</span></span>
                         </span>
                       </a>
                     </li>
