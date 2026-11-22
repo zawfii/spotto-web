@@ -157,6 +157,11 @@ const FACTS = [
   ['0 zł', 'za profil, menu, oferty i statystyki. Pieczątki: pierwszy rok gratis dla pierwszych lokali'],
 ];
 
+// Lokale, które są z nami. Logo w public/partnerzy/ (kwadrat, ok. 320 px).
+const VENUES = [
+  { name: 'Bejbi Na Rozdrożu', kind: 'Kawiarnia · Warszawa', logo: '/partnerzy/bejbi.jpg', url: 'https://www.bejbinarozdrozu.pl/', site: 'bejbinarozdrozu.pl' },
+];
+
 const STEPS = [
   ['Załóż konto', 'Nick, e-mail i telefon. Bez hasła — logujesz się linkiem z maila.'],
   ['Zgłoś, że lokal jest Twój', 'Znajdujesz go w katalogu i podajesz dane firmy. Sprawdzamy każde zgłoszenie, żeby nikt obcy nie przejął Twojego profilu.'],
@@ -224,6 +229,30 @@ export default function DlaRestauracjiPage() {
                 <div className="text-spoot-ink2">{label}</div>
               </div>
             ))}
+          </div>
+        </section>
+
+        <section className={`${GUTTER} pb-[104px]`}>
+          <div className={`${WRAP} flex flex-wrap items-center justify-between gap-x-14 gap-y-6`}>
+            <div className="flex min-w-0 flex-[1_1_340px] flex-col gap-3">
+              <Eyebrow>Są z nami</Eyebrow>
+              <h2 className={H2}>Te lokale już tu są</h2>
+              <p className="text-lg text-spoot-ink2">Restauracje i kawiarnie, które mają w Spoot swój profil i menu.</p>
+            </div>
+            <ul className="flex min-w-0 flex-[1_1_340px] list-none flex-col gap-3">
+              {VENUES.map(v => (
+                <li key={v.url}>
+                  <a href={v.url} target="_blank" rel="noopener" className="flex items-center gap-4 rounded-3xl bg-spoot-card p-4 transition-opacity hover:opacity-90">
+                    <img src={v.logo} alt={`Logo: ${v.name}`} width={72} height={72} loading="lazy" className="h-[72px] w-[72px] shrink-0 rounded-2xl" />
+                    <span className="flex min-w-0 flex-col">
+                      <span className="font-display text-xl font-bold leading-tight">{v.name}</span>
+                      <span className="text-spoot-ink2">{v.kind}</span>
+                      <span className="font-display text-sm font-bold text-spoot-green underline">{v.site}</span>
+                    </span>
+                  </a>
+                </li>
+              ))}
+            </ul>
           </div>
         </section>
 
