@@ -3,13 +3,13 @@ import type { CSSProperties, ReactNode } from 'react';
 import { Manrope } from 'next/font/google';
 import Link from 'next/link';
 import { getPlaceExtras, supabase, type PlaceReview } from '@/lib/supabase';
-import { dishName, formatPrice, ratingColor as circleColor, relativePl } from '@/lib/format';
-import { allergenLabels } from '@/lib/owner';
+import { dishName, ratingColor as circleColor, relativePl } from '@/lib/format';
 import { Wordmark } from '@/components/SpootLogo';
 import { AppBridge, OpenAppButton, StoreLink } from '@/components/AppBridge';
 import { Avatar } from '@/components/ui';
 import { ShowMore } from '../../u/[username]/ProfileClient';
-import { Badges, DishThumb, PlaceCard, TodayHours } from './PlaceClient';
+import { Badges, PlaceCard, TodayHours } from './PlaceClient';
+import { MenuCard } from './MenuCard';
 
 // Tyle opinii widać od razu, reszta po „Pokaż wszystkie”.
 const VISIBLE_REVIEWS = 5;
@@ -127,12 +127,6 @@ export default async function PlacePage({ params }: PlacePageProps) {
   const coords = place.lat != null && place.lng != null ? { lat: Number(place.lat), lng: Number(place.lng) } : null;
   const mapsQuery = address ? `${place.name}, ${place.address}` : `${coords?.lat},${coords?.lng}`;
   const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(mapsQuery)}`;
-  const menuDate = menu.updatedAt ? new Date(menu.updatedAt).toLocaleDateString('pl-PL', { timeZone: 'Europe/Warsaw' }) : null;
-  const menuCaption = !menu.sections.length
-    ? 'Kartę tego lokalu znajdziesz na jego stronie'
-    : menu.source === 'website' || menu.source === 'photo'
-      ? `${menu.source === 'website' ? 'Menu ze strony lokalu' : 'Ze zdjęcia karty od użytkownika'}${menuDate ? ` · stan na ${menuDate}` : ''}`
-      : null;
 
   const rows: ReactNode[] = [];
   if (address) {
@@ -215,43 +209,12 @@ export default async function PlacePage({ params }: PlacePageProps) {
           {(menu.sections.length > 0 || menu.url) && (
             <section id="menu" style={s.section}>
               <h2 style={s.h2}>Menu</h2>
-              {(menuCaption || menu.url) && (
+              {menu.sections.length > 0 ? (
+                <MenuCard menu={menu} embedded />
+              ) : (
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
-                  <span style={{ fontSize: 13, color: INK2 }}>{menuCaption}</span>
-                  {menu.url && <a href={menu.url} target="_blank" rel="noopener noreferrer" style={{ ...s.rowAction, padding: '12px 0 12px 8px' }}>Zobacz menu</a>}
-                </div>
-              )}
-              {menu.sections.length > 0 && (
-                <div style={{ background: CARD, borderRadius: 16, overflow: 'hidden' }}>
-                  {menu.sections.map((sec, i) => (
-                    <details key={sec.id} open={i === 0} style={{ borderTop: i ? `1px solid ${HAIR}` : undefined }}>
-                      <summary style={{ minHeight: 52, padding: '0 16px', display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer', listStyle: 'none' }}>
-                        <span style={{ flexGrow: 1, minWidth: 0, padding: '14px 0', fontFamily: MANROPE, fontWeight: 700, fontSize: 15 }}>{sec.name}</span>
-                        <span style={{ fontSize: 13, color: INK2, flexShrink: 0 }}>{sec.items.length} {pluralPl(sec.items.length, 'pozycja', 'pozycje', 'pozycji')}</span>
-                        <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke={INK2} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
-                          <path d="M6 9l6 6 6-6" />
-                        </svg>
-                      </summary>
-                      <ul style={{ listStyle: 'none', margin: 0, padding: '0 16px 4px' }}>
-                        {sec.items.map((it) => (
-                          <li key={it.id} style={{ display: 'flex', alignItems: 'flex-start', gap: 12, padding: '12px 0', borderTop: `1px solid ${HAIR}` }}>
-                            {it.image_url && <DishThumb src={it.image_url} />}
-                            <div style={{ flexGrow: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 2 }}>
-                              <span style={{ fontSize: 15, fontWeight: 600, lineHeight: '20px' }}>
-                                {it.name}
-                                {it.is_vege && <span style={{ marginLeft: 6, padding: '1px 7px', borderRadius: 999, background: '#dcebd9', color: '#2e7d32', fontSize: 11, fontWeight: 700, verticalAlign: 2 }}>wege</span>}
-                              </span>
-                              {it.description && <span style={{ fontSize: 13, lineHeight: '18px', color: INK2 }}>{it.description}</span>}
-                              {!!it.allergens?.length && <span style={{ fontSize: 12, lineHeight: '16px', color: INK2 }}><strong>Alergeny:</strong> {allergenLabels(it.allergens)}</span>}
-                            </div>
-                            {Number(it.price) > 0 && (
-                              <span style={{ fontFamily: MANROPE, fontWeight: 700, fontSize: 14, lineHeight: '20px', whiteSpace: 'nowrap', flexShrink: 0 }}>{formatPrice(it.price)}</span>
-                            )}
-                          </li>
-                        ))}
-                      </ul>
-                    </details>
-                  ))}
+                  <span style={{ fontSize: 13, color: INK2 }}>Kartę tego lokalu znajdziesz na jego stronie</span>
+                  <a href={menu.url!} target="_blank" rel="noopener noreferrer" style={{ ...s.rowAction, padding: '12px 0 12px 8px' }}>Zobacz menu</a>
                 </div>
               )}
             </section>

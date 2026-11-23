@@ -48,3 +48,9 @@ export function dishName(d: string) {
 export function formatPrice(price: number) {
   return `${Number(price).toLocaleString('pl-PL', { minimumFractionDigits: 2 })} zł`;
 }
+
+// Cena w karcie dań jak menuPrice w apce: „28 zł”, ale „23,90 zł”.
+export function menuPrice(price: number) {
+  const n = Number(price);
+  return `${n.toLocaleString('pl-PL', { minimumFractionDigits: Number.isInteger(n) ? 0 : 2, maximumFractionDigits: 2 })} zł`;
+}

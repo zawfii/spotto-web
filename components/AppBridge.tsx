@@ -51,7 +51,8 @@ export function OpenAppButton({ style, children }: { style?: CSSProperties; chil
   return <button type="button" onClick={() => window.dispatchEvent(new Event(OPEN_EVENT))} style={style}>{children}</button>;
 }
 
-export function AppBridge({ content, appStoreUrl, playUrl }: { content: BridgeContent; appStoreUrl: string; playUrl: string }) {
+// autoOpen={false}: sam pasek „Otwórz” — bez samoczynnego otwierania apki i arkusza (karta dań z kodu QR).
+export function AppBridge({ content, appStoreUrl, playUrl, autoOpen = true }: { content: BridgeContent; appStoreUrl: string; playUrl: string; autoOpen?: boolean }) {
   const [platform, setPlatform] = useState<Platform | null>(null);
   const [phase, setPhase] = useState<'page' | 'opening' | 'sheet'>('page');
   const cancelAttempt = useRef<() => void>(() => {});
@@ -109,6 +110,7 @@ export function AppBridge({ content, appStoreUrl, playUrl }: { content: BridgeCo
       setPhase('sheet');
       return;
     }
+    if (!autoOpen) return;
     if (p === 'android') {
       setPhase('opening');
       openApp(p);

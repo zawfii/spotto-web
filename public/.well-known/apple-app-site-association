@@ -4,6 +4,7 @@
       {
         "appIDs": ["9RQR6242TX.com.spoot.app"],
         "components": [
+          { "/": "/place/*/menu", "exclude": true, "comment": "Kod QR ze stolika zostaje na stronie z kartą (tam pasek „Otwórz w aplikacji”)" },
           { "/": "/place/*", "comment": "Link do lokalu otwiera ekran lokalu w apce" },
           { "/": "/u/*", "comment": "Link do profilu otwiera profil w apce" }
         ]

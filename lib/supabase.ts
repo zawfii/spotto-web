@@ -107,7 +107,7 @@ export type PlaceReview = {
 export type PlaceMenuSection = {
   id: string;
   name: string;
-  items: { id: string; name: string; price: number; description: string | null; is_vege: boolean; image_url: string | null; allergens: string[] | null }[];
+  items: { id: string; name: string; price: number; description: string | null; is_vege: boolean; spice_level: number | null; image_url: string | null; allergens: string[] | null }[];
 };
 
 // Opinie i menu lokalu — jak app/place-ratings.tsx i hooks/useMenu.ts w apce. Oceny grupowe ukrywa RLS.
@@ -121,7 +121,7 @@ export async function getPlaceExtras(placeId: string) {
       .limit(50),
     supabase
       .from('menu_sections')
-      .select('id, name, source, source_url, updated_at, menu_items(id, name, price, description, is_vege, image_url, allergens, is_available)')
+      .select('id, name, source, source_url, updated_at, menu_items(id, name, price, description, is_vege, spice_level, image_url, allergens, is_available)')
       .eq('place_id', placeId)
       .order('position', { ascending: true })
       .order('position', { ascending: true, referencedTable: 'menu_items' }),
