@@ -4,6 +4,7 @@ import type { ReactNode } from 'react';
 import { Manrope, Plus_Jakarta_Sans } from 'next/font/google';
 import { Wordmark } from '@/components/SpootLogo';
 import OwnerQuestionPopup from '@/components/OwnerQuestionPopup';
+import PackageCards, { Bullets } from './PackageCards';
 import { FREE_FEATURES, LOYALTY, LOYALTY_NOTE, WEBSITE_PACKAGES, zl } from '@/lib/website-packages';
 
 // Te same ustawienia co w app/owner/layout.tsx — next/font 14.2 bywa kapryśny przy nowych zestawach wag.
@@ -68,24 +69,6 @@ function Shot({ file, src, address = 'panel.spootme.pl', title, className = '', 
         <iframe className="rs-frame" src={src ?? `/demo-panel/${file}.html`} title={title} tabIndex={-1} scrolling="no" loading={eager ? 'eager' : 'lazy'} />
       </div>
     </div>
-  );
-}
-
-function Check({ onDark = false }: { onDark?: boolean }) {
-  return (
-    <span aria-hidden="true" className={`mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full ${onDark ? 'bg-white text-spoot-green' : 'bg-spoot-green text-white'}`}>
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12l5 5 9-10" /></svg>
-    </span>
-  );
-}
-
-function Bullets({ items, onDark = false }: { items: string[]; onDark?: boolean }) {
-  return (
-    <ul className="flex list-none flex-col gap-2.5">
-      {items.map(item => (
-        <li key={item} className="flex items-start gap-3"><Check onDark={onDark} /><span>{item}</span></li>
-      ))}
-    </ul>
   );
 }
 
@@ -307,26 +290,9 @@ export default function DlaRestauracjiPage() {
                 </a>
               </div>
             </div>
-            <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,300px),1fr))] gap-3">
-              {WEBSITE_PACKAGES.map(pkg => {
-                const dark = pkg.id === 'plus';
-                return (
-                  <div key={pkg.id} className={`flex flex-col gap-4 rounded-3xl p-[clamp(24px,3vw,32px)] ${dark ? 'bg-spoot-green text-white' : 'bg-spoot-card'}`}>
-                    <div className="flex flex-col gap-1">
-                      <h3 className="font-display text-[26px] font-bold leading-[1.15]">{pkg.label}</h3>
-                      <p className={dark ? 'text-white/85' : 'text-spoot-ink2'}>{pkg.tagline}</p>
-                    </div>
-                    <div className="font-display text-[32px] font-bold leading-10">
-                      {pkg.monthly ? <>od {zl(pkg.monthly.yearly)} <span className="text-base font-semibold">/ mies.</span></> : 'Wycena indywidualna'}
-                    </div>
-                    {pkg.includes && <p className="font-display text-sm font-bold">{pkg.includes}</p>}
-                    <Bullets items={pkg.features} onDark={dark} />
-                  </div>
-                );
-              })}
-            </div>
+            <PackageCards />
             <p className="max-w-[760px] text-sm text-spoot-ink2">
-              „Od” oznacza płatność za 12 miesięcy z góry. Stworzenie strony nic nie kosztuje. Strona działa, dopóki opłacasz abonament —
+              Stworzenie strony nic nie kosztuje. Strona działa, dopóki opłacasz abonament —
               profil w Spoot zostaje zawsze. Stronę zamawiasz w panelu, po przejęciu lokalu.
             </p>
             <div id="cennik" className="flex scroll-mt-6 flex-col gap-4 rounded-3xl bg-spoot-card p-[clamp(24px,3vw,32px)]">
