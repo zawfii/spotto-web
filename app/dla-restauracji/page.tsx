@@ -3,6 +3,7 @@ import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
 import { Manrope, Plus_Jakarta_Sans } from 'next/font/google';
 import { Wordmark } from '@/components/SpootLogo';
+import OwnerQuestionPopup from '@/components/OwnerQuestionPopup';
 import { SETUP_FEE, WEBSITE_PACKAGES, zl } from '@/lib/website-packages';
 
 // Te same ustawienia co w app/owner/layout.tsx — next/font 14.2 bywa kapryśny przy nowych zestawach wag.
@@ -399,6 +400,8 @@ export default function DlaRestauracjiPage() {
           </div>
         </div>
       </footer>
+
+      <OwnerQuestionPopup />
     </div>
   );
 }

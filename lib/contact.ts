@@ -1,4 +1,5 @@
-// Kontakt dla właścicieli lokali. Telefon pokazujemy dopiero po wysłaniu zgłoszenia, nie publicznie.
+// Kontakt dla właścicieli lokali. Telefonu nie ma w treści stron: pokazujemy go po wysłaniu zgłoszenia
+// albo po kliknięciu „Pokaż numer” w karcie „Masz pytanie?” na /dla-restauracji (OwnerQuestionPopup).
 export const OWNER_CONTACT_EMAIL = 'info@spootme.pl';
 export const OWNER_CONTACT_PHONE = '+48 573 912 116';
 
