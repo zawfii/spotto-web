@@ -90,7 +90,7 @@ export default function OwnerQuestionPopup() {
           <button type="button" onClick={() => setStep('form')} className={`${BTN} bg-spoot-orange text-spoot-ink`}>Zostaw numer</button>
           {phoneVisible
             ? phone
-            : <button type="button" onClick={() => setPhoneVisible(true)} className={`${BTN} border-[1.5px] border-white`}>Pokaż numer</button>}
+            : <button type="button" onClick={() => setPhoneVisible(true)} className={`${BTN} shadow-[inset_0_0_0_1.5px_#fff]`}>Pokaż numer</button>}
         </div>
       )}
 
