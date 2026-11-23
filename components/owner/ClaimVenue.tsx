@@ -90,7 +90,8 @@ export default function ClaimVenue({ userId, defaultPhone, nextVenue }: { userId
     }
     if (!placeId) { setSubmitting(false); return; }
 
-    const { data: created, error } = await supabase.from('ownership_requests').insert({
+    // Push do nas o nowym zgłoszeniu wysyła baza (wyzwalacz notify_admins_new_claim).
+    const { error } = await supabase.from('ownership_requests').insert({
       user_id: userId,
       place_id: placeId,
       full_name: fullName.trim(),
@@ -98,14 +99,12 @@ export default function ClaimVenue({ userId, defaultPhone, nextVenue }: { userId
       nip: cleanNip || null,
       call_time: callTime || null,
       message: message.trim() || null,
-    }).select('id').single();
+    });
     setSubmitting(false);
     if (error) {
       setError(error.code === '23505' ? 'Prośba dla tego lokalu już została wysłana.' : 'Nie udało się wysłać zgłoszenia. Spróbuj ponownie.');
       return;
     }
-    // Push do nas: nowe zgłoszenie, trzeba zadzwonić (funkcja sama sprawdza, czy jest komu wysłać).
-    supabase.functions.invoke('claim-push', { body: { requestId: created.id } }).catch(() => {});
     router.refresh();
   }
 
