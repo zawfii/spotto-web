@@ -9,7 +9,7 @@ import OwnerShell from '@/components/owner/OwnerShell';
 import LogoutButton from '@/components/owner/LogoutButton';
 import ClaimVenue from '@/components/owner/ClaimVenue';
 import OwnerContact from '@/components/owner/OwnerContact';
-import { CALL_TIMES } from '@/lib/contact';
+import { CALL_TIMES, OWNER_CONTACT_PHONE } from '@/lib/contact';
 import { Wordmark } from '@/components/SpootLogo';
 
 // Stany sprzed wejścia do panelu — te same co w apce (app/owner-panel.tsx).
@@ -63,7 +63,7 @@ export default async function ProtectedLayout({ children }: { children: React.Re
           {claim?.status === 'pending' && claim.phone && (
             <p className="rounded-xl bg-spoot-input p-3 text-spoot-ink2">
               <strong className="font-display text-spoot-ink">Dzwonimy na: </strong>{claim.phone}
-              {claim.call_time && CALL_TIMES[claim.call_time] ? `, ${CALL_TIMES[claim.call_time]}` : ''}
+              {claim.call_time && CALL_TIMES[claim.call_time] ? `, ${CALL_TIMES[claim.call_time]}` : ''}. Z numeru {OWNER_CONTACT_PHONE}.
             </p>
           )}
           {claim?.status !== 'pending' && (
@@ -72,7 +72,7 @@ export default async function ProtectedLayout({ children }: { children: React.Re
               defaultPhone={typeof user.user_metadata?.phone === 'string' ? user.user_metadata.phone : ''}
             />
           )}
-          <OwnerContact lead={claim?.status === 'pending' ? 'Wolisz odezwać się pierwszy?' : 'Masz pytanie?'} />
+          <OwnerContact lead={claim?.status === 'pending' ? 'Wolisz odezwać się pierwszy?' : 'Masz pytanie?'} withPhone={!!claim} />
           <p className="flex flex-wrap items-center gap-x-2 border-t border-spoot-line pt-4 text-xs text-spoot-ink2">
             Zalogowano jako {user.email}
             <LogoutButton base={base} className="py-2 font-display font-bold text-spoot-ink underline underline-offset-4" />
