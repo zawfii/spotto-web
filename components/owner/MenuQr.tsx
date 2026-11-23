@@ -55,11 +55,10 @@ h1{margin:0;font-size:28px}p{margin:0;font-size:16px}svg{width:70vw;max-width:36
         <div className="flex flex-col gap-1">
           <div className="flex flex-wrap items-center gap-2">
             <CardTitle>Kod QR do menu</CardTitle>
-            <span className="rounded-full bg-spoot-orange px-2 py-0.5 font-display text-[10px] font-bold tracking-[0.5px]">TERAZ ZA DARMO</span>
+            <span className="rounded-full bg-spoot-orange px-2 py-0.5 font-display text-[10px] font-bold tracking-[0.5px]">ZA DARMO</span>
           </div>
           <p className="text-spoot-ink2">Wydrukuj i postaw na stolikach. Goście skanują kod telefonem i widzą Twoją aktualną kartę — zmiany w menu nie wymagają nowego wydruku.</p>
         </div>
-        <p className="text-xs text-spoot-ink2">Na start kod jest bezpłatny. Docelowo będzie częścią płatnego pakietu — damy znać z wyprzedzeniem.</p>
         <span className="self-start break-all rounded-lg bg-spoot-input px-2.5 py-1.5 font-display text-[13px] font-semibold">{url.replace('https://', '')}</span>
         <div className="flex flex-wrap gap-2">
           <Btn onClick={printPdf} disabled={!svg}>Drukuj / PDF</Btn>

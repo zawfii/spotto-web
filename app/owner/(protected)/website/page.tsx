@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { useOwnerVenue } from '@/lib/owner-client';
 import { Card, CardTitle, Eyebrow, Loading, PageHeader, inputCls, labelCls } from '@/components/owner/ui';
 import {
-  SETUP_FEE, WEBSITE_PACKAGES, isValidSlug, quote, slugify, slugTyping, zl,
+  FREE_FEATURES, LOYALTY, WEBSITE_PACKAGES, isValidSlug, quote, slugify, slugTyping, zl,
   type WebsiteBilling, type WebsitePackage,
 } from '@/lib/website-packages';
 
@@ -39,7 +39,8 @@ export default function WebsitePage() {
   const [requests, setRequests] = useState<WebsiteRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [billing, setBilling] = useState<WebsiteBilling>('yearly');
-  const [pkg, setPkg] = useState<WebsitePackage>('plus');
+  const [pkg, setPkg] = useState<WebsitePackage | null>('plus'); // null = bez strony
+  const [loyalty, setLoyalty] = useState(false);
   const [slug, setSlug] = useState('');
   const [phone, setPhone] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -69,13 +70,14 @@ export default function WebsitePage() {
     });
   }, [supabase]);
 
-  const q = quote(pkg, billing);
+  const q = quote(pkg, billing, loyalty);
   const custom = q === null;
+  const loyaltyIncluded = pkg === LOYALTY.includedIn;
   const slugOk = isValidSlug(slug);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
-    if (!venue || !userId) return;
+    if (!venue || !userId || !pkg) return;
     if (!slugOk) { setError('Adres strony: 3–40 znaków, tylko małe litery, cyfry i myślnik między słowami.'); return; }
     setSubmitting(true);
     setError('');
@@ -94,15 +96,21 @@ export default function WebsitePage() {
 
   if (venueLoading || (venue && loading)) return <Loading />;
 
-  const header = (
+  const live = requests.find(r => r.status !== 'rejected');
+
+  const header = live ? (
     <PageHeader
-      eyebrow="Strona dla lokalu"
-      title="Zamów stronę swojego lokalu"
-      sub={<>Robimy ją za Ciebie i uruchamiamy pod adresem <strong className="text-spoot-ink">spootme.pl/{slug || 'twoj-lokal'}</strong>. Menu, godziny i zdjęcia bierzemy z profilu w Spoot — zmieniasz raz, aktualne jest wszędzie.</>}
+      eyebrow="Cennik"
+      title="Strona Twojego lokalu"
+      sub="Menu, godziny i zdjęcia bierzemy z profilu w Spoot — zmieniasz raz, aktualne jest wszędzie. Strona działa, dopóki opłacasz abonament."
+    />
+  ) : (
+    <PageHeader
+      eyebrow="Cennik"
+      title="Wybierz, czego potrzebujesz"
+      sub="Zaznacz, co chcesz — suma liczy się na bieżąco. Panel jest za darmo; płacisz tylko za dodatki, które sam wybierzesz."
     />
   );
-
-  const live = requests.find(r => r.status !== 'rejected');
   const lastRejected = requests[0]?.status === 'rejected' ? requests[0] : null;
 
   if (live) {
@@ -138,13 +146,50 @@ export default function WebsitePage() {
 
       <div className="flex flex-wrap items-start gap-6">
         <div className="flex min-w-0 flex-[2_1_480px] flex-col gap-6">
+          <Card className="flex flex-col gap-3">
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="grow"><CardTitle>Masz już w panelu</CardTitle></div>
+              <span className="font-display text-lg font-bold">{zl(0)}</span>
+            </div>
+            <ul className="grid grid-cols-[repeat(auto-fit,minmax(220px,1fr))] gap-x-6 gap-y-2">
+              {FREE_FEATURES.map(f => <li key={f} className="flex gap-2">{CHECK}<span>{f}</span></li>)}
+            </ul>
+            <span className="text-xs text-spoot-ink2">Za darmo dla każdego lokalu, bez limitu czasu.</span>
+          </Card>
+
           <Card>
             <fieldset className="flex flex-col gap-3">
-              <legend className="pb-3"><CardTitle>Jak chcesz płacić</CardTitle></legend>
+              <legend className="pb-3"><CardTitle>Dodatki</CardTitle></legend>
+              <label className={`${optionCls(loyalty || loyaltyIncluded)} ${loyaltyIncluded ? 'cursor-default' : ''}`}>
+                <input type="checkbox" checked={loyalty || loyaltyIncluded} disabled={loyaltyIncluded} onChange={e => setLoyalty(e.target.checked)} className="mt-0.5 h-5 w-5 shrink-0 accent-spoot-ink" />
+                <span className="flex grow flex-col gap-0.5">
+                  <span className="font-display font-bold">Pieczątki — karta stałego gościa</span>
+                  <span className="text-[13px] text-spoot-ink2">Goście zbierają pieczątki w aplikacji, Ty skanujesz kod przy kasie. Włączasz je w zakładce Pieczątki.</span>
+                </span>
+                <span className="shrink-0 text-right">
+                  <span className="block font-display font-bold">{loyaltyIncluded ? 'w cenie Strony Plus' : `${zl(0)} przez rok`}</span>
+                  {!loyaltyIncluded && <span className="block text-xs text-spoot-ink2">potem {zl(LOYALTY.monthly)} netto / mies.</span>}
+                </span>
+              </label>
+              <div className="flex gap-3 rounded-2xl border-2 border-transparent bg-spoot-input p-4 opacity-70">
+                <input type="checkbox" disabled aria-label="Wyróżnienie lokalu — wkrótce" className="mt-0.5 h-5 w-5 shrink-0" />
+                <span className="flex grow flex-col gap-0.5">
+                  <span className="font-display font-bold">Wyróżnienie lokalu i promocja oferty</span>
+                  <span className="text-[13px] text-spoot-ink2">Lokal wyżej u gości w okolicy, zawsze z etykietą. Damy znać, gdy ruszy.</span>
+                </span>
+                <span className="shrink-0 self-start rounded-full bg-spoot-chip px-2 py-0.5 font-display text-[10px] font-bold tracking-[0.5px]">WKRÓTCE</span>
+              </div>
+            </fieldset>
+          </Card>
+
+          <Card>
+            <fieldset className="flex flex-col gap-3">
+              <legend className="pb-3"><CardTitle>Strona dla lokalu</CardTitle></legend>
+              <span className="text-[13px] text-spoot-ink2">Robimy ją za Ciebie z tego, co już jest w profilu. Stworzenie strony nic nie kosztuje — płacisz tylko abonament.</span>
               <div className="grid grid-cols-[repeat(auto-fit,minmax(240px,1fr))] gap-3">
                 {([
-                  ['yearly', '12 miesięcy, z góry', `Stworzenie strony ${zl(SETUP_FEE.yearly)}. Płacisz raz za cały rok.`],
-                  ['monthly', 'Co miesiąc', `Stworzenie strony ${zl(SETUP_FEE.monthly)}. Odnawia się co miesiąc, bez zobowiązania.`],
+                  ['yearly', '12 miesięcy, z góry', 'Płacisz raz za cały rok — niższa cena za miesiąc.'],
+                  ['monthly', 'Co miesiąc', 'Odnawia się co miesiąc, bez zobowiązania.'],
                 ] as const).map(([id, label, desc]) => (
                   <label key={id} className={optionCls(billing === id)}>
                     <input type="radio" name="billing" checked={billing === id} onChange={() => setBilling(id)} className="mt-0.5 h-5 w-5 shrink-0 accent-spoot-ink" />
@@ -158,14 +203,13 @@ export default function WebsitePage() {
                   </label>
                 ))}
               </div>
-            </fieldset>
-          </Card>
-
-          <Card>
-            <fieldset className="flex flex-col gap-3">
-              <legend className="pb-3"><CardTitle>Wybierz pakiet</CardTitle></legend>
-              {/* Dwa pakiety z ceną obok siebie, strona na zamówienie pod nimi na całą szerokość. */}
+              {/* Bez strony na całą szerokość, dwa pakiety z ceną obok siebie, strona na zamówienie pod nimi. */}
               <div className="grid grid-cols-[repeat(auto-fit,minmax(260px,1fr))] gap-3">
+                <label className={`${optionCls(pkg === null)} col-span-full items-center`}>
+                  <input type="radio" name="package" checked={pkg === null} onChange={() => setPkg(null)} className="h-5 w-5 shrink-0 accent-spoot-ink" />
+                  <span className="grow font-display font-bold">Bez strony</span>
+                  <span className="font-display font-bold">{zl(0)}</span>
+                </label>
                 {WEBSITE_PACKAGES.map(p => (
                   <label key={p.id} className={`${optionCls(pkg === p.id)} flex-col gap-4 !p-5 ${p.monthly ? '' : 'col-span-full'}`}>
                     <span className="flex flex-col gap-1">
@@ -191,10 +235,11 @@ export default function WebsitePage() {
                   </label>
                 ))}
               </div>
-              <span className="text-xs text-spoot-ink2">Ceny netto, doliczamy 23% VAT.</span>
+              <span className="text-xs text-spoot-ink2">Ceny netto, doliczamy 23% VAT. Strona działa, dopóki opłacasz abonament — profil w Spoot zostaje zawsze.</span>
             </fieldset>
           </Card>
 
+          {pkg && <>
           <Card className="flex flex-col gap-3">
             <CardTitle>Adres i kontakt</CardTitle>
             <div className="grid grid-cols-[repeat(auto-fit,minmax(220px,1fr))] gap-3">
@@ -243,17 +288,21 @@ export default function WebsitePage() {
               ))}
             </ul>
           </Card>
+          </>}
         </div>
 
         <section className="flex min-w-0 flex-[1_1_320px] flex-col gap-4 rounded-3xl bg-spoot-green p-6 text-white">
-          <h2 className="font-display text-lg font-bold">Twoja prośba</h2>
+          <h2 className="font-display text-lg font-bold">Twój wybór</h2>
           <dl className="flex flex-col">
             {([
               ['Lokal', place?.name ?? '—'],
-              ['Pakiet', pkgLabel(pkg)],
-              ...(q ? [
+              ['Panel', zl(0)],
+              ...(loyaltyIncluded ? [['Pieczątki', 'w cenie Strony Plus']]
+                : loyalty ? [['Pieczątki', `${zl(0)} przez rok, potem ${zl(LOYALTY.monthly)} / mies.`]] : []),
+              ['Strona', pkg ? pkgLabel(pkg) : 'Bez strony'],
+              ...(!pkg ? [] : q ? [
                 ['Adres', `spootme.pl/${slug || '…'}`],
-                ['Stworzenie strony', zl(q.setup)],
+                ['Stworzenie strony', zl(0)],
                 ['Abonament', billing === 'yearly' ? `${zl(12 * q.monthly)} (12 × ${zl(q.monthly)})` : `${zl(q.monthly)} / mies.`],
               ] : [['Cena', 'Wycena indywidualna']]),
             ] as [string, string][]).map(([k, v]) => (
@@ -264,23 +313,30 @@ export default function WebsitePage() {
             ))}
             {q && (
               <div className="flex items-baseline gap-3 border-t border-white/50 py-3">
-                <dt className="grow text-white/80">Koszt na start, netto</dt>
+                <dt className="grow text-white/80">Dziś płacisz, netto</dt>
                 <dd className="font-display text-[32px] font-bold leading-10">{zl(q.dueNow)}</dd>
               </div>
             )}
           </dl>
-          {q && billing === 'yearly' && (
+          {q && q.loyaltyLater > 0 && (
+            <p className="rounded-xl bg-white/15 px-3 py-2.5 text-[13px]">Po darmowym roku pieczątek dojdzie {zl(q.loyaltyLater)} netto miesięcznie. Damy znać wcześniej — możesz je wtedy wyłączyć.</p>
+          )}
+          {q && billing === 'yearly' && q.yearlySaving > 0 && (
             <p className="rounded-xl bg-white/15 px-3 py-2.5 text-[13px]">Oszczędzasz {zl(q.yearlySaving)} w pierwszym roku względem płatności co miesiąc.</p>
           )}
           {error && <p role="alert" className="rounded-xl bg-spoot-tint px-3 py-2.5 text-spoot-ink">{error}</p>}
-          <button
-            type="submit"
-            disabled={submitting || !slugOk}
-            className="h-12 rounded-2xl bg-spoot-orange font-display font-bold text-spoot-ink transition-opacity hover:opacity-90 disabled:opacity-50"
-          >
-            {submitting ? 'Wysyłam…' : custom ? 'Poproś o wycenę' : 'Wyślij prośbę'}
-          </button>
-          <p className="text-xs text-white/80">Po wysłaniu prośba czeka na potwierdzenie. Odezwiemy się w sprawie szczegółów i płatności — online nic teraz nie płacisz.</p>
+          {pkg ? <>
+            <button
+              type="submit"
+              disabled={submitting || !slugOk}
+              className="h-12 rounded-2xl bg-spoot-orange font-display font-bold text-spoot-ink transition-opacity hover:opacity-90 disabled:opacity-50"
+            >
+              {submitting ? 'Wysyłam…' : custom ? 'Poproś o wycenę' : 'Wyślij prośbę o stronę'}
+            </button>
+            <p className="text-xs text-white/80">Po wysłaniu prośba czeka na potwierdzenie. Odezwiemy się w sprawie szczegółów i płatności — online nic teraz nie płacisz.</p>
+          </> : (
+            <p className="text-xs text-white/80">Nic nie musisz wysyłać — wszystko z tej listy masz już w panelu.</p>
+          )}
         </section>
       </div>
     </form>

@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
+import { LOYALTY_NOTE } from '@/lib/website-packages';
 import { useOwnerVenue } from '@/lib/owner-client';
 import { CARD_PALETTES, CARD_PATTERNS, UUID_RE, maxTierStamps, nextRewardLabel, resolveCardDesign } from '@/lib/owner-loyalty';
 import type { AddStampResult, LoyaltyCardDesign, LoyaltyTier, PaletteKey } from '@/lib/owner-loyalty';
@@ -152,7 +153,7 @@ export default function LoyaltyPage() {
 
   return (
     <>
-      <PageHeader eyebrow="Pieczątki" title="Karta stałego gościa" sub="Goście zbierają pieczątki w aplikacji Spoot, Ty ustalasz progi i nagrody.">
+      <PageHeader eyebrow="Pieczątki" title="Karta stałego gościa" sub={`Goście zbierają pieczątki w aplikacji Spoot, Ty ustalasz progi i nagrody. ${LOYALTY_NOTE}`}>
         <span role="status" className="self-center font-display text-[13px] font-bold">{saved ? 'Zapisano' : ''}</span>
         <Btn variant="outline" onClick={() => setScan({ step: 'scanning' })} disabled={!programLive} title={programLive ? undefined : 'Najpierw włącz program, dodaj próg nagrody i zapisz'}>Skanuj kartę gościa</Btn>
         <Btn onClick={save} disabled={saving}>{saving ? 'Zapisuję…' : 'Zapisz zmiany'}</Btn>

@@ -4,7 +4,7 @@ import type { ReactNode } from 'react';
 import { Manrope, Plus_Jakarta_Sans } from 'next/font/google';
 import { Wordmark } from '@/components/SpootLogo';
 import OwnerQuestionPopup from '@/components/OwnerQuestionPopup';
-import { SETUP_FEE, WEBSITE_PACKAGES, zl } from '@/lib/website-packages';
+import { FREE_FEATURES, LOYALTY, LOYALTY_NOTE, WEBSITE_PACKAGES, zl } from '@/lib/website-packages';
 
 // Te same ustawienia co w app/owner/layout.tsx — next/font 14.2 bywa kapryśny przy nowych zestawach wag.
 const manrope = Manrope({ subsets: ['latin', 'latin-ext'], weight: ['500', '600', '700'], variable: '--font-manrope' });
@@ -120,7 +120,7 @@ const BENEFITS: { eyebrow: string; title: string; text: string; bullets: string[
       'Widzisz, kto jest o krok od nagrody',
       'Zero druku, zero kartoników, zero podrabianych stempli',
     ],
-    note: 'Pierwsze lokale mają pieczątki za darmo przez rok. Potem 39 zł miesięcznie — albo w cenie jednego z pakietów strony.',
+    note: LOYALTY_NOTE,
     file: 'pieczatki',
     shot: 'Podgląd panelu: ustawienia karty stałego gościa i lista gości z pieczątkami',
     wide: true,
@@ -155,7 +155,7 @@ const BENEFITS: { eyebrow: string; title: string; text: string; bullets: string[
 const FACTS = [
   ['16 miast', 'w których ludzie szukają jedzenia przez Spoot'],
   ['43 tys. lokali', 'już w aplikacji — Twój najpewniej też, tylko bez gospodarza'],
-  ['0 zł', 'za profil, menu, oferty i statystyki. Pieczątki: pierwszy rok gratis dla pierwszych lokali'],
+  ['0 zł', 'za profil, menu, oferty i statystyki. Pieczątki: pierwszy rok gratis'],
 ];
 
 // Lokale, które są z nami. Logo w public/partnerzy/ (kwadrat, ok. 320 px).
@@ -170,11 +170,21 @@ const STEPS = [
 ];
 
 const FAQ = [
-  ['Naprawdę za darmo? Gdzie jest haczyk?', 'Nie ma. Profil, menu, oferty i statystyki są bezpłatne. Pieczątki są za darmo przez rok dla pierwszych lokali, potem 39 zł miesięcznie albo w cenie jednego z pakietów strony. Płatne są też dodatki, o które sam poprosisz: strona internetowa dla lokalu i wyróżnienie w aplikacji.'],
+  ['Naprawdę za darmo? Gdzie jest haczyk?', `Nie ma. Profil, menu, oferty i statystyki są bezpłatne na zawsze. ${LOYALTY_NOTE} Płatna jest też strona internetowa dla lokalu — tylko jeśli sam o nią poprosisz, bez opłaty za jej stworzenie. Płatne wyróżnienie w aplikacji dopiero szykujemy.`],
   ['Mojego lokalu nie ma w Spoot. Co teraz?', 'Dodasz go sam przy zgłoszeniu: nazwa, adres i rodzaj lokalu. Sprawdzimy dane i dopiszemy go do katalogu razem z Twoim zgłoszeniem.'],
   ['Jak wygląda weryfikacja?', `Dzwonimy do każdego zgłaszającego, zwykle w ciągu 1 dnia roboczego i o porze, którą wskażesz. W tej samej rozmowie pokażemy Ci panel. Wolisz napisać? ${MAIL}.`],
   ['Czy mogę usunąć słabą ocenę?', 'Nie — i to działa na Twoją korzyść. Goście ufają ocenom, bo nikt ich nie czyści. Na opinię możesz odpowiedzieć, a treść łamiącą regulamin zgłosić.'],
   ['Czy muszę mieć aplikację w telefonie?', 'Nie. Cały panel działa w przeglądarce na komputerze. Aplikacja przydaje się przy kasie — do skanowania kart stałych gości.'],
+];
+
+// Cennik w jednej tabeli — te same stałe, z których liczy panel. [nazwa, opis, rocznie | cała szerokość, miesięcznie?]
+const PRICE_ROWS: [string, string, string, string?][] = [
+  ['Panel lokalu', FREE_FEATURES.join(' · '), `${zl(0)}, na zawsze`],
+  ['Pieczątki', 'Karta stałego gościa. W cenie Strony Plus', `pierwszy rok ${zl(0)}, potem ${zl(LOYALTY.monthly)}`],
+  ...WEBSITE_PACKAGES.map((p): [string, string, string, string?] =>
+    p.monthly ? [p.label, p.tagline, zl(p.monthly.yearly), zl(p.monthly.monthly)] : [p.label, p.tagline, 'Wycena indywidualna']),
+  ['Stworzenie strony', 'Robimy ją za Ciebie z tego, co jest w panelu', zl(0)],
+  ['Wyróżnienie lokalu i promocja oferty', 'Zawsze wyraźnie oznaczone', 'Wkrótce'],
 ];
 
 export default function DlaRestauracjiPage() {
@@ -191,6 +201,7 @@ export default function DlaRestauracjiPage() {
           <nav aria-label="Główna" className="flex flex-wrap items-center gap-x-6 gap-y-2 font-display text-sm font-bold">
             <a href="#korzysci" className="py-3 hover:text-spoot-green max-md:hidden">Co zyskujesz</a>
             <a href="#strona" className="py-3 hover:text-spoot-green max-md:hidden">Strona www</a>
+            <a href="#cennik" className="py-3 hover:text-spoot-green max-md:hidden">Cennik</a>
             <a href="#jak" className="py-3 hover:text-spoot-green max-md:hidden">Jak to działa</a>
             <a href="#pytania" className="py-3 hover:text-spoot-green max-md:hidden">Pytania</a>
             <a href={LOGIN} className="whitespace-nowrap py-3 hover:text-spoot-green">Zaloguj się</a>
@@ -315,10 +326,42 @@ export default function DlaRestauracjiPage() {
               })}
             </div>
             <p className="max-w-[760px] text-sm text-spoot-ink2">
-              Ceny netto. „Od” oznacza płatność za 12 miesięcy z góry; przy płatności co miesiąc: Wizytówka {zl(79)}, Strona Plus {zl(129)}.
-              Jednorazowa opłata za stworzenie strony: {zl(SETUP_FEE.yearly)} przy płatności rocznej, {zl(SETUP_FEE.monthly)} przy miesięcznej.
-              Stronę zamawiasz w panelu, po przejęciu lokalu.
+              „Od” oznacza płatność za 12 miesięcy z góry. Stworzenie strony nic nie kosztuje. Strona działa, dopóki opłacasz abonament —
+              profil w Spoot zostaje zawsze. Stronę zamawiasz w panelu, po przejęciu lokalu.
             </p>
+            <div id="cennik" className="flex scroll-mt-6 flex-col gap-4 rounded-3xl bg-spoot-card p-[clamp(24px,3vw,32px)]">
+              <h3 className="font-display text-[26px] font-bold leading-[1.15]">Cały cennik</h3>
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-[520px] border-collapse text-left">
+                  <thead>
+                    <tr className="font-display text-xs font-bold uppercase tracking-[0.08em] text-spoot-ink2">
+                      <th scope="col" className="py-2 pr-4 font-bold">Co dostajesz</th>
+                      <th scope="col" className="whitespace-nowrap py-2 pr-4 text-right font-bold">Za rok z góry</th>
+                      <th scope="col" className="whitespace-nowrap py-2 text-right font-bold">Co miesiąc</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {PRICE_ROWS.map(([name, hint, yearly, monthly]) => (
+                      <tr key={name} className="border-t border-spoot-line align-top">
+                        <th scope="row" className="py-3 pr-4 font-normal">
+                          <div className="font-display font-bold">{name}</div>
+                          <div className="text-sm text-spoot-ink2">{hint}</div>
+                        </th>
+                        {monthly === undefined
+                          ? <td colSpan={2} className="whitespace-nowrap py-3 text-right font-display font-bold">{yearly}</td>
+                          : <>
+                              <td className="whitespace-nowrap py-3 pr-4 text-right font-display font-bold">{yearly}</td>
+                              <td className="whitespace-nowrap py-3 text-right font-display font-bold">{monthly}</td>
+                            </>}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <p className="text-sm text-spoot-ink2">
+                Ceny netto za miesiąc, doliczamy 23% VAT. Bez umowy na czas określony. W panelu zaznaczasz, czego chcesz, i od razu widzisz sumę.
+              </p>
+            </div>
           </div>
         </section>
 

@@ -18,7 +18,7 @@ const NAV = [
   { path: '/reviews', label: 'Opinie', icon: NAV_ICONS.star },
   { path: '/settings', label: 'Profil lokalu', icon: NAV_ICONS.store },
   { path: '/promote', label: 'Wyróżnienie', icon: NAV_ICONS.rocket, badge: 'WKRÓTCE' },
-  { path: '/website', label: 'Strona dla lokalu', icon: NAV_ICONS.globe, badge: 'NOWE' },
+  { path: '/website', label: 'Cennik i strona', icon: NAV_ICONS.globe },
 ];
 
 type Props = { base: string; venues: OwnerVenueRef[]; selectedId: string; canAdd: boolean; userEmail: string };
