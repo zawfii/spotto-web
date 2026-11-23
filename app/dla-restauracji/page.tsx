@@ -183,18 +183,18 @@ export default function DlaRestauracjiPage() {
       <style dangerouslySetInnerHTML={{ __html: SHOT_CSS }} />
 
       <header className={`${GUTTER} py-4`}>
-        <div className={`${WRAP} flex flex-wrap items-center justify-between gap-x-6 gap-y-3`}>
-          <div className="flex items-center gap-3">
+        <div className={`${WRAP} flex flex-wrap items-center justify-between gap-x-3 gap-y-3`}>
+          <div className="flex items-center gap-2 sm:gap-3">
             <Wordmark size={26} />
-            <span className="rounded-full bg-spoot-green px-3 py-[3px] font-display text-[11px] font-bold tracking-[0.4px] text-white">DLA RESTAURACJI</span>
+            <span className="rounded-full bg-spoot-green px-2.5 py-[3px] sm:px-3 font-display text-[11px] font-bold tracking-[0.4px] text-white">DLA RESTAURACJI</span>
           </div>
           <nav aria-label="Główna" className="flex flex-wrap items-center gap-x-6 gap-y-2 font-display text-sm font-bold">
-            <a href="#korzysci" className="py-3 hover:text-spoot-green">Co zyskujesz</a>
-            <a href="#strona" className="py-3 hover:text-spoot-green">Strona www</a>
-            <a href="#jak" className="py-3 hover:text-spoot-green">Jak to działa</a>
-            <a href="#pytania" className="py-3 hover:text-spoot-green">Pytania</a>
-            <a href={LOGIN} className="py-3 hover:text-spoot-green">Zaloguj się</a>
-            <a href={REGISTER} className={`${BTN} min-h-[44px] bg-spoot-ink px-5 text-sm text-white`}>Zgłoś lokal</a>
+            <a href="#korzysci" className="py-3 hover:text-spoot-green max-md:hidden">Co zyskujesz</a>
+            <a href="#strona" className="py-3 hover:text-spoot-green max-md:hidden">Strona www</a>
+            <a href="#jak" className="py-3 hover:text-spoot-green max-md:hidden">Jak to działa</a>
+            <a href="#pytania" className="py-3 hover:text-spoot-green max-md:hidden">Pytania</a>
+            <a href={LOGIN} className="whitespace-nowrap py-3 hover:text-spoot-green">Zaloguj się</a>
+            <a href={REGISTER} className={`${BTN} min-h-[44px] bg-spoot-ink px-5 text-sm text-white max-md:hidden`}>Zgłoś lokal</a>
           </nav>
         </div>
       </header>
