@@ -164,14 +164,14 @@ const VENUES = [
 
 const STEPS = [
   ['Załóż konto', 'Nick, e-mail i telefon. Bez hasła — logujesz się linkiem z maila.'],
-  ['Zgłoś, że lokal jest Twój', 'Znajdujesz go w katalogu i podajesz dane firmy. Sprawdzamy każde zgłoszenie, żeby nikt obcy nie przejął Twojego profilu.'],
+  ['Zgłoś, że lokal jest Twój', 'Znajdujesz go w katalogu i zostawiasz numer telefonu. Dzwonimy w ciągu 1 dnia roboczego, żeby nikt obcy nie przejął Twojego profilu.'],
   ['Zarządzaj skąd chcesz', 'Z komputera w panelu albo z telefonu w aplikacji. Zmiany widać u gości od razu.'],
 ];
 
 const FAQ = [
   ['Naprawdę za darmo? Gdzie jest haczyk?', 'Nie ma. Profil, menu, oferty i statystyki są bezpłatne. Pieczątki są za darmo przez rok dla pierwszych lokali, potem 39 zł miesięcznie albo w cenie jednego z pakietów strony. Płatne są też dodatki, o które sam poprosisz: strona internetowa dla lokalu i wyróżnienie w aplikacji.'],
-  ['Mojego lokalu nie ma w Spoot. Co teraz?', `Napisz na ${MAIL} — dodamy go do katalogu, a potem zgłosisz go jako swój.`],
-  ['Jak wygląda weryfikacja?', 'Każde zgłoszenie sprawdza człowiek. Stan zgłoszenia widzisz po zalogowaniu, a gdy je zatwierdzimy, panel otworzy się na Twoim koncie.'],
+  ['Mojego lokalu nie ma w Spoot. Co teraz?', 'Dodasz go sam przy zgłoszeniu: nazwa, adres i rodzaj lokalu. Sprawdzimy dane i dopiszemy go do katalogu razem z Twoim zgłoszeniem.'],
+  ['Jak wygląda weryfikacja?', `Dzwonimy do każdego zgłaszającego, zwykle w ciągu 1 dnia roboczego i o porze, którą wskażesz. W tej samej rozmowie pokażemy Ci panel. Wolisz napisać? ${MAIL}.`],
   ['Czy mogę usunąć słabą ocenę?', 'Nie — i to działa na Twoją korzyść. Goście ufają ocenom, bo nikt ich nie czyści. Na opinię możesz odpowiedzieć, a treść łamiącą regulamin zgłosić.'],
   ['Czy muszę mieć aplikację w telefonie?', 'Nie. Cały panel działa w przeglądarce na komputerze. Aplikacja przydaje się przy kasie — do skanowania kart stałych gości.'],
 ];

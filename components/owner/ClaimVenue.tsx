@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSupabase } from '@/lib/owner-client';
+import { CALL_TIMES } from '@/lib/contact';
 import { Btn, inputCls, labelCls } from './ui';
 
 type PlaceResult = { id: string; name: string; category: string | null; city: string | null; district: string | null };
@@ -27,6 +28,7 @@ export default function ClaimVenue({ userId, defaultPhone, nextVenue }: { userId
   const [fullName, setFullName] = useState('');
   const [phone, setPhone] = useState(defaultPhone);
   const [nip, setNip] = useState('');
+  const [callTime, setCallTime] = useState('');
   const [message, setMessage] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
@@ -65,7 +67,7 @@ export default function ClaimVenue({ userId, defaultPhone, nextVenue }: { userId
     if (mode === 'new' && (!newName.trim() || !newAddress.trim() || !newCity.trim())) { setError('Podaj nazwę, adres i miasto lokalu.'); return; }
     if (!fullName.trim()) { setError('Wpisz imię i nazwisko.'); return; }
     if (cleanPhone.replace(/\D/g, '').length < 9) { setError('Wpisz poprawny numer telefonu.'); return; }
-    if (cleanNip.length !== 10) { setError('NIP musi mieć 10 cyfr.'); return; }
+    if (cleanNip && cleanNip.length !== 10) { setError('NIP musi mieć 10 cyfr.'); return; }
     setSubmitting(true);
     setError('');
 
@@ -88,19 +90,22 @@ export default function ClaimVenue({ userId, defaultPhone, nextVenue }: { userId
     }
     if (!placeId) { setSubmitting(false); return; }
 
-    const { error } = await supabase.from('ownership_requests').insert({
+    const { data: created, error } = await supabase.from('ownership_requests').insert({
       user_id: userId,
       place_id: placeId,
       full_name: fullName.trim(),
       phone: cleanPhone,
-      nip: cleanNip,
+      nip: cleanNip || null,
+      call_time: callTime || null,
       message: message.trim() || null,
-    });
+    }).select('id').single();
     setSubmitting(false);
     if (error) {
       setError(error.code === '23505' ? 'Prośba dla tego lokalu już została wysłana.' : 'Nie udało się wysłać zgłoszenia. Spróbuj ponownie.');
       return;
     }
+    // Push do nas: nowe zgłoszenie, trzeba zadzwonić (funkcja sama sprawdza, czy jest komu wysłać).
+    supabase.functions.invoke('claim-push', { body: { requestId: created.id } }).catch(() => {});
     router.refresh();
   }
 
@@ -190,10 +195,17 @@ export default function ClaimVenue({ userId, defaultPhone, nextVenue }: { userId
               <input type="tel" value={phone} onChange={e => setPhone(e.target.value)} required maxLength={30} autoComplete="tel" className={inputCls} />
             </label>
             <label className={labelCls}>
-              NIP
-              <input value={nip} onChange={e => setNip(e.target.value)} required inputMode="numeric" maxLength={13} placeholder="10 cyfr" className={inputCls} />
+              Kiedy najlepiej dzwonić?
+              <select value={callTime} onChange={e => setCallTime(e.target.value)} className={inputCls}>
+                <option value="">O dowolnej porze</option>
+                {Object.entries(CALL_TIMES).map(([value, label]) => <option key={value} value={value}>{label[0].toUpperCase() + label.slice(1)}</option>)}
+              </select>
             </label>
           </div>
+          <label className={labelCls}>
+            NIP (opcjonalnie)
+            <input value={nip} onChange={e => setNip(e.target.value)} inputMode="numeric" maxLength={13} placeholder="10 cyfr — przyspiesza weryfikację" className={inputCls} />
+          </label>
           <label className={labelCls}>
             Wiadomość (opcjonalnie)
             <textarea value={message} onChange={e => setMessage(e.target.value)} maxLength={500} rows={3} className={`${inputCls} h-auto py-2.5`} />
@@ -202,8 +214,8 @@ export default function ClaimVenue({ userId, defaultPhone, nextVenue }: { userId
           <Btn type="submit" disabled={submitting}>{submitting ? 'Wysyłam…' : mode === 'new' ? 'Dodaj lokal i wyślij zgłoszenie' : 'Wyślij zgłoszenie'}</Btn>
           <p className="text-xs text-spoot-ink2">
             {nextVenue
-              ? 'Po akceptacji lokal pojawi się na liście lokali w panelu.'
-              : 'Zgłoszenie sprawdzamy ręcznie — po akceptacji panel otworzy się na tym koncie.'}
+              ? 'Zadzwonimy, żeby potwierdzić lokal. Potem pojawi się na liście lokali w panelu.'
+              : 'Zadzwonimy w ciągu 1 dnia roboczego, żeby potwierdzić, że to Twój lokal. Po rozmowie panel otworzy się na tym koncie.'}
           </p>
         </>
       )}
