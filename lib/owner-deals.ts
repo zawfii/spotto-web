@@ -3,10 +3,17 @@
 export type DealStatus = 'pending' | 'approved' | 'rejected';
 export type DealSource = 'owner' | 'admin' | 'user' | 'scraper';
 export type DayKey = 'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat' | 'sun';
+// 'promo' trafia do Ofert dnia, 'lunch' tylko na kartę lokalu (góra menu).
+export type DealKind = 'promo' | 'lunch';
+// plan lunchu na dni tygodnia, np. { mon: 'pomidorowa + schabowy' }
+export type DayMenu = Partial<Record<DayKey, string>>;
 
 export type Deal = {
   id: string;
   dish_name: string;
+  description: string | null;
+  kind: DealKind;
+  day_menu: DayMenu | null;
   price: number;
   original_price: number | null;
   days_of_week: DayKey[];
@@ -29,6 +36,11 @@ export const DAYS: { key: DayKey; short: string }[] = [
   { key: 'sat', short: 'Sob' },
   { key: 'sun', short: 'Nd' },
 ];
+
+// Ten sam wzorzec co wyzwalacz deals_default_kind w bazie i looksLikeLunch w apce.
+export function looksLikeLunch(name: string): boolean {
+  return /lunch|(danie|zestaw|menu|obiad|zupa)\s+dnia/i.test(name);
+}
 
 export function discountPercent(price: number, originalPrice: number | null): number | null {
   if (!originalPrice || originalPrice <= price) return null;

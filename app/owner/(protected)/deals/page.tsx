@@ -2,8 +2,8 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { useOwnerVenue } from '@/lib/owner-client';
-import { DAYS, DISH_TYPE_LABELS, discountPercent, dishToTemplateKey, formatDealTime } from '@/lib/owner-deals';
-import type { Deal, DayKey, DishTypeKey } from '@/lib/owner-deals';
+import { DAYS, DISH_TYPE_LABELS, discountPercent, dishToTemplateKey, formatDealTime, looksLikeLunch } from '@/lib/owner-deals';
+import type { Deal, DayKey, DayMenu, DealKind, DishTypeKey } from '@/lib/owner-deals';
 import { formatPrice } from '@/lib/format';
 import { Btn, Card, CardTitle, Eyebrow, Loading, PageHeader, inputCls, labelCls } from '@/components/owner/ui';
 
@@ -18,11 +18,16 @@ type Form = {
   endTime: string;
   dishType: DishTypeKey;
   dishTypeTouched: boolean; // dopóki właściciel nie wybierze, zgadujemy z nazwy dania
+  kind: DealKind;
+  kindTouched: boolean; // jak wyżej: nazwa „Lunch dnia” sama przełącza na lunch
+  description: string;
+  dayMenu: DayMenu;
 };
 
 const EMPTY: Form = {
   editId: null, dishName: '', price: '', originalPrice: '', days: [], validUntil: '',
   startTime: '', endTime: '', dishType: 'inne', dishTypeTouched: false,
+  kind: 'promo', kindTouched: false, description: '', dayMenu: {},
 };
 
 // Płatna promocja oferty jeszcze nie ruszyła: nowych próśb nie przyjmujemy,
@@ -50,13 +55,14 @@ export default function DealsPage() {
   const [form, setForm] = useState<Form>(EMPTY);
   const [saving, setSaving] = useState(false);
   const [promos, setPromos] = useState<DealPromotion[]>([]);
+  const isLunch = form.kind === 'lunch';
 
   const load = useCallback(async () => {
     if (!venue) return;
     const [{ data }, { data: promoRows }] = await Promise.all([
       supabase
         .from('deals')
-        .select('id, dish_name, price, original_price, days_of_week, valid_until, start_time, end_time, dish_category, status, source, admin_note, created_at')
+        .select('id, dish_name, description, kind, day_menu, price, original_price, days_of_week, valid_until, start_time, end_time, dish_category, status, source, admin_note, created_at')
         .eq('place_id', venue.place_id)
         .order('created_at', { ascending: false }),
       supabase
@@ -86,6 +92,7 @@ export default function DealsPage() {
       ...f,
       dishName,
       dishType: f.dishTypeTouched ? f.dishType : dishToTemplateKey(dishName) ?? 'inne',
+      kind: f.kindTouched ? f.kind : looksLikeLunch(dishName) ? 'lunch' : 'promo',
     }));
   }
 
@@ -105,6 +112,10 @@ export default function DealsPage() {
       endTime: deal.end_time?.slice(0, 5) ?? '',
       dishType: deal.dish_category ?? 'inne',
       dishTypeTouched: true,
+      kind: deal.kind ?? 'promo',
+      kindTouched: true,
+      description: deal.description ?? '',
+      dayMenu: deal.day_menu ?? {},
     });
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
@@ -116,9 +127,16 @@ export default function DealsPage() {
     if (!venue || !userId || !form.dishName.trim() || isNaN(price) || form.days.length === 0) return;
     if (original !== null && isNaN(original)) return;
 
+    // plan dni tylko dla lunchu i tylko dla zaznaczonych dni
+    const dayMenu = Object.fromEntries(
+      DAYS.filter(d => isLunch && form.days.includes(d.key) && form.dayMenu[d.key]?.trim())
+        .map(d => [d.key, form.dayMenu[d.key]!.trim()]),
+    );
     const data = {
       dish_name: form.dishName.trim(),
-      description: null,
+      description: form.description.trim() || null,
+      kind: form.kind,
+      day_menu: Object.keys(dayMenu).length > 0 ? dayMenu : null,
       price,
       original_price: original,
       days_of_week: DAYS.map(d => d.key).filter(k => form.days.includes(k)),
@@ -159,7 +177,7 @@ export default function DealsPage() {
       <PageHeader
         eyebrow="Oferty"
         title="Oferty dnia"
-        sub="Dania w niższej cenie w wybrane dni i godziny. Goście widzą je w Ofertach dnia i na profilu lokalu."
+        sub="Promocje trafiają do Ofert dnia w okolicy i na profil lokalu. Lunch pokazujemy na górze Twojego menu."
       />
 
       <div className="flex flex-wrap items-start gap-6">
@@ -204,7 +222,7 @@ export default function DealsPage() {
                           <td className="py-3.5 pl-2 pr-3">
                             <div className="font-display font-bold">{deal.dish_name}</div>
                             <div className="text-xs text-spoot-ink2">
-                              {DISH_TYPE_LABELS[deal.dish_category] ?? 'Inne'}
+                              {deal.kind === 'lunch' ? 'Lunch · w menu lokalu' : DISH_TYPE_LABELS[deal.dish_category] ?? 'Inne'}
                               {deal.valid_until ? ` · do ${deal.valid_until.split('-').reverse().join('.')}` : ''}
                             </div>
                             {deal.status === 'rejected' && deal.admin_note && <div className="text-xs text-spoot-danger">{deal.admin_note}</div>}
@@ -261,13 +279,37 @@ export default function DealsPage() {
         <Card className="min-w-0 flex-[1_1_320px]">
           <form onSubmit={save} className="flex flex-col gap-4">
             <CardTitle>{form.editId ? 'Edytuj ofertę' : 'Nowa oferta'}</CardTitle>
+            <div className="flex flex-col gap-2">
+              <div className="flex gap-1.5">
+                {([['promo', 'Promocja'], ['lunch', 'Lunch']] as const).map(([k, label]) => (
+                  <button
+                    key={k}
+                    type="button"
+                    aria-pressed={form.kind === k}
+                    onClick={() => setForm({ ...form, kind: k, kindTouched: true })}
+                    className={`min-h-10 flex-1 rounded-full px-3 font-display text-[13px] font-bold ${form.kind === k ? 'bg-spoot-ink text-white' : 'border border-spoot-line bg-spoot-input hover:bg-spoot-chip/70'}`}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+              <p className="text-xs text-spoot-ink2">
+                {isLunch ? 'Pokażemy na górze Twojego menu. Nie trafia do Ofert dnia.' : 'Pokażemy w Ofertach dnia w okolicy i na profilu lokalu.'}
+              </p>
+            </div>
             <label className={labelCls}>
-              Danie *
-              <input required value={form.dishName} onChange={e => setName(e.target.value)} placeholder="np. Pizza Margherita" maxLength={80} className={inputCls} />
+              {isLunch ? 'Nazwa *' : 'Danie *'}
+              <input required value={form.dishName} onChange={e => setName(e.target.value)} placeholder={isLunch ? 'np. Lunch dnia' : 'np. Pizza Margherita'} maxLength={80} className={inputCls} />
             </label>
+            {isLunch && (
+              <label className={labelCls}>
+                Co w zestawie
+                <input value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} placeholder="np. zupa + danie główne + kompot" maxLength={240} className={inputCls} />
+              </label>
+            )}
             <div className="grid grid-cols-2 gap-3">
               <label className={labelCls}>
-                Cena w ofercie *
+                {isLunch ? 'Cena *' : 'Cena w ofercie *'}
                 <input required value={form.price} onChange={e => setForm({ ...form, price: e.target.value })} inputMode="decimal" placeholder="np. 15" className={inputCls} />
               </label>
               <label className={labelCls}>
@@ -275,16 +317,18 @@ export default function DealsPage() {
                 <input value={form.originalPrice} onChange={e => setForm({ ...form, originalPrice: e.target.value })} inputMode="decimal" placeholder="np. 22" className={inputCls} />
               </label>
             </div>
-            <label className={labelCls}>
-              Rodzaj dania
-              <select
-                value={form.dishType}
-                onChange={e => setForm({ ...form, dishType: e.target.value as DishTypeKey, dishTypeTouched: true })}
-                className={inputCls}
-              >
-                {(Object.keys(DISH_TYPE_LABELS) as DishTypeKey[]).map(k => <option key={k} value={k}>{DISH_TYPE_LABELS[k]}</option>)}
-              </select>
-            </label>
+            {!isLunch && (
+              <label className={labelCls}>
+                Rodzaj dania
+                <select
+                  value={form.dishType}
+                  onChange={e => setForm({ ...form, dishType: e.target.value as DishTypeKey, dishTypeTouched: true })}
+                  className={inputCls}
+                >
+                  {(Object.keys(DISH_TYPE_LABELS) as DishTypeKey[]).map(k => <option key={k} value={k}>{DISH_TYPE_LABELS[k]}</option>)}
+                </select>
+              </label>
+            )}
             <fieldset className="flex flex-col gap-2">
               <legend className="pb-2 font-display text-[11px] font-bold uppercase tracking-[0.5px]">Dni tygodnia *</legend>
               <div className="flex flex-wrap gap-1.5">
@@ -304,6 +348,23 @@ export default function DealsPage() {
                 })}
               </div>
             </fieldset>
+            {isLunch && form.days.length > 0 && (
+              <fieldset className="flex flex-col gap-2">
+                <legend className="pb-2 font-display text-[11px] font-bold uppercase tracking-[0.5px]">Dania na dni (opcjonalnie)</legend>
+                {DAYS.filter(d => form.days.includes(d.key)).map(d => (
+                  <label key={d.key} className="flex items-center gap-2">
+                    <span className="w-9 shrink-0 font-display text-[13px] font-bold">{d.short}</span>
+                    <input
+                      value={form.dayMenu[d.key] ?? ''}
+                      onChange={e => setForm({ ...form, dayMenu: { ...form.dayMenu, [d.key]: e.target.value } })}
+                      placeholder="np. pomidorowa + schabowy"
+                      maxLength={120}
+                      className={inputCls}
+                    />
+                  </label>
+                ))}
+              </fieldset>
+            )}
             <div className="grid grid-cols-2 gap-3">
               <label className={labelCls}>
                 Od
