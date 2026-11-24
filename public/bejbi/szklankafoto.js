@@ -194,7 +194,6 @@ export async function zbudujPokaz(group, { plakat: P, ramka: R, szklanka: S, war
     // spłaszczona (jak wydruk) → pełna bryła przed plakatem
     szkl.scale.set(k, k, k * (0.02 + 0.98 * lot));
     szkl.position.z = 0.002 + (rMax * k + 0.06) * lot;
-    szkl.rotation.x = 0.26 * lot;                              // pochylenie: widać wnętrze i lustro płynu
     obrot.rotation.y = 0.38 * Math.sin((t - 0.4) * 1.5) * lot; // kołysanie do ~22°
 
     const L = poziom(t), pelna = L === null;
