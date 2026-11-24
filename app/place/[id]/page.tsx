@@ -214,23 +214,6 @@ export default async function PlacePage({ params }: PlacePageProps) {
             </div>
           )}
 
-          {links.instagram && (
-            <a href={links.instagram} {...EXTERNAL} style={s.instagram}>
-              <svg aria-hidden="true" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" style={{ flexShrink: 0 }}>
-                <rect x="3" y="3" width="18" height="18" rx="5" /><circle cx="12" cy="12" r="4" /><circle cx="17.5" cy="6.5" r="0.8" fill="currentColor" />
-              </svg>
-              <span style={{ flexGrow: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
-                <span style={{ fontSize: 12, opacity: 0.9 }}>Instagram</span>
-                <span style={{ fontFamily: MANROPE, fontWeight: 700, fontSize: 16, overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                  @{links.instagram.split('/').filter(Boolean).pop()}
-                </span>
-              </span>
-              <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
-                <path d="M7 17L17 7M9 7h8v8" />
-              </svg>
-            </a>
-          )}
-
           {place.editorial_summary && (
             <p style={{ margin: 0, fontSize: 15, lineHeight: '22px', color: INK2 }}>{place.editorial_summary}</p>
           )}
@@ -253,6 +236,23 @@ export default async function PlacePage({ params }: PlacePageProps) {
             <div style={{ background: CARD, borderRadius: 16, overflow: 'hidden' }}>
               {rows.flatMap((row, i) => (i ? [<div key={`divider-${i}`} style={{ height: 1, marginLeft: 48, background: HAIR }} />, row] : [row]))}
             </div>
+          )}
+
+          {links.instagram && (
+            <a href={links.instagram} {...EXTERNAL} style={s.instagram}>
+              <svg aria-hidden="true" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" style={{ flexShrink: 0 }}>
+                <rect x="3" y="3" width="18" height="18" rx="5" /><circle cx="12" cy="12" r="4" /><circle cx="17.5" cy="6.5" r="0.8" fill="currentColor" />
+              </svg>
+              <span style={{ flexGrow: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
+                <span style={{ fontSize: 12, opacity: 0.9 }}>Instagram</span>
+                <span style={{ fontFamily: MANROPE, fontWeight: 700, fontSize: 16, overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  @{links.instagram.split('/').filter(Boolean).pop()}
+                </span>
+              </span>
+              <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+                <path d="M7 17L17 7M9 7h8v8" />
+              </svg>
+            </a>
           )}
 
           <section id="opinie" style={s.section}>
