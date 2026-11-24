@@ -6,12 +6,12 @@ import * as THREE from 'three';
 
 export const KONIEC = 9.6; // s — po tym czasie karta końcowa
 
-const clamp = (v) => Math.max(0, Math.min(1, v));
-const ease = (v) => { v = clamp(v); return v < 0.5 ? 4 * v * v * v : 1 - Math.pow(-2 * v + 2, 3) / 2; };
-const faza = (t, a, b) => ease((t - a) / (b - a));
-const sprezyna = (v) => { v = clamp(v); const c = 1.9; return 1 + (c + 1) * Math.pow(v - 1, 3) + c * Math.pow(v - 1, 2); };
+export const clamp = (v) => Math.max(0, Math.min(1, v));
+export const ease = (v) => { v = clamp(v); return v < 0.5 ? 4 * v * v * v : 1 - Math.pow(-2 * v + 2, 3) / 2; };
+export const faza = (t, a, b) => ease((t - a) / (b - a));
+export const sprezyna = (v) => { v = clamp(v); const c = 1.9; return 1 + (c + 1) * Math.pow(v - 1, 3) + c * Math.pow(v - 1, 2); };
 
-function canvasTex(w, h, rysuj) {
+export function canvasTex(w, h, rysuj) {
   const c = Object.assign(document.createElement('canvas'), { width: w, height: h });
   rysuj(c.getContext('2d'), w, h);
   const t = new THREE.CanvasTexture(c);
@@ -21,7 +21,7 @@ function canvasTex(w, h, rysuj) {
 const mat = (o) => new THREE.MeshBasicMaterial({ transparent: true, depthWrite: false, ...o });
 const plaszczyzna = (w, h, m, kolejnosc = 10) => Object.assign(new THREE.Mesh(new THREE.PlaneGeometry(w, h), m), { renderOrder: kolejnosc });
 
-function etykietaTex(nr, nazwa) {
+export function etykietaTex(nr, nazwa) {
   return canvasTex(760, 132, (g, w, h) => {
     g.font = '800 52px Barlow';
     let rozmiar = 52;

@@ -1,6 +1,8 @@
 import * as THREE from 'three';
 import { MindARThree } from 'mindar-image-three';
-import { zbudujPokaz, KONIEC } from '/bejbi/pokaz3d.js';
+// Pokaz: prawdziwe 3D (szklanka3d.js); ?wersja=plaski = poprzedni pokaz z pociętego zdjęcia.
+const wersja = new URLSearchParams(location.search).get('wersja') === 'plaski' ? 'plaski' : '3d';
+const { zbudujPokaz, KONIEC } = await import(wersja === 'plaski' ? '/bejbi/pokaz3d.js' : '/bejbi/szklanka3d.js');
 
 // ── KONFIGURACJA ────────────────────────────────────────────────────────────
 const CONFIG = {
@@ -77,7 +79,7 @@ async function startAR() {
   });
   const { renderer, scene, camera } = mindar;
   const anchor = mindar.addAnchor(0);
-  const pokazGotowy = zbudujPokaz(anchor.group, { ...CONFIG, maska: maskaZaokraglona(CONFIG.ramka) });
+  const pokazGotowy = zbudujPokaz(anchor.group, { ...CONFIG, maska: maskaZaokraglona(CONFIG.ramka), renderer, scene });
   anchor.onTargetFound = () => {
     widoczny = true;
     if (!znaleziono) { znaleziono = true; track('target_found'); }
@@ -106,7 +108,7 @@ async function startAR() {
       tPokazu += Math.min(0.05, (teraz - ostatnio) / 1000);
       if (tPokazu >= KONIEC) {
         skonczony = true;
-        track('video_completed', { tryb: 'ar' });
+        track('video_completed', { tryb: 'ar', wersja });
         pokaz('koniec');
       }
     }
