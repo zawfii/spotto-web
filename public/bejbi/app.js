@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { MindARThree } from 'mindar-image-three';
+import { zbudujPokaz, KONIEC } from '/bejbi/pokaz3d.js';
 
 // ── KONFIGURACJA ────────────────────────────────────────────────────────────
 const CONFIG = {
@@ -13,6 +14,10 @@ const CONFIG = {
   // Ramka 9:16 na plakacie (px w poster-target.png 1123×1587): tu leży film.
   plakat: { w: 1123, h: 1587 },
   ramka: { x: 298, y: 384, w: 528, h: 939, r: 28 },
+  // Zdjęcie szklanki (664×789) i jego miejsce na plakacie (px).
+  szklanka: { src: '/bejbi/szklanka.png', x: 332, y: 580, w: 460, h: 547 },
+  // Warstwy w wierszach zdjęcia, od góry: [od, do, nr, nazwa] — jak skład na plakacie.
+  warstwy: [[0, 185, '01', 'Pianka ze śmietanki'], [185, 320, '02', 'Matcha'], [320, 455, '03', 'Mleko'], [455, 789, '04', 'Pulpa bananowa']],
 };
 
 // ── ANALITYKA (PostHog, bez ciasteczek: id tylko w pamięci, bez profili osób) ──
@@ -46,6 +51,7 @@ let mindar = null;
 let widoczny = false;
 let znaleziono = false;
 let skonczony = false;
+let tPokazu = 0; // s pokazu 3D; biegnie tylko, gdy plakat jest w kadrze
 
 track('scan_opened');
 
@@ -63,50 +69,53 @@ function maskaZaokraglona({ w, h, r }) {
 async function startAR() {
   const btn = $('#wlacz');
   btn.disabled = true; btn.textContent = 'Uruchamiam…';
-  // iOS: odblokuj wideo w geście użytkownika, zanim MindAR przejmie wątek.
-  film.play().then(() => { if (!widoczny) film.pause(); }).catch(() => {});
 
-  const { plakat: P, ramka: R } = CONFIG;
   mindar = new MindARThree({
     container: $('#ar'), imageTargetSrc: '/bejbi/targets.mind', maxTrack: 1,
     uiLoading: 'no', uiScanning: 'no', uiError: 'no',
     filterMinCF: 0.0001, filterBeta: 0.001, // mniej drgań
   });
   const { renderer, scene, camera } = mindar;
-  const tex = new THREE.VideoTexture(film);
-  tex.colorSpace = THREE.SRGBColorSpace;
-  // Jednostki MindAR: szerokość plakatu = 1, środek plakatu = (0,0), oś Y w górę.
-  const plane = new THREE.Mesh(
-    new THREE.PlaneGeometry(R.w / P.w, R.h / P.w),
-    new THREE.MeshBasicMaterial({ map: tex, alphaMap: maskaZaokraglona(R), transparent: true }),
-  );
-  plane.position.set((R.x + R.w / 2) / P.w - 0.5, (P.h / 2 - (R.y + R.h / 2)) / P.w, 0.001);
   const anchor = mindar.addAnchor(0);
-  anchor.group.add(plane);
+  const pokazGotowy = zbudujPokaz(anchor.group, { ...CONFIG, maska: maskaZaokraglona(CONFIG.ramka) });
   anchor.onTargetFound = () => {
     widoczny = true;
     if (!znaleziono) { znaleziono = true; track('target_found'); }
-    if (tryb === 'ar') { pokaz(skonczony ? 'koniec' : null); if (!skonczony) film.play().catch(() => {}); }
+    if (tryb === 'ar') pokaz(skonczony ? 'koniec' : null);
   };
   anchor.onTargetLost = () => {
     widoczny = false;
-    film.pause();
     if (tryb === 'ar' && !skonczony) pokaz('skan');
   };
 
+  let klatka;
   try {
-    await mindar.start();
+    [klatka] = await Promise.all([pokazGotowy, mindar.start()]);
   } catch (e) {
     console.error(e);
     return startFallback('blad_aparatu');
   }
   if (tryb !== 'start') return; // użytkownik w międzyczasie wybrał film
   tryb = 'ar';
-  film.currentTime = 0;
   pokaz('skan');
   track('ar_started');
-  renderer.setAnimationLoop(() => renderer.render(scene, camera));
-  setTimeout(() => { if (!znaleziono && tryb === 'ar') $('#podpowiedz').textContent = 'Podejdź bliżej, cały plakat w kadrze'; }, 8000);
+  let ostatnio = performance.now();
+  renderer.setAnimationLoop(() => {
+    const teraz = performance.now();
+    if (widoczny && !skonczony) {
+      tPokazu += Math.min(0.05, (teraz - ostatnio) / 1000);
+      if (tPokazu >= KONIEC) {
+        skonczony = true;
+        track('video_completed', { tryb: 'ar' });
+        pokaz('koniec');
+      }
+    }
+    ostatnio = teraz;
+    klatka(Math.min(tPokazu, KONIEC));
+    window.__pokazT = tPokazu;
+    renderer.render(scene, camera);
+  });
+  setTimeout(() => { if (!znaleziono && tryb === 'ar') $('#podpowiedz').textContent = 'Cały plakat w kadrze, bez odblasków'; }, 8000);
 }
 
 function stopAR() {
@@ -132,16 +141,16 @@ function startFallback(powod) {
 
 // ── KONIEC FILMU ────────────────────────────────────────────────────────────
 film.addEventListener('ended', () => {
+  if (tryb !== 'fallback') return;
   skonczony = true;
   track('video_completed', { tryb });
-  pokaz(...(tryb === 'fallback' ? ['fallback', 'koniec'] : ['koniec']));
+  pokaz('fallback', 'koniec');
 });
 
 $('#jeszcze').addEventListener('click', () => {
   skonczony = false;
-  film.currentTime = 0;
-  if (tryb === 'fallback') { pokaz('fallback'); film.play(); }
-  else { pokaz(widoczny ? null : 'skan'); if (widoczny) film.play(); }
+  if (tryb === 'fallback') { film.currentTime = 0; pokaz('fallback'); film.play(); }
+  else { tPokazu = 0; pokaz(widoczny ? null : 'skan'); }
 });
 
 document.querySelectorAll('[data-cta]').forEach((a) => a.addEventListener('click', () => track('cta_clicked', { cta: a.dataset.cta, tryb })));

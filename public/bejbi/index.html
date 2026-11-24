@@ -22,7 +22,10 @@
 <link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-three.prod.js">
 <link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/controller-mGt1s8dJ.js">
 <link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/ui-fBadYuor.js">
-<link rel="preload" href="/bejbi/targets.mind" as="fetch" crossorigin><style>
+<link rel="preload" href="/bejbi/targets.mind" as="fetch" crossorigin>
+<link rel="modulepreload" href="/bejbi/pokaz3d.js">
+<link rel="preload" href="/bejbi/szklanka.png" as="image">
+<link rel="preload" href="/bejbi/plakat-mini.jpg" as="image"><style>
   :root { --zolty: #FFEB00; --ink: #1E1B05; --zielony: #164938; --pomarancz: #ff751f; --krem: #fdf5ec; }
   * { box-sizing: border-box; }
   html, body { margin: 0; height: 100%; background: var(--ink); color: var(--ink); font-family: Barlow, system-ui, sans-serif; -webkit-tap-highlight-color: transparent; overflow: hidden; }
@@ -49,12 +52,9 @@
   /* SKANOWANIE — rogi ramki 9:16 nad obrazem z aparatu */
   #skan { justify-content: center; gap: 22px; pointer-events: none; color: #fff; }
   #skan .link { pointer-events: auto; position: absolute; bottom: max(20px, env(safe-area-inset-bottom)); text-shadow: 0 1px 4px rgba(0,0,0,.6); color: #fff; }
-  .celownik { position: relative; height: min(58dvh, 520px); aspect-ratio: 9 / 16; animation: puls 1.6s ease-in-out infinite; }
-  .celownik i { position: absolute; width: 44px; height: 44px; border: 6px solid var(--zolty); }
-  .celownik i:nth-child(1) { left: 0; top: 0; border-right: 0; border-bottom: 0; border-top-left-radius: 22px; }
-  .celownik i:nth-child(2) { right: 0; top: 0; border-left: 0; border-bottom: 0; border-top-right-radius: 22px; }
-  .celownik i:nth-child(3) { left: 0; bottom: 0; border-right: 0; border-top: 0; border-bottom-left-radius: 22px; }
-  .celownik i:nth-child(4) { right: 0; bottom: 0; border-left: 0; border-top: 0; border-bottom-right-radius: 22px; }
+  /* Obrys całego plakatu (A3) z jego bladą miniaturą — AR musi widzieć cały plakat, nie samą ramkę. */
+  .celownik { position: relative; width: min(80vw, 60dvh * 1123 / 1587, 420px); aspect-ratio: 1123 / 1587; border: 4px solid var(--zolty); border-radius: 8px; box-shadow: 0 0 0 9999px rgba(30, 27, 5, .35), 0 0 18px rgba(255, 235, 0, .6); animation: puls 1.6s ease-in-out infinite; overflow: hidden; }
+  .celownik::before { content: ""; position: absolute; inset: 0; background: url(/bejbi/plakat-mini.jpg) center / cover; opacity: .28; }
   .celownik b { position: absolute; left: 8%; right: 8%; height: 3px; background: var(--zolty); box-shadow: 0 0 14px var(--zolty); animation: linia 2.2s ease-in-out infinite alternate; }
   @keyframes linia { from { top: 4%; } to { top: 96%; } }
   @keyframes puls { 50% { transform: scale(1.035); } }
@@ -98,8 +98,8 @@
 </section>
 
 <section id="skan" class="warstwa" hidden>
-  <div class="celownik" aria-hidden="true"><i></i><i></i><i></i><i></i><b></b></div>
-  <div class="podpowiedz" id="podpowiedz">Nakieruj na plakat</div>
+  <div class="celownik" aria-hidden="true"><b></b></div>
+  <div class="podpowiedz" id="podpowiedz">Złap cały plakat w kadr</div>
   <button class="link" data-fallback>Nie działa AR? Obejrzyj film</button>
 </section>
 
