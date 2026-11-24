@@ -81,6 +81,7 @@ export type Review = {
 export type MenuSection = {
   id: string;
   name: string;
+  name_en?: string | null; // karta po angielsku — tylko lokale z menu_en_places
   position: number;
   menu_items: MenuItem[];
 };
@@ -97,6 +98,8 @@ export type MenuItem = {
   position: number;
   image_url: string | null;
   allergens: AllergenKey[] | null; // null = nieuzupełnione, [] = brak alergenów
+  name_en?: string | null;
+  description_en?: string | null;
 };
 
 // 14 alergenów, które restauracje w UE muszą podawać — klucze jak w menu_items.allergens.

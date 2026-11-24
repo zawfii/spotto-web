@@ -36,12 +36,12 @@ const PRESETS: Record<string, string[]> = {
   'Bliski Wschód': ['Meze', 'Kebaby', 'Dania główne', 'Sałatki', 'Desery', 'Napoje'],
 };
 
-const ITEM_COLUMNS = 'id, section_id, name, price, description, is_vege, spice_level, is_available, position, image_url, allergens';
+const ITEM_COLUMNS = 'id, section_id, name, price, description, is_vege, spice_level, is_available, position, image_url, allergens, name_en, description_en';
 const SPICE_LABELS = ['Brak', 'Łagodne', 'Ostre', 'Bardzo ostre'];
 
 type ItemForm = {
   editId: string | null; sectionId: string;
-  name: string; price: string; description: string;
+  name: string; price: string; description: string; name_en: string; description_en: string;
   is_vege: boolean; spice_level: 0 | 1 | 2 | 3; is_available: boolean;
   image_url: string | null; allergens: AllergenKey[] | null; // null = nieuzupełnione, [] = brak alergenów
 };
@@ -67,19 +67,23 @@ export default function MenuPage() {
   const [copying, setCopying] = useState(false);
   const [copyError, setCopyError] = useState<string | null>(null);
   const [copied, setCopied] = useState<number | null>(null);
+  // Lokal wskazany do karty po angielsku (menu_en_places) — tylko wtedy pola po angielsku.
+  const [en, setEn] = useState(false);
 
   const load = useCallback(async () => {
     if (!venue) return;
     try {
-      const [{ data: sectionRows }, { data: importedRows }] = await Promise.all([
+      const [{ data: sectionRows }, { data: importedRows }, { data: enRow }] = await Promise.all([
         supabase
           .from('menu_sections')
-          .select(`id, name, position, menu_items(${ITEM_COLUMNS})`)
+          .select(`id, name, name_en, position, menu_items(${ITEM_COLUMNS})`)
           .eq('place_id', venue.place_id)
           .eq('source', 'owner') // import ze strony/zdjęcia nie jest edytowalny przez właściciela (RLS)
           .order('position', { ascending: true }),
         supabase.from('menu_sections').select('source, menu_items(id)').eq('place_id', venue.place_id).neq('source', 'owner'),
+        supabase.from('menu_en_places').select('place_id').eq('place_id', venue.place_id).maybeSingle(),
       ]);
+      setEn(!!enRow);
       setImported(importedRows?.length
         ? { source: importedRows[0].source, items: importedRows.reduce((n, s) => n + (s.menu_items?.length ?? 0), 0) }
         : null);
@@ -146,10 +150,15 @@ export default function MenuPage() {
 
   async function renameSection(section: MenuSection) {
     const name = prompt('Nazwa sekcji', section.name)?.trim();
-    if (!name || name === section.name) return;
-    const { error } = await supabase.from('menu_sections').update({ name }).eq('id', section.id);
+    if (!name) return;
+    const patch: { name: string; name_en?: string | null } = { name };
+    // Anulowanie drugiego pytania zostawia angielską nazwę bez zmian (baza skasuje ją, jeśli zmieniła się polska).
+    const enInput = en ? prompt('Nazwa sekcji po angielsku (dla gości z zagranicy)', section.name_en ?? '') : null;
+    if (enInput != null) patch.name_en = enInput.trim().slice(0, 50) || null;
+    if (name === section.name && (patch.name_en === undefined || patch.name_en === (section.name_en ?? null))) return;
+    const { data, error } = await supabase.from('menu_sections').update(patch).eq('id', section.id).select('name, name_en').single();
     if (error) { alert('Nie udało się zapisać: ' + error.message); return; }
-    setSections(prev => prev.map(s => (s.id === section.id ? { ...s, name } : s)));
+    setSections(prev => prev.map(s => (s.id === section.id ? { ...s, ...data } : s)));
   }
 
   async function deleteSection(section: MenuSection) {
@@ -197,6 +206,7 @@ export default function MenuPage() {
       description: form.description.trim() || null,
       is_vege: form.is_vege, spice_level: form.spice_level, is_available: form.is_available,
       image_url: form.image_url, allergens: form.allergens,
+      ...(en ? { name_en: form.name_en.trim() || null, description_en: form.description_en.trim() || null } : null),
     };
 
     if (!form.editId) {
@@ -207,16 +217,19 @@ export default function MenuPage() {
     const current = sections.flatMap(s => s.menu_items).find(i => i.id === form.editId);
     const moved = current && current.section_id !== form.sectionId;
     const position = moved ? sections.find(s => s.id === form.sectionId)?.menu_items.length ?? 0 : current?.position ?? 0;
-    const { error } = await supabase.from('menu_items')
+    // Wiersz z bazy, nie payload: baza kasuje nieaktualne tłumaczenie przy zmianie polskiej nazwy/opisu.
+    const { data, error } = await supabase.from('menu_items')
       .update({ ...payload, section_id: form.sectionId, position })
-      .eq('id', form.editId);
+      .eq('id', form.editId)
+      .select(ITEM_COLUMNS)
+      .single();
     if (error) { alert('Nie udało się zapisać: ' + error.message); return; }
     if (moved) {
       await load();
     } else {
       setSections(prev => prev.map(s => ({
         ...s,
-        menu_items: s.menu_items.map(i => (i.id === form.editId ? { ...i, ...payload } : i)),
+        menu_items: s.menu_items.map(i => (i.id === form.editId ? (data as MenuItem) : i)),
       })));
     }
     setForm(null);
@@ -241,12 +254,13 @@ export default function MenuPage() {
   }
 
   const openNew = () => selected && setForm({
-    editId: null, sectionId: selected.id, name: '', price: '', description: '', is_vege: false, spice_level: 0, is_available: true,
-    image_url: null, allergens: null,
+    editId: null, sectionId: selected.id, name: '', price: '', description: '', name_en: '', description_en: '',
+    is_vege: false, spice_level: 0, is_available: true, image_url: null, allergens: null,
   });
   const openEdit = (item: MenuItem) => setForm({
     editId: item.id, sectionId: item.section_id, name: item.name, price: String(item.price),
-    description: item.description ?? '', is_vege: item.is_vege, spice_level: item.spice_level, is_available: item.is_available,
+    description: item.description ?? '', name_en: item.name_en ?? '', description_en: item.description_en ?? '',
+    is_vege: item.is_vege, spice_level: item.spice_level, is_available: item.is_available,
     image_url: item.image_url, allergens: item.allergens,
   });
 
@@ -363,7 +377,10 @@ export default function MenuPage() {
           ) : (
             <>
               <div className="flex flex-wrap items-center gap-2">
-                <div className="grow"><CardTitle>{selected.name}</CardTitle></div>
+                <div className="grow">
+                  <CardTitle>{selected.name}</CardTitle>
+                  {en && <div className="text-xs text-spoot-ink2">{selected.name_en ? `Po angielsku: ${selected.name_en}` : 'Bez nazwy po angielsku — dodasz ją w „Zmień nazwę”'}</div>}
+                </div>
                 <Btn variant="ghost" size="sm" onClick={() => renameSection(selected)}>Zmień nazwę</Btn>
                 <Btn variant="danger" size="sm" onClick={() => deleteSection(selected)}>Usuń sekcję</Btn>
               </div>
@@ -395,6 +412,7 @@ export default function MenuPage() {
                               <span className="font-display font-bold">{item.name}</span>
                               {item.is_vege && <span className="rounded-full bg-spoot-chip px-2 py-px font-display text-[10px] font-bold tracking-[0.5px]">WEGE</span>}
                               {item.spice_level > 0 && <span className="rounded-full bg-spoot-tint px-2 py-px font-display text-[10px] font-bold tracking-[0.5px]">{SPICE_LABELS[item.spice_level].toUpperCase()}</span>}
+                              {en && !item.name_en && <span className="rounded-full border border-spoot-line px-2 py-px font-display text-[10px] font-bold tracking-[0.5px] text-spoot-ink2">BEZ EN</span>}
                               {!item.is_available && <span className="text-xs text-spoot-ink2">· niedostępne</span>}
                             </div>
                             {item.description && <div className="text-xs text-spoot-ink2">{item.description}</div>}
@@ -451,6 +469,21 @@ export default function MenuPage() {
                 Opis
                 <textarea value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} placeholder="Krótki opis zwiększa apetyt" maxLength={240} rows={3} className={`${inputCls} h-auto resize-y py-3`} />
               </label>
+              {en && (
+                <div className="flex flex-col gap-4 border-t border-spoot-line pt-4">
+                  <label className={labelCls}>
+                    Nazwa po angielsku
+                    <input lang="en" value={form.name_en} onChange={e => setForm({ ...form, name_en: e.target.value })} placeholder="np. Beef noodles" maxLength={80} className={inputCls} />
+                  </label>
+                  <label className={labelCls}>
+                    Opis po angielsku
+                    <textarea lang="en" value={form.description_en} onChange={e => setForm({ ...form, description_en: e.target.value })} maxLength={240} rows={3} className={`${inputCls} h-auto resize-y py-3`} />
+                  </label>
+                  <span className="text-xs text-spoot-ink2">
+                    Goście z zagranicy zobaczą to w karcie po angielsku. Zmieniasz polską nazwę lub opis? Popraw też angielski — inaczej angielski zniknie, a goście zobaczą polski.
+                  </span>
+                </div>
+              )}
               <div className="flex flex-col gap-1.5">
                 <Eyebrow>Zdjęcie dania</Eyebrow>
                 <div className="flex items-center gap-3">
