@@ -6,8 +6,8 @@ const CONFIG = {
   // „Oceń w Spoot” (link do bety / sklepu). Android nie ma jeszcze apki w sklepie → strona Spoot.
   ocenUrl: 'https://apps.apple.com/pl/app/id6822473524',
   ocenUrlAndroid: 'https://www.spootme.pl',
-  // „Zapisz to miejsce” → strona lokalu w Spoot.
-  miejsceUrl: 'https://spootme.pl/place/391d11f1-5945-4c70-a0c2-9ea26452f610',
+  // „Menu Bejbi w Spoot” → karta menu lokalu (pasek „Otwórz” otwiera apkę na zakładce Menu).
+  menuUrl: 'https://spootme.pl/place/391d11f1-5945-4c70-a0c2-9ea26452f610/menu',
   posthogKey: 'phc_C7CCDonoDEAq9vJF4ZXQj3HViTxUZbtfnj348Dc4Rj4C',
   posthogHost: 'https://eu.i.posthog.com',
   // Ramka 9:16 na plakacie (px w poster-target.png 1123×1587): tu leży film.
@@ -39,7 +39,7 @@ const ekrany = { start: $('#start'), skan: $('#skan'), fallback: $('#fallback'),
 const pokaz = (...nazwy) => Object.entries(ekrany).forEach(([n, el]) => { el.hidden = !nazwy.includes(n); });
 const android = /android/i.test(navigator.userAgent);
 $('#cta-ocen').href = android ? CONFIG.ocenUrlAndroid : CONFIG.ocenUrl;
-$('#cta-zapisz').href = CONFIG.miejsceUrl;
+$('#cta-menu').href = CONFIG.menuUrl;
 
 let tryb = 'start'; // start | ar | fallback
 let mindar = null;
@@ -147,4 +147,5 @@ $('#jeszcze').addEventListener('click', () => {
 document.querySelectorAll('[data-cta]').forEach((a) => a.addEventListener('click', () => track('cta_clicked', { cta: a.dataset.cta, tryb })));
 document.querySelectorAll('[data-fallback]').forEach((b) => b.addEventListener('click', () => startFallback('przycisk')));
 $('#wlacz').addEventListener('click', startAR, { once: true });
+Object.assign($('#wlacz'), { disabled: false, textContent: 'Włącz aparat' }); // biblioteki gotowe
 $('#zamknij').addEventListener('click', () => { film.pause(); location.reload(); });

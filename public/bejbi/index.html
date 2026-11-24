@@ -16,7 +16,13 @@
   "mindar-image-three": "https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-three.prod.js"
 } }
 </script>
-<style>
+<!-- Biblioteki (~3,6 MB) i marker ściągają się równolegle od razu, a nie łańcuchem po imporcie. -->
+<link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js">
+<link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/renderers/CSS3DRenderer.js">
+<link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-three.prod.js">
+<link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/controller-mGt1s8dJ.js">
+<link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/ui-fBadYuor.js">
+<link rel="preload" href="/bejbi/targets.mind" as="fetch" crossorigin><style>
   :root { --zolty: #FFEB00; --ink: #1E1B05; --zielony: #164938; --pomarancz: #ff751f; --krem: #fdf5ec; }
   * { box-sizing: border-box; }
   html, body { margin: 0; height: 100%; background: var(--ink); color: var(--ink); font-family: Barlow, system-ui, sans-serif; -webkit-tap-highlight-color: transparent; overflow: hidden; }
@@ -87,7 +93,7 @@
   <h1>Banana milk matcha.</h1>
   <div class="ramka" aria-hidden="true"></div>
   <p class="opis">Skieruj aparat na plakat. Drink ożyje w ramce.</p>
-  <button id="wlacz" class="przycisk">Włącz aparat</button>
+  <button id="wlacz" class="przycisk" disabled>Ładuję AR…</button>
   <button class="link" data-fallback>Nie działa AR? Obejrzyj film</button>
 </section>
 
@@ -106,7 +112,7 @@
     <div class="wynik" id="koniec-tytul"><span>10</span>/10<small>od Spoot</small></div>
     <p><strong>Banana milk matcha</strong><br>Bejbi Na Rozdrożu · Al. Wyzwolenia 3/5, Warszawa</p>
     <a class="przycisk" id="cta-ocen" data-cta="ocen" target="_blank" rel="noopener">Oceń w Spoot</a>
-    <a class="przycisk drugi" id="cta-zapisz" data-cta="zapisz" target="_blank" rel="noopener">Zapisz to miejsce</a>
+    <a class="przycisk drugi" id="cta-menu" data-cta="menu" target="_blank" rel="noopener">Menu Bejbi w Spoot</a>
     <button class="link" id="jeszcze">Obejrzyj jeszcze raz</button>
   </div>
 </section>
