@@ -1,7 +1,9 @@
 import type { Metadata, Viewport } from 'next';
 import { Manrope } from 'next/font/google';
 import Link from 'next/link';
+import { headers } from 'next/headers';
 import { getPlaceExtras, supabase } from '@/lib/supabase';
+import { MENU_TEXT, pickMenuLang } from '@/lib/menu-lang';
 import { Wordmark } from '@/components/SpootLogo';
 import { AppBridge } from '@/components/AppBridge';
 import { MenuCard } from '../MenuCard';
@@ -45,6 +47,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function PlaceMenuPage({ params }: Props) {
   const [place, { menu }] = await Promise.all([getPlace(params.id), getPlaceExtras(params.id)]);
   const meta = place ? [place.district, place.category].filter(Boolean).join(' · ') : '';
+  // Turysta skanujący kod QR na stoliku dostaje od razu kartę po angielsku (w lokalach z menu_en_places).
+  const lang = menu.en ? pickMenuLang(headers().get('accept-language')) : 'pl';
 
   return (
     <main className={manrope.variable} style={{ minHeight: '100vh', background: CREAM, color: INK, fontFamily: `${MANROPE}, system-ui`, paddingBottom: 'calc(100px + env(safe-area-inset-bottom))' }}>
@@ -69,11 +73,11 @@ export default async function PlaceMenuPage({ params }: Props) {
                 {menu.url && <a href={menu.url} style={{ fontWeight: 700, fontSize: 14, color: GREEN, padding: '8px 0' }}>Zobacz menu na stronie lokalu</a>}
               </div>
             ) : (
-              <MenuCard menu={menu} />
+              <MenuCard menu={menu} initialLang={lang} />
             )}
 
             <Link href={`/place/${place.id}`} style={{ alignSelf: 'flex-start', marginTop: 16, padding: '12px 0', fontWeight: 700, fontSize: 14, color: GREEN, textDecoration: 'underline', textUnderlineOffset: 4 }}>
-              Opinie i informacje o lokalu w Spoot
+              {MENU_TEXT[lang].reviewsLink}
             </Link>
           </>
         )}

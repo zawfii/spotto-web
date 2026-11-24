@@ -107,12 +107,16 @@ export type PlaceReview = {
 export type PlaceMenuSection = {
   id: string;
   name: string;
-  items: { id: string; name: string; price: number; description: string | null; is_vege: boolean; spice_level: number | null; image_url: string | null; allergens: string[] | null }[];
+  name_en: string | null;
+  items: {
+    id: string; name: string; price: number; description: string | null; is_vege: boolean; spice_level: number | null;
+    image_url: string | null; allergens: string[] | null; name_en: string | null; description_en: string | null;
+  }[];
 };
 
 // Opinie i menu lokalu — jak app/place-ratings.tsx i hooks/useMenu.ts w apce. Oceny grupowe ukrywa RLS.
 export async function getPlaceExtras(placeId: string) {
-  const [ratings, menu, link, venue] = await Promise.all([
+  const [ratings, menu, link, venue, en] = await Promise.all([
     supabase
       .from('ratings')
       .select('id, user_id, rating, opinion, dishes, dish_entries, created_at, rating_photos(url)')
@@ -121,12 +125,13 @@ export async function getPlaceExtras(placeId: string) {
       .limit(50),
     supabase
       .from('menu_sections')
-      .select('id, name, source, source_url, updated_at, menu_items(id, name, price, description, is_vege, spice_level, image_url, allergens, is_available)')
+      .select('id, name, name_en, source, source_url, updated_at, menu_items(id, name, name_en, price, description, description_en, is_vege, spice_level, image_url, allergens, is_available)')
       .eq('place_id', placeId)
       .order('position', { ascending: true })
       .order('position', { ascending: true, referencedTable: 'menu_items' }),
     supabase.from('place_menu_links').select('url').eq('place_id', placeId).maybeSingle(),
     supabase.from('venue_details').select('menu_url').eq('place_id', placeId).maybeSingle(),
+    supabase.from('menu_en_places').select('place_id').eq('place_id', placeId).maybeSingle(),
   ]);
 
   const rows = ratings.data ?? [];
@@ -162,6 +167,7 @@ export async function getPlaceExtras(placeId: string) {
     .map((sec) => ({
       id: sec.id,
       name: sec.name,
+      name_en: sec.name_en,
       // Pozycje wyłączone przez właściciela („niedostępne”) nie pokazują się gościom.
       items: ((sec.menu_items ?? []) as (PlaceMenuSection['items'][number] & { is_available: boolean | null })[])
         .filter((it) => it.is_available !== false)
@@ -176,6 +182,8 @@ export async function getPlaceExtras(placeId: string) {
       source: (shown[0]?.source as 'owner' | 'website' | 'photo' | undefined) ?? null,
       updatedAt: shown.reduce<string | null>((max, sec) => (!max || sec.updated_at > max ? sec.updated_at : max), null),
       url: safeUrl(venue.data?.menu_url) || safeUrl(link.data?.url) || safeUrl(shown[0]?.source_url),
+      /** Lokal wskazany do karty po angielsku — tylko wtedy strona ma przełącznik PL | EN. */
+      en: !!en.data,
     },
   };
 }

@@ -2,7 +2,9 @@ import type { Metadata, Viewport } from 'next';
 import type { CSSProperties, ReactNode } from 'react';
 import { Manrope } from 'next/font/google';
 import Link from 'next/link';
+import { headers } from 'next/headers';
 import { getPlaceExtras, supabase, type PlaceReview } from '@/lib/supabase';
+import { pickMenuLang } from '@/lib/menu-lang';
 import { dishName, ratingColor as circleColor, relativePl } from '@/lib/format';
 import { Wordmark } from '@/components/SpootLogo';
 import { AppBridge, OpenAppButton, StoreLink } from '@/components/AppBridge';
@@ -210,7 +212,7 @@ export default async function PlacePage({ params }: PlacePageProps) {
             <section id="menu" style={s.section}>
               <h2 style={s.h2}>Menu</h2>
               {menu.sections.length > 0 ? (
-                <MenuCard menu={menu} embedded />
+                <MenuCard menu={menu} embedded initialLang={menu.en ? pickMenuLang(headers().get('accept-language')) : 'pl'} />
               ) : (
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
                   <span style={{ fontSize: 13, color: INK2 }}>Kartę tego lokalu znajdziesz na jego stronie</span>

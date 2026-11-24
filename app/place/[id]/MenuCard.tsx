@@ -3,6 +3,7 @@
 import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from 'react';
 import { menuPrice, pluralPl } from '@/lib/format';
 import { allergenLabels } from '@/lib/owner';
+import { MENU_TEXT, allergenLabelsEn, type MenuLang } from '@/lib/menu-lang';
 import type { getPlaceExtras } from '@/lib/supabase';
 
 // Karta dań jak zakładka Menu w apce (components/PlaceMenu.tsx): sekcje zawsze rozwinięte,
@@ -19,12 +20,29 @@ const CREAM = '#fdf5ec';
 const CARD = '#eae5de';
 const HAIR = 'rgba(3,39,26,0.15)';
 const MANROPE = 'var(--font-manrope), sans-serif';
-const SPICE = ['', 'lekko ostre', 'ostre', 'bardzo ostre'];
 const CHIPS_H = 52;
 // Na stronie lokalu dłuższa karta jest przycięta do „Pokaż całe menu”.
 const PREVIEW_ITEMS = 8;
 
-export function MenuCard({ menu, embedded = false }: { menu: Menu; embedded?: boolean }) {
+const count = (n: number, lang: MenuLang) =>
+  lang === 'en' ? `${n} ${n === 1 ? 'item' : 'items'}` : `${n} ${pluralPl(n, 'pozycja', 'pozycje', 'pozycji')}`;
+const allergenText = (keys: string[], lang: MenuLang) => (lang === 'en' ? allergenLabelsEn(keys) : allergenLabels(keys));
+
+// Po angielsku podmieniamy teksty na wejściu — brak tłumaczenia pola zostawia polski.
+function localize(sections: Menu['sections'], lang: MenuLang): Menu['sections'] {
+  if (lang === 'pl') return sections;
+  return sections.map((sec) => ({
+    ...sec,
+    name: sec.name_en || sec.name,
+    items: sec.items.map((it) => ({ ...it, name: it.name_en || it.name, description: it.description_en || it.description })),
+  }));
+}
+
+export function MenuCard({ menu: data, embedded = false, initialLang = 'pl' }: { menu: Menu; embedded?: boolean; initialLang?: MenuLang }) {
+  // Przełącznik PL | EN tylko w lokalach z menu_en_places.
+  const [lang, setLang] = useState<MenuLang>(data.en ? initialLang : 'pl');
+  const menu = { ...data, sections: localize(data.sections, lang) };
+  const t = MENU_TEXT[lang];
   // zdjęcia dań bywają linkowane ze stron lokali — gdy któreś zniknie, danie wraca do zwykłego wiersza
   const [broken, setBroken] = useState<Set<string>>(new Set());
   const [active, setActive] = useState(menu.sections[0]?.id);
@@ -39,12 +57,22 @@ export function MenuCard({ menu, embedded = false }: { menu: Menu; embedded?: bo
     requestAnimationFrame(() => document.getElementById(`menu-${id}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' }));
   }
 
-  const date = menu.updatedAt ? new Date(menu.updatedAt).toLocaleDateString('pl-PL', { timeZone: 'Europe/Warsaw' }) : null;
+  const date = menu.updatedAt ? new Date(menu.updatedAt).toLocaleDateString(t.dateLocale, { timeZone: 'Europe/Warsaw' }) : null;
 
   return (
-    <div>
+    <div lang={lang}>
+      {data.en && (
+        <div role="group" aria-label={t.langSwitch} style={st.langBar}>
+          {(['pl', 'en'] as const).map((l) => (
+            <button key={l} type="button" lang={l} aria-pressed={l === lang} onClick={() => setLang(l)} style={{ ...st.chip, ...st.langChip, ...(l === lang ? st.chipOn : null) }}>
+              {l === 'pl' ? 'Polski' : 'English'}
+            </button>
+          ))}
+        </div>
+      )}
+
       {menu.sections.length > 1 && (
-        <nav aria-label="Sekcje menu" style={st.chipsBar}>
+        <nav aria-label={t.sections} style={st.chipsBar}>
           <div style={st.chips}>
             {menu.sections.map((sec) => {
               const on = sec.id === active;
@@ -67,14 +95,14 @@ export function MenuCard({ menu, embedded = false }: { menu: Menu; embedded?: bo
               <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 12 }}>
                 <H style={{ ...st.sectionName, ...(embedded ? { fontSize: 20, lineHeight: '26px' } : null) }}>{sec.name}</H>
                 <span style={{ fontSize: 13, color: INK2, flexShrink: 0 }}>
-                  {sec.items.length} {pluralPl(sec.items.length, 'pozycja', 'pozycje', 'pozycji')}
+                  {count(sec.items.length, lang)}
                 </span>
               </div>
 
               {photos.length > 0 && (
                 <div style={st.grid}>
                   {photos.map((it, i) => (
-                    <button key={it.id} type="button" onClick={() => setViewer({ section: sec.name, items: photos, index: i })} aria-label={`${it.name} — pokaż zdjęcie`} style={st.tile}>
+                    <button key={it.id} type="button" onClick={() => setViewer({ section: sec.name, items: photos, index: i })} aria-label={`${it.name} — ${t.showPhoto}`} style={st.tile}>
                       <span style={st.tilePhoto}>
                         {/* Leniwe ładowanie: obrazek startuje po hydracji, więc onError zdąży się podpiąć. */}
                         {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -101,8 +129,8 @@ export function MenuCard({ menu, embedded = false }: { menu: Menu; embedded?: bo
                     )}
                   </div>
                   {it.description && <p style={st.rowDesc}>{it.description}</p>}
-                  {!!it.allergens?.length && <p style={st.rowDesc}>Alergeny: {allergenLabels(it.allergens)}</p>}
-                  <Tags item={it} />
+                  {!!it.allergens?.length && <p style={st.rowDesc}>{t.allergens}: {allergenText(it.allergens, lang)}</p>}
+                  <Tags item={it} lang={lang} />
                 </div>
               ))}
             </section>
@@ -113,7 +141,7 @@ export function MenuCard({ menu, embedded = false }: { menu: Menu; embedded?: bo
 
       {!expanded && (
         <button type="button" onClick={() => setExpanded(true)} style={st.more}>
-          Pokaż całe menu · {total} {pluralPl(total, 'pozycja', 'pozycje', 'pozycji')}
+          {t.showAll} · {count(total, lang)}
         </button>
       )}
 
@@ -121,13 +149,13 @@ export function MenuCard({ menu, embedded = false }: { menu: Menu; embedded?: bo
         <div style={{ paddingTop: 20, display: 'flex', flexDirection: 'column', gap: 4 }}>
           {menu.source !== 'owner' && (
             <span style={{ fontSize: 12, color: INK2 }}>
-              {menu.source === 'photo' ? 'Ze zdjęcia karty od użytkownika' : 'Menu ze strony lokalu'}
-              {date ? ` · stan na ${date}` : ''}
+              {menu.source === 'photo' ? t.fromPhoto : t.fromWebsite}
+              {date ? ` · ${t.asOf} ${date}` : ''}
             </span>
           )}
           {menu.url && (
             <a href={menu.url} target="_blank" rel="noopener noreferrer" style={st.footLink}>
-              Pełna karta na stronie lokalu
+              {t.fullMenu}
               <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5" />
               </svg>
@@ -136,25 +164,27 @@ export function MenuCard({ menu, embedded = false }: { menu: Menu; embedded?: bo
         </div>
       )}
 
-      {viewer && <DishViewer viewer={viewer} onClose={() => setViewer(null)} />}
+      {viewer && <DishViewer viewer={viewer} lang={lang} onClose={() => setViewer(null)} />}
     </div>
   );
 }
 
-function Tags({ item }: { item: Item }) {
-  const spice = SPICE[item.spice_level ?? 0];
+function Tags({ item, lang }: { item: Item; lang: MenuLang }) {
+  const t = MENU_TEXT[lang];
+  const spice = t.spice[item.spice_level ?? 0];
   if (!item.is_vege && !spice) return null;
   return (
     <div style={{ display: 'flex', gap: 6, marginTop: 6 }}>
-      {item.is_vege && <span style={{ ...st.tag, background: '#dcebd9', color: '#2e7d32' }}>wege</span>}
+      {item.is_vege && <span style={{ ...st.tag, background: '#dcebd9', color: '#2e7d32' }}>{t.vege}</span>}
       {spice && <span style={{ ...st.tag, background: '#ffe5d4', color: '#c9500c' }}>{spice}</span>}
     </div>
   );
 }
 
 // Otwarte danie: zdjęcie na całą szerokość, przesuwanie między daniami sekcji, miniatury, powiększenie.
-function DishViewer({ viewer, onClose }: { viewer: Viewer; onClose: () => void }) {
+function DishViewer({ viewer, lang, onClose }: { viewer: Viewer; lang: MenuLang; onClose: () => void }) {
   const { items, section } = viewer;
+  const t = MENU_TEXT[lang];
   const [index, setIndex] = useState(viewer.index);
   const [zoom, setZoom] = useState<string | null>(null);
   const track = useRef<HTMLDivElement>(null);
@@ -189,7 +219,7 @@ function DishViewer({ viewer, onClose }: { viewer: Viewer; onClose: () => void }
   }
 
   return (
-    <div role="dialog" aria-modal="true" aria-label={`${section} — zdjęcia dań`} style={st.viewer}>
+    <div role="dialog" aria-modal="true" aria-label={`${section} — ${t.dishPhotos}`} style={st.viewer}>
       <div style={st.viewerInner}>
         <div
           ref={track}
@@ -198,7 +228,7 @@ function DishViewer({ viewer, onClose }: { viewer: Viewer; onClose: () => void }
         >
           {items.map((it) => (
             <article key={it.id} style={st.slide}>
-              <button type="button" onClick={() => setZoom(it.image_url)} aria-label="Powiększ zdjęcie" style={st.slidePhoto}>
+              <button type="button" onClick={() => setZoom(it.image_url)} aria-label={t.zoomPhoto} style={st.slidePhoto}>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={it.image_url!} alt={it.name} style={st.cover} />
               </button>
@@ -209,8 +239,8 @@ function DishViewer({ viewer, onClose }: { viewer: Viewer; onClose: () => void }
                   {Number(it.price) > 0 && <span style={st.viewerPrice}>{menuPrice(it.price)}</span>}
                 </div>
                 {it.description && <p style={{ margin: '10px 0 0', fontSize: 16, lineHeight: '24px', color: INK2 }}>{it.description}</p>}
-                {!!it.allergens?.length && <p style={st.rowDesc}>Alergeny: {allergenLabels(it.allergens)}</p>}
-                <Tags item={it} />
+                {!!it.allergens?.length && <p style={st.rowDesc}>{t.allergens}: {allergenText(it.allergens, lang)}</p>}
+                <Tags item={it} lang={lang} />
               </div>
             </article>
           ))}
@@ -218,7 +248,7 @@ function DishViewer({ viewer, onClose }: { viewer: Viewer; onClose: () => void }
 
         {items.length > 1 && (
           <div style={st.thumbs}>
-            <span style={{ padding: '0 16px', fontFamily: MANROPE, fontWeight: 700, fontSize: 13 }}>Więcej: {section}</span>
+            <span style={{ padding: '0 16px', fontFamily: MANROPE, fontWeight: 700, fontSize: 13 }}>{t.more}: {section}</span>
             <div style={st.thumbsRow}>
               {items.map((it, i) => (
                 <button key={it.id} type="button" onClick={() => goTo(i)} aria-label={it.name} aria-pressed={i === index} style={{ ...st.thumb, ...(i === index ? { border: `3px solid ${INK}` } : null) }}>
@@ -230,11 +260,11 @@ function DishViewer({ viewer, onClose }: { viewer: Viewer; onClose: () => void }
           </div>
         )}
 
-        {items.length > 1 && <span style={{ ...st.pill, left: 16 }}>{index + 1} z {items.length}</span>}
-        <button type="button" autoFocus onClick={onClose} aria-label="Zamknij" style={{ ...st.round, right: 16 }}><CloseIcon /></button>
+        {items.length > 1 && <span style={{ ...st.pill, left: 16 }}>{index + 1} {t.of} {items.length}</span>}
+        <button type="button" autoFocus onClick={onClose} aria-label={t.close} style={{ ...st.round, right: 16 }}><CloseIcon /></button>
         <button type="button" onClick={() => setZoom(items[index]?.image_url ?? null)} style={st.zoomBtn}>
           <ExpandIcon size={16} />
-          Powiększ
+          {t.zoom}
         </button>
       </div>
 
@@ -243,7 +273,7 @@ function DishViewer({ viewer, onClose }: { viewer: Viewer; onClose: () => void }
         <div style={st.zoom}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={zoom} alt="" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
-          <button type="button" onClick={() => setZoom(null)} aria-label="Zamknij powiększenie" style={{ ...st.round, right: 16 }}><CloseIcon /></button>
+          <button type="button" onClick={() => setZoom(null)} aria-label={t.closeZoom} style={{ ...st.round, right: 16 }}><CloseIcon /></button>
         </div>
       )}
     </div>
@@ -277,6 +307,8 @@ const st: Record<string, CSSProperties> = {
     fontFamily: MANROPE, fontWeight: 700, fontSize: 13, whiteSpace: 'nowrap', cursor: 'pointer',
   },
   chipOn: { background: INK, color: '#fff' },
+  langBar: { display: 'flex', justifyContent: 'flex-end', gap: 6, paddingTop: 4 },
+  langChip: { minHeight: 32, padding: '0 12px', fontSize: 12 },
 
   sectionName: { margin: 0, flexGrow: 1, minWidth: 0, fontFamily: MANROPE, fontWeight: 700, fontSize: 26, lineHeight: '34px', letterSpacing: -0.3 },
 
