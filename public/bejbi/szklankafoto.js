@@ -2,7 +2,7 @@
 // Wydruk „nadmuchuje się” w bryłę i wychodzi przed plakat, szklanka się opróżnia, potem składniki
 // wlewają się po kolei i odsłaniają warstwy z prawdziwego zdjęcia. Pełna szklanka = zdjęcie z plakatu,
 // więc na koniec spłaszcza się z powrotem w wydruk bez skoku. Potem pieczątka 10/10.
-// Zdjęcie pokazuje tylko przód: kołysanie do ~22°, bez pełnego obrotu (boki by się rozmazały).
+// Szklanka stoi nieruchomo na plakacie (bez kołysania i pochylania); składniki lecą pionowo z góry.
 // Jednostki MindAR: szerokość plakatu = 1, środek plakatu = (0,0), Y w górę, Z w stronę widza.
 import * as THREE from 'three';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
@@ -190,8 +190,7 @@ export async function zbudujPokaz(group, { plakat: P, ramka: R, szklanka: S, war
     cien.material.opacity = lot * 0.9;
     // spłaszczona (jak wydruk) → pełna bryła przed plakatem
     szkl.scale.set(k, k, k * (0.02 + 0.98 * lot));
-    szkl.position.z = 0.002 + (rMax * k + 0.06) * lot;
-    obrot.rotation.y = 0.38 * Math.sin((t - 0.4) * 1.5) * lot; // kołysanie do ~22°
+    szkl.position.z = 0.002 + rMax * k * lot;               // tyłem opiera się o plakat, nie odlatuje do widza
 
     const L = poziom(t), pelna = L === null;
     gFoto.setDrawRange(0, pelna ? CALOSC : pasDla(L) * N * 6);
