@@ -15,6 +15,10 @@ const nextConfig = {
       permanent: false,
     }];
   },
+  async rewrites() {
+    // Żywy plakat AR Bejbi × Spoot — statyczna strona w public/bejbi (źródła: repo Spoot, kampanie/bejbi-ar).
+    return [{ source: '/bejbi', destination: '/bejbi/index.html' }];
+  },
   async headers() {
     // Apple pobiera ten plik bez rozszerzenia — musi przyjść jako JSON.
     return [

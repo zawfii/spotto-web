@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Banana milk matcha · Bejbi × Spoot</title>
+<meta name="description" content="Zeskanuj plakat Bejbi Na Rozdrożu i zobacz drinka tygodnia. Ocena Spoot: 10/10.">
+<meta name="theme-color" content="#FFEB00">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@600;700;800&family=Manrope:wght@700&display=swap" rel="stylesheet">
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/",
+  "mindar-image-three": "https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-three.prod.js"
+} }
+</script>
+<style>
+  :root { --zolty: #FFEB00; --ink: #1E1B05; --zielony: #164938; --pomarancz: #ff751f; --krem: #fdf5ec; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; background: var(--ink); color: var(--ink); font-family: Barlow, system-ui, sans-serif; -webkit-tap-highlight-color: transparent; overflow: hidden; }
+  button, a { font: inherit; }
+  [hidden] { display: none !important; }
+
+  #ar { position: fixed; inset: 0; }
+  .warstwa { position: fixed; inset: 0; display: flex; flex-direction: column; align-items: center; padding: max(16px, env(safe-area-inset-top)) 16px max(20px, env(safe-area-inset-bottom)); z-index: 10; }
+
+  /* START */
+  #start { background: var(--zolty); justify-content: space-between; gap: 16px; overflow-y: auto; }
+  .marki { width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-bottom: 10px; border-bottom: 3px solid var(--ink); font-weight: 800; font-size: clamp(17px, 5vw, 24px); text-transform: uppercase; line-height: 1; }
+  .spoot { font-family: Manrope, sans-serif; font-weight: 700; font-size: 1.35em; color: var(--zielony); text-transform: none; letter-spacing: -0.02em; display: inline-flex; align-items: baseline; }
+  .spoot svg { width: 1em; height: .654em; margin: 0 .03em; }
+  h1 { margin: 0; width: 100%; font-size: clamp(44px, 14vw, 72px); font-weight: 800; line-height: .88; letter-spacing: -0.02em; text-transform: uppercase; }
+  .ramka { position: relative; height: min(42dvh, 400px); aspect-ratio: 9 / 16; border-radius: 18px; overflow: hidden; background: var(--zolty) url(/bejbi/poster.jpg) center / cover; border: 3px solid var(--ink); flex: none; }
+  .ramka::after { content: ""; position: absolute; left: 0; right: 0; height: 22%; background: linear-gradient(transparent, rgba(22, 73, 56, .45) 85%, var(--zielony)); animation: skan 2.2s ease-in-out infinite; }
+  @keyframes skan { from { top: -22%; } to { top: 100%; } }
+  .opis { margin: 0; font-size: 19px; font-weight: 600; line-height: 1.25; text-align: center; max-width: 340px; }
+  .przycisk { display: block; width: 100%; max-width: 420px; padding: 18px; border: 0; border-radius: 999px; background: var(--ink); color: var(--zolty); font-size: 22px; font-weight: 800; text-transform: uppercase; letter-spacing: .04em; text-align: center; text-decoration: none; cursor: pointer; }
+  .przycisk:disabled { opacity: .6; }
+  .link { background: none; border: 0; padding: 8px; color: inherit; font-size: 16px; font-weight: 700; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+
+  /* SKANOWANIE — rogi ramki 9:16 nad obrazem z aparatu */
+  #skan { justify-content: center; gap: 22px; pointer-events: none; color: #fff; }
+  #skan .link { pointer-events: auto; position: absolute; bottom: max(20px, env(safe-area-inset-bottom)); text-shadow: 0 1px 4px rgba(0,0,0,.6); color: #fff; }
+  .celownik { position: relative; height: min(58dvh, 520px); aspect-ratio: 9 / 16; animation: puls 1.6s ease-in-out infinite; }
+  .celownik i { position: absolute; width: 44px; height: 44px; border: 6px solid var(--zolty); }
+  .celownik i:nth-child(1) { left: 0; top: 0; border-right: 0; border-bottom: 0; border-top-left-radius: 22px; }
+  .celownik i:nth-child(2) { right: 0; top: 0; border-left: 0; border-bottom: 0; border-top-right-radius: 22px; }
+  .celownik i:nth-child(3) { left: 0; bottom: 0; border-right: 0; border-top: 0; border-bottom-left-radius: 22px; }
+  .celownik i:nth-child(4) { right: 0; bottom: 0; border-left: 0; border-top: 0; border-bottom-right-radius: 22px; }
+  .celownik b { position: absolute; left: 8%; right: 8%; height: 3px; background: var(--zolty); box-shadow: 0 0 14px var(--zolty); animation: linia 2.2s ease-in-out infinite alternate; }
+  @keyframes linia { from { top: 4%; } to { top: 96%; } }
+  @keyframes puls { 50% { transform: scale(1.035); } }
+  .podpowiedz { background: var(--ink); color: var(--zolty); padding: 12px 18px; font-size: 18px; font-weight: 800; text-transform: uppercase; letter-spacing: .05em; }
+
+  /* FILM BEZ AR */
+  #fallback { background: #000; justify-content: center; padding: 0; z-index: 20; }
+  #fallback video { width: 100%; height: 100%; object-fit: contain; }
+  #film { position: fixed; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+  #fallback #film { position: static; width: 100%; height: 100%; opacity: 1; pointer-events: auto; }
+  #zamknij { position: absolute; top: max(14px, env(safe-area-inset-top)); right: 14px; z-index: 2; width: 44px; height: 44px; border-radius: 50%; border: 0; background: rgba(255,255,255,.9); font-size: 24px; font-weight: 800; cursor: pointer; }
+
+  /* KARTA KOŃCOWA */
+  #koniec { justify-content: flex-end; background: rgba(30, 27, 5, .35); z-index: 30; }
+  .karta { width: 100%; max-width: 460px; background: var(--zielony); color: var(--krem); border-radius: 28px; padding: 26px 22px 18px; display: flex; flex-direction: column; gap: 14px; animation: wjazd .35s ease-out; }
+  @keyframes wjazd { from { transform: translateY(40px); opacity: 0; } }
+  .wynik { font-size: 96px; font-weight: 800; line-height: .85; letter-spacing: -0.03em; }
+  .wynik span { color: var(--pomarancz); }
+  .wynik small { display: block; margin-top: 10px; font-family: Manrope, sans-serif; font-size: 30px; letter-spacing: -0.01em; }
+  .karta p { margin: 0; font-size: 18px; font-weight: 600; line-height: 1.3; }
+  .karta p strong { color: var(--zolty); font-weight: 800; text-transform: uppercase; }
+  .karta .przycisk { background: var(--pomarancz); color: var(--ink); max-width: none; }
+  .karta .przycisk.drugi { background: var(--krem); color: var(--zielony); }
+  .karta .link { color: var(--krem); align-self: center; }
+</style>
+</head>
+<body>
+<div id="ar"></div>
+<video id="film" src="/bejbi/film.mp4" poster="/bejbi/poster.jpg" muted playsinline webkit-playsinline preload="auto" crossorigin="anonymous"></video>
+
+<section id="start" class="warstwa">
+  <div class="marki">
+    <span>Bejbi Na Rozdrożu</span><span>×</span>
+    <span class="spoot" aria-label="spoot">sp<svg viewBox="0 0 153 100" aria-hidden="true"><circle cx="50" cy="50" r="50" fill="#ff751f"/><circle cx="103" cy="50" r="47" fill="none" stroke="#164938" stroke-width="6"/></svg>t</span>
+  </div>
+  <h1>Banana milk matcha.</h1>
+  <div class="ramka" aria-hidden="true"></div>
+  <p class="opis">Skieruj aparat na plakat. Drink ożyje w ramce.</p>
+  <button id="wlacz" class="przycisk">Włącz aparat</button>
+  <button class="link" data-fallback>Nie działa AR? Obejrzyj film</button>
+</section>
+
+<section id="skan" class="warstwa" hidden>
+  <div class="celownik" aria-hidden="true"><i></i><i></i><i></i><i></i><b></b></div>
+  <div class="podpowiedz" id="podpowiedz">Nakieruj na plakat</div>
+  <button class="link" data-fallback>Nie działa AR? Obejrzyj film</button>
+</section>
+
+<section id="fallback" class="warstwa" hidden>
+  <button id="zamknij" aria-label="Zamknij film">×</button>
+</section>
+
+<section id="koniec" class="warstwa" hidden>
+  <div class="karta" role="dialog" aria-labelledby="koniec-tytul">
+    <div class="wynik" id="koniec-tytul"><span>10</span>/10<small>od Spoot</small></div>
+    <p><strong>Banana milk matcha</strong><br>Bejbi Na Rozdrożu · Al. Wyzwolenia 3/5, Warszawa</p>
+    <a class="przycisk" id="cta-ocen" data-cta="ocen" target="_blank" rel="noopener">Oceń w Spoot</a>
+    <a class="przycisk drugi" id="cta-zapisz" data-cta="zapisz" target="_blank" rel="noopener">Zapisz to miejsce</a>
+    <button class="link" id="jeszcze">Obejrzyj jeszcze raz</button>
+  </div>
+</section>
+
+<script type="module" src="/bejbi/app.js"></script>
+</body>
+</html>
