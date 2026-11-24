@@ -3,7 +3,7 @@ import type { CSSProperties, ReactNode } from 'react';
 import { Manrope } from 'next/font/google';
 import Link from 'next/link';
 import { headers } from 'next/headers';
-import { getPlaceExtras, supabase, type PlaceReview } from '@/lib/supabase';
+import { getPlaceExtras, getPlaceLinks, supabase, type PlaceReview } from '@/lib/supabase';
 import { pickMenuLang } from '@/lib/menu-lang';
 import { dishName, ratingColor as circleColor, relativePl } from '@/lib/format';
 import { Wordmark } from '@/components/SpootLogo';
@@ -30,6 +30,7 @@ const CREAM = '#fdf5ec';
 const CARD = '#eae5de';
 const HAIR = 'rgba(3,39,26,0.15)';
 const MANROPE = 'var(--font-manrope), sans-serif';
+const EXTERNAL = { target: '_blank', rel: 'noopener noreferrer' } as const;
 
 interface PlacePageProps {
   params: { id: string };
@@ -98,7 +99,7 @@ function ratingColor(v: number) {
 }
 
 export default async function PlacePage({ params }: PlacePageProps) {
-  const [place, { reviews, menu }] = await Promise.all([getPlaceData(params.id), getPlaceExtras(params.id)]);
+  const [place, { reviews, menu }, links] = await Promise.all([getPlaceData(params.id), getPlaceExtras(params.id), getPlaceLinks(params.id)]);
   const fonts = manrope.variable;
 
   if (!place) {
@@ -139,6 +140,22 @@ export default async function PlacePage({ params }: PlacePageProps) {
     rows.push(
       <InfoRow key="phone" icon={ICONS.phone} action={<a href={`tel:${String(place.phone).replace(/\s/g, '')}`} style={s.rowAction}>Zadzwoń</a>}>
         {place.phone}
+      </InfoRow>,
+    );
+  }
+  if (links.website) {
+    // Nasza strona (/slug) w tej samej karcie, cudza w nowej.
+    const own = links.website.startsWith('/');
+    rows.push(
+      <InfoRow key="website" icon={ICONS.globe} action={<a href={links.website} {...(own ? null : EXTERNAL)} style={s.rowAction}>Otwórz</a>}>
+        {own ? `spootme.pl${links.website}` : links.website.replace(/^https?:\/\/(www\.)?/i, '').replace(/\/$/, '')}
+      </InfoRow>,
+    );
+  }
+  if (links.instagram) {
+    rows.push(
+      <InfoRow key="instagram" icon={ICONS.instagram} action={<a href={links.instagram} {...EXTERNAL} style={s.rowAction}>Otwórz</a>}>
+        @{links.instagram.split('/').filter(Boolean).pop()}
       </InfoRow>,
     );
   }
@@ -380,6 +397,8 @@ const ICONS = {
   pin: <><path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z" /><circle cx="12" cy="9.5" r="2.5" /></>,
   phone: <path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2z" />,
   cash: <><rect x="3" y="6" width="18" height="12" rx="2" /><circle cx="12" cy="12" r="2.5" /></>,
+  globe: <><circle cx="12" cy="12" r="9" /><path d="M3 12h18M12 3c2.5 2.7 2.5 15.3 0 18M12 3c-2.5 2.7-2.5 15.3 0 18" /></>,
+  instagram: <><rect x="3" y="3" width="18" height="18" rx="5" /><circle cx="12" cy="12" r="4" /><circle cx="17.5" cy="6.5" r="0.8" fill={GREEN} /></>,
   star: <path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8-5.2-2.7-5.2 2.7 1-5.8-4.3-4.1 5.9-.9z" />,
   sparkle: <><path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z" /><path d="M19 15l.8 2.2 2.2.8-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z" /></>,
 };
