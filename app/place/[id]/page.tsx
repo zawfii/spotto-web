@@ -152,13 +152,6 @@ export default async function PlacePage({ params }: PlacePageProps) {
       </InfoRow>,
     );
   }
-  if (links.instagram) {
-    rows.push(
-      <InfoRow key="instagram" icon={ICONS.instagram} action={<a href={links.instagram} {...EXTERNAL} style={s.rowAction}>Otwórz</a>}>
-        @{links.instagram.split('/').filter(Boolean).pop()}
-      </InfoRow>,
-    );
-  }
   if (place.price_range) rows.push(<InfoRow key="price" icon={ICONS.cash}>{place.price_range}</InfoRow>);
 
   return (
@@ -219,6 +212,23 @@ export default async function PlacePage({ params }: PlacePageProps) {
                 </div>
               )}
             </div>
+          )}
+
+          {links.instagram && (
+            <a href={links.instagram} {...EXTERNAL} style={s.instagram}>
+              <svg aria-hidden="true" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" style={{ flexShrink: 0 }}>
+                <rect x="3" y="3" width="18" height="18" rx="5" /><circle cx="12" cy="12" r="4" /><circle cx="17.5" cy="6.5" r="0.8" fill="currentColor" />
+              </svg>
+              <span style={{ flexGrow: 1, minWidth: 0, display: 'flex', flexDirection: 'column' }}>
+                <span style={{ fontSize: 12, opacity: 0.9 }}>Instagram</span>
+                <span style={{ fontFamily: MANROPE, fontWeight: 700, fontSize: 16, overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  @{links.instagram.split('/').filter(Boolean).pop()}
+                </span>
+              </span>
+              <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+                <path d="M7 17L17 7M9 7h8v8" />
+              </svg>
+            </a>
           )}
 
           {place.editorial_summary && (
@@ -398,7 +408,6 @@ const ICONS = {
   phone: <path d="M5 4h4l2 5-2.5 1.5a11 11 0 0 0 5 5L15 13l5 2v4a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2z" />,
   cash: <><rect x="3" y="6" width="18" height="12" rx="2" /><circle cx="12" cy="12" r="2.5" /></>,
   globe: <><circle cx="12" cy="12" r="9" /><path d="M3 12h18M12 3c2.5 2.7 2.5 15.3 0 18M12 3c-2.5 2.7-2.5 15.3 0 18" /></>,
-  instagram: <><rect x="3" y="3" width="18" height="18" rx="5" /><circle cx="12" cy="12" r="4" /><circle cx="17.5" cy="6.5" r="0.8" fill={GREEN} /></>,
   star: <path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8-5.2-2.7-5.2 2.7 1-5.8-4.3-4.1 5.9-.9z" />,
   sparkle: <><path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z" /><path d="M19 15l.8 2.2 2.2.8-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z" /></>,
 };
@@ -408,6 +417,11 @@ const s: Record<string, CSSProperties> = {
   column: { maxWidth: 480, margin: '0 auto' },
   eyebrow: { fontFamily: MANROPE, fontWeight: 700, fontSize: 11, letterSpacing: 1.2, color: INK2 },
   ratingCard: { flex: 1, background: CARD, borderRadius: 16, padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: 2 },
+  // Kolory Instagrama; tekst stoi na fioletowo-różowej części (biały ≥ 4,5:1), pomarańcz tylko pod strzałką.
+  instagram: {
+    minHeight: 60, padding: '10px 16px', borderRadius: 16, display: 'flex', alignItems: 'center', gap: 12, color: '#fff', textDecoration: 'none',
+    background: 'linear-gradient(100deg, #833ab4 0%, #c13584 50%, #d62a63 78%, #f56040 100%)',
+  },
   ratingValue: { fontFamily: MANROPE, fontWeight: 700, fontSize: 28, lineHeight: '34px' },
   ratingCount: { fontSize: 12, color: INK2 },
   rowAction: { padding: '14px 0 14px 8px', fontFamily: MANROPE, fontWeight: 700, fontSize: 13, color: GREEN, flexShrink: 0 },
