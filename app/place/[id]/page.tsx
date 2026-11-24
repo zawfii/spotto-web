@@ -55,7 +55,7 @@ async function getPlaceData(id: string) {
 }
 
 export async function generateMetadata({ params }: PlacePageProps): Promise<Metadata> {
-  const place = await getPlaceData(params.id);
+  const [place, links] = await Promise.all([getPlaceData(params.id), getPlaceLinks(params.id)]);
 
   if (!place) {
     return { title: 'Miejsce nie znalezione - Spoot' };
@@ -67,7 +67,7 @@ export async function generateMetadata({ params }: PlacePageProps): Promise<Meta
     openGraph: {
       title: `${place.name} - Spoot`,
       description: place.editorial_summary || `${place.name} · ${place.category} · ${place.district}`,
-      images: place.image_url ? [{ url: place.image_url }] : [],
+      images: links.cover || place.image_url ? [{ url: links.cover || place.image_url }] : [],
       type: 'website',
     },
   };
@@ -123,7 +123,8 @@ export default async function PlacePage({ params }: PlacePageProps) {
   const address = place.address ? String(place.address).replace(/,\s*Polska$/, '') : null;
   const atmosphere: string[] = place.atmosphere ?? [];
 
-  const bridgePlace = { id: place.id, name: place.name, meta, imageUrl: place.image_url ?? null, spootRating: spootText };
+  const image: string | null = links.cover || place.image_url || null;
+  const bridgePlace = { id: place.id, name: place.name, meta, imageUrl: image, spootRating: spootText };
 
   const coords = place.lat != null && place.lng != null ? { lat: Number(place.lat), lng: Number(place.lng) } : null;
   const mapsQuery = address ? `${place.name}, ${place.address}` : `${coords?.lat},${coords?.lng}`;
@@ -163,10 +164,10 @@ export default async function PlacePage({ params }: PlacePageProps) {
         </header>
 
         <div style={{ padding: '0 16px', display: 'flex', flexDirection: 'column', gap: 16 }}>
-          {place.image_url ? (
+          {image ? (
             <div style={{ position: 'relative', height: 230, borderRadius: 24, overflow: 'hidden', background: CARD }}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={place.image_url} alt={`Zdjęcie: ${place.name}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              <img src={image} alt={`Zdjęcie: ${place.name}`} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
               <div style={{ position: 'absolute', left: 0, right: 0, bottom: 0, padding: '14px 16px', background: 'rgba(0,0,0,0.55)', color: '#fff', display: 'flex', flexDirection: 'column', gap: 2 }}>
                 <h1 style={{ margin: 0, fontFamily: MANROPE, fontWeight: 700, fontSize: 26, lineHeight: '32px' }}>{place.name}</h1>
                 <p style={{ margin: 0, fontSize: 13, color: 'rgba(255,255,255,0.8)' }}>{meta}</p>
@@ -306,9 +307,9 @@ export default async function PlacePage({ params }: PlacePageProps) {
           browserLabel: 'Zobacz lokal w przeglądarce',
           sheetHeader: (
             <>
-              {place.image_url && (
+              {image && (
                 // eslint-disable-next-line @next/next/no-img-element
-                <img src={place.image_url} alt="" style={{ width: 56, height: 56, borderRadius: 12, objectFit: 'cover', flexShrink: 0 }} />
+                <img src={image} alt="" style={{ width: 56, height: 56, borderRadius: 12, objectFit: 'cover', flexShrink: 0 }} />
               )}
               <div style={{ flexGrow: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 2 }}>
                 <span style={{ fontFamily: MANROPE, fontWeight: 700, fontSize: 16 }}>{place.name}</span>

@@ -8,6 +8,7 @@ import { useOwnerVenue } from '@/lib/owner-client';
 import { useOwnerVenueList } from '@/components/owner/VenueContext';
 import { Btn, Card, CardTitle, Eyebrow, Loading, PageHeader, checkCls, inputCls, labelCls } from '@/components/owner/ui';
 import MenuQr from '@/components/owner/MenuQr';
+import CoverPhoto from '@/components/owner/CoverPhoto';
 import MenuEntryRequest from '@/components/owner/MenuEntryRequest';
 
 // Jak getPresetSections w apce (app/owner-panel.tsx).
@@ -321,6 +322,8 @@ export default function MenuPage() {
           Skopiowano {copied} {pluralPl(copied, 'danie', 'dania', 'dań')}
         </p>
       )}
+
+      {venue && <CoverPhoto supabase={supabase} userId={userId} venueId={venue.id} placeId={venue.place_id} googleUrl={place?.image_url ?? null} />}
 
       {/* poza pustym stanem: błąd zostaje widoczny także, gdy przeładowanie pokaże menu */}
       {copyError && <p role="alert" className="text-spoot-danger">{copyError}</p>}

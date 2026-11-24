@@ -6,7 +6,7 @@ import { Btn, Card, CardTitle } from './ui';
 
 const INK = '#03271a';
 
-/** Kod QR do samej karty dań lokalu (spootme.pl/place/[id]/menu) — do wydruku na stoliki. */
+/** Kod QR do strony lokalu z kartą dań (spootme.pl/place/[id]/menu) — do wydruku na stoliki. */
 export default function MenuQr({ placeId }: { placeId: string }) {
   const url = `https://spootme.pl/place/${placeId}/menu`;
   const [svg, setSvg] = useState('');
