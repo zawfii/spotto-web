@@ -12,7 +12,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     .map((p) => p.website_uri as string)
     .filter((url) => url !== `${BASE}/bistropokazowe`); // demo z /dla-restauracji
 
-  return ['/dla-restauracji', '/regulamin', '/polityka-prywatnosci']
+  return ['/dla-restauracji', '/dla-restauracji/en', '/regulamin', '/polityka-prywatnosci']
     .map((path) => BASE + path)
     .concat(sites)
     .map((url) => ({ url }));
