@@ -76,7 +76,11 @@ async function startAR() {
   mindar = new MindARThree({
     container: $('#ar'), imageTargetSrc: '/bejbi/targets.mind', maxTrack: 1,
     uiLoading: 'no', uiScanning: 'no', uiError: 'no',
-    filterMinCF: 0.0001, filterBeta: 0.001, // mniej drgań
+    // Filtr „one euro”: przy bezruchu wygładza (minCF), przy ruchu nadąża (beta). Poprzednio beta 0.001
+    // = maksymalne wygładzanie → nakładka „dojeżdżała” do plakatu z opóźnieniem po każdym ruchu telefonu.
+    filterMinCF: 0.001, filterBeta: 10,
+    warmupTolerance: 2,  // plakat złapany po 2 klatkach (domyślnie 5)
+    missTolerance: 10,   // chwilowe zgubienie (rozmazanie, odblask) nie zdejmuje nakładki
   });
   const { renderer, scene, camera } = mindar;
   const anchor = mindar.addAnchor(0);
