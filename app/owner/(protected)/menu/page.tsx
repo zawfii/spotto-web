@@ -156,7 +156,11 @@ export default function MenuPage() {
     const enInput = en ? prompt('Nazwa sekcji po angielsku (dla gości z zagranicy)', section.name_en ?? '') : null;
     if (enInput != null) patch.name_en = enInput.trim().slice(0, 50) || null;
     if (name === section.name && (patch.name_en === undefined || patch.name_en === (section.name_en ?? null))) return;
-    const { data, error } = await supabase.from('menu_sections').update(patch).eq('id', section.id).select('name, name_en').single();
+    let { data, error } = await supabase.from('menu_sections').update(patch).eq('id', section.id).select('name, name_en').single();
+    // Zatwierdzona bez zmian angielska nazwa przy nowej polskiej: baza ją skasowała, zapisujemy ponownie.
+    if (!error && patch.name_en && !data?.name_en) {
+      ({ data, error } = await supabase.from('menu_sections').update({ name_en: patch.name_en }).eq('id', section.id).select('name, name_en').single());
+    }
     if (error) { alert('Nie udało się zapisać: ' + error.message); return; }
     setSections(prev => prev.map(s => (s.id === section.id ? { ...s, ...data } : s)));
   }
@@ -218,11 +222,20 @@ export default function MenuPage() {
     const moved = current && current.section_id !== form.sectionId;
     const position = moved ? sections.find(s => s.id === form.sectionId)?.menu_items.length ?? 0 : current?.position ?? 0;
     // Wiersz z bazy, nie payload: baza kasuje nieaktualne tłumaczenie przy zmianie polskiej nazwy/opisu.
-    const { data, error } = await supabase.from('menu_items')
+    let { data, error } = await supabase.from('menu_items')
       .update({ ...payload, section_id: form.sectionId, position })
       .eq('id', form.editId)
       .select(ITEM_COLUMNS)
       .single();
+    // Właściciel widział angielski w formularzu, więc zostaje to, co zatwierdził (kasowanie jest dla
+    // zmian bez pól po angielsku, np. z panelu w apce). Drugi zapis: angielski z null na wartość.
+    if (!error && en && ((!data?.name_en && payload.name_en) || (!data?.description_en && payload.description_en))) {
+      ({ data, error } = await supabase.from('menu_items')
+        .update({ name_en: payload.name_en, description_en: payload.description_en })
+        .eq('id', form.editId)
+        .select(ITEM_COLUMNS)
+        .single());
+    }
     if (error) { alert('Nie udało się zapisać: ' + error.message); return; }
     if (moved) {
       await load();
@@ -480,7 +493,7 @@ export default function MenuPage() {
                     <textarea lang="en" value={form.description_en} onChange={e => setForm({ ...form, description_en: e.target.value })} maxLength={240} rows={3} className={`${inputCls} h-auto resize-y py-3`} />
                   </label>
                   <span className="text-xs text-spoot-ink2">
-                    Goście z zagranicy zobaczą to w karcie po angielsku. Zmieniasz polską nazwę lub opis? Popraw też angielski — inaczej angielski zniknie, a goście zobaczą polski.
+                    Goście z zagranicy zobaczą to w karcie po angielsku. Zmieniasz polską nazwę lub opis? Sprawdź, czy angielski nadal pasuje. Puste pole = goście zobaczą polski.
                   </span>
                 </div>
               )}
