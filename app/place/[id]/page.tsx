@@ -120,7 +120,7 @@ export default async function PlacePage({ params }: PlacePageProps) {
     .join(' · ');
   const spoot = place.avg_spotto_rating != null ? Number(place.avg_spotto_rating) : null;
   const spootText = spoot != null ? spoot.toFixed(1) : null;
-  const address = place.address ? String(place.address).replace(/,\s*Polska$/, '') : null;
+  const address = place.address ? String(place.address).replace(/,\s*(Poland|Polska)$/, '') : null;
   const atmosphere: string[] = place.atmosphere ?? [];
 
   const image: string | null = links.cover || place.image_url || null;
