@@ -90,12 +90,12 @@ export default function RestaurantsPage({ lang }: { lang: Lang }) {
       <style dangerouslySetInnerHTML={{ __html: SHOT_CSS }} />
 
       <header className={`${GUTTER} py-4`}>
-        <div className={`${WRAP} flex flex-wrap items-center justify-between gap-x-3 gap-y-3`}>
+        <div className={`${WRAP} flex flex-wrap items-center justify-between gap-x-2 gap-y-3 sm:gap-x-3`}>
           <div className="flex items-center gap-2 sm:gap-3">
             <Wordmark size={26} />
             <span className="rounded-full bg-spoot-green px-2.5 py-[3px] sm:px-3 font-display text-[11px] font-bold tracking-[0.4px] text-white">{c.badge}</span>
           </div>
-          <nav aria-label={c.navLabel} className="flex flex-wrap items-center gap-x-6 gap-y-2 font-display text-sm font-bold">
+          <nav aria-label={c.navLabel} className="ml-auto flex flex-wrap items-center gap-x-3 gap-y-2 font-display text-sm font-bold sm:gap-x-6">
             <a href="#korzysci" className="py-3 hover:text-spoot-green max-md:hidden">{c.nav.benefits}</a>
             <a href="#strona" className="py-3 hover:text-spoot-green max-md:hidden">{c.nav.site}</a>
             <a href="#cennik" className="py-3 hover:text-spoot-green max-md:hidden">{c.nav.pricing}</a>
@@ -103,9 +103,10 @@ export default function RestaurantsPage({ lang }: { lang: Lang }) {
             <a href="#pytania" className="py-3 hover:text-spoot-green max-md:hidden">{c.nav.faq}</a>
             <a href={LOGIN} className="whitespace-nowrap py-3 hover:text-spoot-green">{c.nav.login}</a>
             <a href={REGISTER} className={`${BTN} min-h-[44px] bg-spoot-ink px-5 text-sm text-white max-md:hidden`}>{c.nav.register}</a>
-            {/* Przełącznik języka jako osobna pigułka z globusem — jako zwykły link ginął wśród pozycji menu. */}
-            <a {...switchLink} aria-label={c.switchTo.name} className="inline-flex min-h-[44px] items-center gap-1.5 rounded-full bg-spoot-card px-3.5 transition-colors hover:bg-spoot-chip">
-              <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="9" /><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18" /></svg>
+            {/* Przełącznik języka jako osobna pigułka z globusem — jako zwykły link ginął wśród pozycji menu.
+                Na telefonie bez globusa i z mniejszymi odstępami, żeby nagłówek mieścił się w jednej linii od 375 px. */}
+            <a {...switchLink} aria-label={c.switchTo.name} className="inline-flex min-h-[44px] items-center gap-1.5 rounded-full bg-spoot-card px-3 transition-colors hover:bg-spoot-chip sm:px-3.5">
+              <svg aria-hidden="true" className="max-sm:hidden" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="9" /><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18" /></svg>
               {c.switchTo.short}
             </a>
           </nav>
