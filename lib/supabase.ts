@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
+import { instagramUrl } from '@/lib/format';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
@@ -91,6 +92,19 @@ export function isRealPhoto(url: string | null | undefined): url is string {
 // URL-e z bazy pochodzą ze scrapingu stron i od użytkowników — do linków i <img> tylko http(s).
 function safeUrl(url: string | null | undefined) {
   return url && /^https?:\/\//i.test(url) ? url : null;
+}
+
+/** Strona i Instagram lokalu na karcie z kodu QR. Nasza strona (spootme.pl/<slug>) wygrywa z adresem z Google. */
+export async function getPlaceLinks(placeId: string) {
+  const [site, place, venue] = await Promise.all([
+    supabase.rpc('get_site_slug', { p_place_id: placeId }),
+    supabase.from('places').select('website_uri').eq('id', placeId).maybeSingle(),
+    supabase.from('venue_details').select('instagram').eq('place_id', placeId).maybeSingle(),
+  ]);
+  return {
+    website: typeof site.data === 'string' && site.data ? `/${site.data}` : safeUrl(place.data?.website_uri),
+    instagram: instagramUrl(venue.data?.instagram),
+  };
 }
 
 export type PlaceReview = {

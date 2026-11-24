@@ -2,7 +2,7 @@ import type { Metadata, Viewport } from 'next';
 import { Manrope } from 'next/font/google';
 import Link from 'next/link';
 import { headers } from 'next/headers';
-import { getPlaceExtras, supabase } from '@/lib/supabase';
+import { getPlaceExtras, getPlaceLinks, supabase } from '@/lib/supabase';
 import { MENU_TEXT, pickMenuLang } from '@/lib/menu-lang';
 import { Wordmark } from '@/components/SpootLogo';
 import { AppBridge } from '@/components/AppBridge';
@@ -25,6 +25,11 @@ const INK2 = '#1e3028';
 const CREAM = '#fdf5ec';
 const CARD = '#eae5de';
 const MANROPE = 'var(--font-manrope), sans-serif';
+const PILL = {
+  display: 'inline-flex', alignItems: 'center', gap: 6, minHeight: 36, padding: '0 14px', borderRadius: 999,
+  background: CARD, color: INK, fontWeight: 700, fontSize: 13, textDecoration: 'none',
+} as const;
+const EXTERNAL = { target: '_blank', rel: 'noopener noreferrer' } as const;
 
 type Props = { params: { id: string } };
 
@@ -45,7 +50,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 export default async function PlaceMenuPage({ params }: Props) {
-  const [place, { menu }] = await Promise.all([getPlace(params.id), getPlaceExtras(params.id)]);
+  const [place, { menu }, links] = await Promise.all([getPlace(params.id), getPlaceExtras(params.id), getPlaceLinks(params.id)]);
   const meta = place ? [place.district, place.category].filter(Boolean).join(' · ') : '';
   // Turysta skanujący kod QR na stoliku dostaje od razu kartę po angielsku (w lokalach z menu_en_places).
   const lang = menu.en ? pickMenuLang(headers().get('accept-language')) : 'pl';
@@ -65,6 +70,23 @@ export default async function PlaceMenuPage({ params }: Props) {
               <span style={{ fontWeight: 700, fontSize: 11, letterSpacing: 1.2, color: INK2 }}>MENU</span>
               <h1 style={{ margin: 0, fontWeight: 700, fontSize: 28, lineHeight: '34px' }}>{place.name}</h1>
               <p style={{ margin: 0, fontSize: 13, color: INK2 }}>{meta}</p>
+              {(links.website || links.instagram) && (
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, paddingTop: 10 }}>
+                  {links.website && (
+                    // Nasza strona (/slug) w tej samej karcie, cudza w nowej.
+                    <a href={links.website} {...(links.website.startsWith('/') ? null : EXTERNAL)} style={PILL}>
+                      <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="9" /><path d="M3 12h18M12 3c2.5 2.7 2.5 15.3 0 18M12 3c-2.5 2.7-2.5 15.3 0 18" /></svg>
+                      {MENU_TEXT[lang].website}
+                    </a>
+                  )}
+                  {links.instagram && (
+                    <a href={links.instagram} {...EXTERNAL} style={PILL}>
+                      <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="5" /><circle cx="12" cy="12" r="4" /><circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none" /></svg>
+                      Instagram
+                    </a>
+                  )}
+                </div>
+              )}
             </div>
 
             {menu.sections.length === 0 ? (

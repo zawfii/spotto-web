@@ -49,6 +49,13 @@ export function formatPrice(price: number) {
   return `${Number(price).toLocaleString('pl-PL', { minimumFractionDigits: 2 })} zł`;
 }
 
+// Instagram z panelu właściciela (venue_details.instagram): nazwa konta, @nazwa albo link → link do profilu.
+export function instagramUrl(value: string | null | undefined) {
+  const v = (value ?? '').trim().replace(/^@/, '');
+  const handle = v.match(/instagram\.com\/([A-Za-z0-9._]{1,30})/)?.[1] ?? (/^[A-Za-z0-9._]{1,30}$/.test(v) ? v : null);
+  return handle ? `https://www.instagram.com/${handle}/` : null;
+}
+
 // Cena w karcie dań jak menuPrice w apce: „28 zł”, ale „23,90 zł”.
 export function menuPrice(price: number) {
   const n = Number(price);

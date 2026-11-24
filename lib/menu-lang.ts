@@ -26,6 +26,7 @@ export const MENU_TEXT = {
     asOf: 'stan na', fullMenu: 'Pełna karta na stronie lokalu', spice: ['', 'lekko ostre', 'ostre', 'bardzo ostre'],
     vege: 'wege', dishPhotos: 'zdjęcia dań', zoomPhoto: 'Powiększ zdjęcie', more: 'Więcej', of: 'z', close: 'Zamknij',
     zoom: 'Powiększ', closeZoom: 'Zamknij powiększenie', dateLocale: 'pl-PL', reviewsLink: 'Opinie i informacje o lokalu w Spoot',
+    website: 'Strona lokalu',
   },
   en: {
     langSwitch: 'Menu language', sections: 'Menu sections', showPhoto: 'show photo', allergens: 'Allergens',
@@ -33,5 +34,6 @@ export const MENU_TEXT = {
     asOf: 'as of', fullMenu: "Full menu on the venue's website", spice: ['', 'mildly spicy', 'spicy', 'very spicy'],
     vege: 'veggie', dishPhotos: 'dish photos', zoomPhoto: 'Zoom photo', more: 'More', of: 'of', close: 'Close',
     zoom: 'Zoom', closeZoom: 'Close zoom', dateLocale: 'en-GB', reviewsLink: 'Reviews and info about this place in Spoot',
+    website: 'Website',
   },
 } satisfies Record<MenuLang, Record<string, string | string[]>>;
