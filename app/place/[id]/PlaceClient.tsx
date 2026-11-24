@@ -17,18 +17,15 @@ export type BridgePlace = {
   meta: string;
   imageUrl: string | null;
   spootRating: string | null;
-  googleRating: string | null;
 };
 
 const GREEN = '#164938';
-const INK = '#03271a';
 const INK2 = '#1e3028';
 const CARD = '#eae5de';
-const HAIR = 'rgba(3,39,26,0.15)';
 const MANROPE = 'var(--font-manrope), sans-serif';
 
 export function PlaceCard({ place }: { place: BridgePlace }) {
-  const hasBadges = place.spootRating || place.googleRating;
+  const hasBadges = !!place.spootRating;
   return (
     <div style={{ width: '100%', borderRadius: 24, overflow: 'hidden', background: CARD }}>
       {place.imageUrl ? (
@@ -58,11 +55,6 @@ export function Badges({ place }: { place: BridgePlace }) {
       {place.spootRating && (
         <span role="img" aria-label={`Ocena Spoot: ${place.spootRating}`} style={{ ...base, background: GREEN, color: '#fff' }}>
           <span aria-hidden="true">S</span><span aria-hidden="true">{place.spootRating}</span>
-        </span>
-      )}
-      {place.googleRating && (
-        <span role="img" aria-label={`Ocena Google: ${place.googleRating}`} style={{ ...base, background: '#fff', color: INK, boxShadow: `inset 0 0 0 1px ${HAIR}` }}>
-          <span aria-hidden="true">G</span><span aria-hidden="true">{place.googleRating}</span>
         </span>
       )}
     </>

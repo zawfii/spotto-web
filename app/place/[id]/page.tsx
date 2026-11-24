@@ -42,7 +42,7 @@ async function getPlaceData(id: string) {
   try {
     const { data, error } = await supabase
       .from('places')
-      .select('id, name, category, venue_type, district, address, phone, hours, price_range, image_url, google_rating, google_ratings_count, avg_spotto_rating, spotto_ratings_count, editorial_summary, tags, atmosphere, lat, lng')
+      .select('id, name, category, venue_type, district, address, phone, hours, price_range, image_url, avg_spotto_rating, spotto_ratings_count, editorial_summary, tags, atmosphere, lat, lng')
       .eq('id', id)
       .maybeSingle();
 
@@ -119,13 +119,11 @@ export default async function PlacePage({ params }: PlacePageProps) {
     .filter(Boolean)
     .join(' · ');
   const spoot = place.avg_spotto_rating != null ? Number(place.avg_spotto_rating) : null;
-  const google = place.google_rating != null ? Number(place.google_rating) : null;
   const spootText = spoot != null ? spoot.toFixed(1) : null;
-  const googleText = google != null ? google.toFixed(1).replace('.', ',') : null;
   const address = place.address ? String(place.address).replace(/,\s*Polska$/, '') : null;
   const atmosphere: string[] = place.atmosphere ?? [];
 
-  const bridgePlace = { id: place.id, name: place.name, meta, imageUrl: place.image_url ?? null, spootRating: spootText, googleRating: googleText };
+  const bridgePlace = { id: place.id, name: place.name, meta, imageUrl: place.image_url ?? null, spootRating: spootText };
 
   const coords = place.lat != null && place.lng != null ? { lat: Number(place.lat), lng: Number(place.lng) } : null;
   const mapsQuery = address ? `${place.name}, ${place.address}` : `${coords?.lat},${coords?.lng}`;
@@ -181,37 +179,18 @@ export default async function PlacePage({ params }: PlacePageProps) {
             </div>
           )}
 
-          {(spoot != null || google != null) && (
-            <div style={{ display: 'flex', gap: 12 }}>
-              {spoot != null && (
-                <a href="#opinie" style={s.ratingCard}>
-                  <span style={s.eyebrow}>SPOOT</span>
-                  <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, color: ratingColor(spoot) }}>
-                    <span style={s.ratingValue}>{spootText}</span>
-                    <span style={{ fontFamily: MANROPE, fontWeight: 700, fontSize: 13 }}>{ratingLabel(spoot)}</span>
-                  </div>
-                  {place.spotto_ratings_count != null && (
-                    <span style={s.ratingCount}>{place.spotto_ratings_count} {pluralPl(place.spotto_ratings_count, 'ocena', 'oceny', 'ocen')}</span>
-                  )}
-                </a>
+          {/* Tylko oceny Spoot — bez Google (decyzja z 2026-11-24). Bez ocen: zachęta w „Opiniach w Spoot”. */}
+          {spoot != null && (
+            <a href="#opinie" style={s.ratingCard}>
+              <span style={s.eyebrow}>SPOOT</span>
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, color: ratingColor(spoot) }}>
+                <span style={s.ratingValue}>{spootText}</span>
+                <span style={{ fontFamily: MANROPE, fontWeight: 700, fontSize: 13 }}>{ratingLabel(spoot)}</span>
+              </div>
+              {place.spotto_ratings_count != null && (
+                <span style={s.ratingCount}>{place.spotto_ratings_count} {pluralPl(place.spotto_ratings_count, 'ocena', 'oceny', 'ocen')}</span>
               )}
-              {google != null && (
-                <div style={s.ratingCard}>
-                  <span style={s.eyebrow}>GOOGLE</span>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                    <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="#ff751f">
-                      <path d="M12 3.5l2.6 5.3 5.9.9-4.3 4.1 1 5.8-5.2-2.7-5.2 2.7 1-5.8-4.3-4.1 5.9-.9z" />
-                    </svg>
-                    <span style={s.ratingValue}>{googleText}</span>
-                  </div>
-                  {place.google_ratings_count != null && (
-                    <span style={s.ratingCount}>
-                      {Number(place.google_ratings_count).toLocaleString('pl-PL')} {pluralPl(place.google_ratings_count, 'ocena', 'oceny', 'ocen')}
-                    </span>
-                  )}
-                </div>
-              )}
-            </div>
+            </a>
           )}
 
           {place.editorial_summary && (

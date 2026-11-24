@@ -38,7 +38,7 @@ export const viewport: Viewport = { width: 'device-width', initialScale: 1, view
 async function getPlace(id: string) {
   const { data } = await supabase
     .from('places')
-    .select('id, name, district, category, image_url, avg_spotto_rating, google_rating')
+    .select('id, name, district, category, image_url, avg_spotto_rating')
     .eq('id', id)
     .maybeSingle();
   return data;
@@ -120,7 +120,6 @@ export default async function PlaceMenuPage({ params }: Props) {
                   meta,
                   imageUrl: place.image_url ?? null,
                   spootRating: place.avg_spotto_rating != null ? Number(place.avg_spotto_rating).toFixed(1) : null,
-                  googleRating: place.google_rating != null ? Number(place.google_rating).toFixed(1).replace('.', ',') : null,
                 }}
               />
             ),
