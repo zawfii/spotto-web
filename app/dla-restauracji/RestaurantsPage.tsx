@@ -101,9 +101,13 @@ export default function RestaurantsPage({ lang }: { lang: Lang }) {
             <a href="#cennik" className="py-3 hover:text-spoot-green max-md:hidden">{c.nav.pricing}</a>
             <a href="#jak" className="py-3 hover:text-spoot-green max-md:hidden">{c.nav.how}</a>
             <a href="#pytania" className="py-3 hover:text-spoot-green max-md:hidden">{c.nav.faq}</a>
-            <a {...switchLink} aria-label={c.switchTo.name} className="py-3 hover:text-spoot-green">{c.switchTo.short}</a>
             <a href={LOGIN} className="whitespace-nowrap py-3 hover:text-spoot-green">{c.nav.login}</a>
             <a href={REGISTER} className={`${BTN} min-h-[44px] bg-spoot-ink px-5 text-sm text-white max-md:hidden`}>{c.nav.register}</a>
+            {/* Przełącznik języka jako osobna pigułka z globusem — jako zwykły link ginął wśród pozycji menu. */}
+            <a {...switchLink} aria-label={c.switchTo.name} className="inline-flex min-h-[44px] items-center gap-1.5 rounded-full bg-spoot-card px-3.5 transition-colors hover:bg-spoot-chip">
+              <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="12" cy="12" r="9" /><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18" /></svg>
+              {c.switchTo.short}
+            </a>
           </nav>
         </div>
       </header>
