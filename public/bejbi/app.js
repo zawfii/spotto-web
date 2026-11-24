@@ -114,14 +114,30 @@ async function startAR() {
       }
     }
     ostatnio = teraz;
-    klatka(Math.min(tPokazu, KONIEC));
+    const etap = klatka(Math.min(tPokazu, KONIEC));
+    pokazSkladnik(etap && widoczny && !skonczony ? etap : null);
     window.__pokazT = tPokazu;
     renderer.render(scene, camera);
   });
   setTimeout(() => { if (!znaleziono && tryb === 'ar') $('#podpowiedz').textContent = 'Cały plakat w kadrze, bez odblasków'; }, 8000);
 }
 
+// Duży napis „co się teraz wlewa” — stały rozmiar na ekranie, niezależnie od odległości od plakatu.
+let skladnikNr = '';
+function pokazSkladnik(etap) {
+  const nr = etap?.nr ?? '';
+  if (nr === skladnikNr) return;
+  skladnikNr = nr;
+  const el = $('#skladnik');
+  el.hidden = !nr;
+  if (!nr) return;
+  el.querySelector('.nr').textContent = etap.nr;
+  el.querySelector('.nazwa').textContent = etap.nazwa;
+  el.style.animation = 'none'; void el.offsetWidth; el.style.animation = ''; // restart animacji wjazdu
+}
+
 function stopAR() {
+  pokazSkladnik(null);
   if (!mindar) return;
   mindar.renderer.setAnimationLoop(null);
   try { mindar.stop(); } catch {}

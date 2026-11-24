@@ -69,6 +69,11 @@
   #fallback #film { position: static; width: 100%; height: 100%; opacity: 1; pointer-events: auto; }
   #zamknij { position: absolute; top: max(14px, env(safe-area-inset-top)); right: 14px; z-index: 2; width: 44px; height: 44px; border-radius: 50%; border: 0; background: rgba(255,255,255,.9); font-size: 24px; font-weight: 800; cursor: pointer; }
 
+  /* SKŁADNIK — co się teraz wlewa (na ekranie, nie na plakacie) */
+  #skladnik { position: fixed; left: 50%; bottom: max(36px, calc(env(safe-area-inset-bottom) + 20px)); z-index: 15; translate: -50% 0; display: flex; align-items: center; gap: 14px; max-width: calc(100vw - 24px); padding: 10px 26px 10px 10px; border-radius: 999px; background: var(--ink); color: var(--zolty); box-shadow: 0 6px 24px rgba(0, 0, 0, .35); pointer-events: none; animation: wjazd .3s ease-out; }
+  #skladnik .nr { flex: none; width: 58px; height: 58px; border-radius: 50%; background: var(--zolty); color: var(--ink); display: flex; align-items: center; justify-content: center; font-size: 26px; font-weight: 800; }
+  #skladnik .nazwa { font-size: clamp(20px, 6.2vw, 34px); font-weight: 800; line-height: 1; text-transform: uppercase; white-space: nowrap; }
+
   /* KARTA KOŃCOWA */
   #koniec { justify-content: flex-end; background: rgba(30, 27, 5, .35); z-index: 30; }
   .karta { width: 100%; max-width: 460px; background: var(--zielony); color: var(--krem); border-radius: 28px; padding: 26px 22px 18px; display: flex; flex-direction: column; gap: 14px; animation: wjazd .35s ease-out; }
@@ -108,6 +113,8 @@
 <section id="fallback" class="warstwa" hidden>
   <button id="zamknij" aria-label="Zamknij film">×</button>
 </section>
+
+<div id="skladnik" hidden aria-live="polite"><span class="nr"></span><span class="nazwa"></span></div>
 
 <section id="koniec" class="warstwa" hidden>
   <div class="karta" role="dialog" aria-labelledby="koniec-tytul">

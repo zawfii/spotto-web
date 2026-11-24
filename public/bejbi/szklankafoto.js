@@ -6,7 +6,7 @@
 // Jednostki MindAR: szerokość plakatu = 1, środek plakatu = (0,0), Y w górę, Z w stronę widza.
 import * as THREE from 'three';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import { canvasTex, etykietaTex, clamp, faza, sprezyna } from '/bejbi/pokaz3d.js';
+import { canvasTex, clamp, faza, sprezyna } from '/bejbi/pokaz3d.js';
 
 export const KONIEC = 10.9; // s — po tym czasie karta końcowa
 
@@ -166,14 +166,11 @@ export async function zbudujPokaz(group, { plakat: P, ramka: R, szklanka: S, war
   const pylGeo = new THREE.BufferGeometry().setAttribute('position', new THREE.BufferAttribute(pp, 3));
   const pyl = new THREE.Points(pylGeo, new THREE.PointsMaterial({ color: 0x6f9a2c, size: 0.007, transparent: true, opacity: 0, depthWrite: false }));
   obrot.add(pyl);
-  // Naklejki z nazwami warstw (01–04 jak na plakacie), od dołu: pulpa, mleko, matcha, pianka.
-  const etapy = [[T.pulpa[0], (W_PULPA + W_DNO) / 2], [T.mleko[0], (W_MLEKO + W_PULPA) / 2], [T.matcha[0], (W_MATCHA + W_MLEKO) / 2], [T.pianka[0], (j0 + W_MATCHA) / 2]];
-  const naklejki = etapy.map(([, wiersz], i) => {
+  // Aktualnie wlewany składnik (01–04 jak na plakacie) — app.js pokazuje go dużym napisem na ekranie,
+  // bo naklejka w 3D maleje razem z plakatem i z daleka jest nieczytelna.
+  const etapy = [T.pulpa[0], T.mleko[0], T.matcha[0], T.pianka[0]].map((od, i) => {
     const [, , nr, nazwa] = warstwy[warstwy.length - 1 - i];
-    const e = plaszcz(0.34 / k, (0.34 * 132 / 760) / k, new THREE.MeshBasicMaterial({ map: etykietaTex(nr, nazwa.toUpperCase()), transparent: true, opacity: 0, depthWrite: false }), 30);
-    e.position.set(-rMax - 0.08 / k, j1 - wiersz, 0);
-    szkl.add(e);
-    return e;
+    return { od, nr, nazwa };
   });
 
   const GORA = j1 - j0;
@@ -243,7 +240,6 @@ export async function zbudujPokaz(group, { plakat: P, ramka: R, szklanka: S, war
       dane.forEach((d, i) => { const tt = Math.max(0, syp - d.opoz); pp.set([d.x, Math.max(GORA + 6, GORA + 330 - 900 * tt), d.z], i * 3); });
       pylGeo.attributes.position.needsUpdate = true;
     }
-    naklejki.forEach((e, i) => { e.material.opacity = faza(t, etapy[i][0], etapy[i][0] + 0.35) * (1 - faza(t, T.pianka[1] + 0.3, T.pianka[1] + 0.8)); });
 
     // pieczątka 10/10
     const o = clamp((t - T.pieczatka) / 0.7);
@@ -251,5 +247,6 @@ export async function zbudujPokaz(group, { plakat: P, ramka: R, szklanka: S, war
     odznaka.position.z = 0.003 + 0.4 * Math.pow(1 - o, 2);
     odznaka.scale.setScalar(t < T.pieczatka ? 0.001 : 0.6 + 0.4 * sprezyna(o));
     odznaka.rotation.z = -0.15 - 0.8 * (1 - sprezyna(o));
+    return t < T.pianka[1] + 0.6 ? etapy.findLast((e) => t >= e.od - 0.15) ?? null : null;
   };
 }
