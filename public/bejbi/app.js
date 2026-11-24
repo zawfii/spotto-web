@@ -1,8 +1,9 @@
 import * as THREE from 'three';
 import { MindARThree } from 'mindar-image-three';
-// Pokaz: prawdziwe 3D (szklanka3d.js); ?wersja=plaski = poprzedni pokaz z pociętego zdjęcia.
-const wersja = new URLSearchParams(location.search).get('wersja') === 'plaski' ? 'plaski' : '3d';
-const { zbudujPokaz, KONIEC } = await import(wersja === 'plaski' ? '/bejbi/pokaz3d.js' : '/bejbi/szklanka3d.js');
+// Pokaz: zdjęcie na bryle 3D (szklankafoto.js). Starsze wersje: ?wersja=3d (grafika 3D), ?wersja=plaski (pocięte zdjęcie).
+const MODULY = { foto: '/bejbi/szklankafoto.js', '3d': '/bejbi/szklanka3d.js', plaski: '/bejbi/pokaz3d.js' };
+const wersja = MODULY[new URLSearchParams(location.search).get('wersja')] ? new URLSearchParams(location.search).get('wersja') : 'foto';
+const { zbudujPokaz, KONIEC } = await import(MODULY[wersja]);
 
 // ── KONFIGURACJA ────────────────────────────────────────────────────────────
 const CONFIG = {
