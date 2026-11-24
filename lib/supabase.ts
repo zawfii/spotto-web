@@ -94,16 +94,17 @@ function safeUrl(url: string | null | undefined) {
   return url && /^https?:\/\//i.test(url) ? url : null;
 }
 
-/** Strona i Instagram lokalu na karcie z kodu QR. Nasza strona (spootme.pl/<slug>) wygrywa z adresem z Google. */
+/** Strona i Instagram lokalu na karcie z kodu QR. Nasza strona (spootme.pl/<slug>) wygrywa z adresem z Google,
+ *  Instagram z panelu właściciela z tym, który wpisaliśmy my (places.instagram, lokale bez właściciela). */
 export async function getPlaceLinks(placeId: string) {
   const [site, place, venue] = await Promise.all([
     supabase.rpc('get_site_slug', { p_place_id: placeId }),
-    supabase.from('places').select('website_uri').eq('id', placeId).maybeSingle(),
+    supabase.from('places').select('website_uri, instagram').eq('id', placeId).maybeSingle(),
     supabase.from('venue_details').select('instagram').eq('place_id', placeId).maybeSingle(),
   ]);
   return {
     website: typeof site.data === 'string' && site.data ? `/${site.data}` : safeUrl(place.data?.website_uri),
-    instagram: instagramUrl(venue.data?.instagram),
+    instagram: instagramUrl(venue.data?.instagram) ?? instagramUrl(place.data?.instagram),
   };
 }
 
