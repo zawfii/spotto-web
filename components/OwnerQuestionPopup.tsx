@@ -51,7 +51,7 @@ export default function OwnerQuestionPopup({ lang = 'pl' }: { lang?: keyof typeo
     try {
       if (sessionStorage.getItem(CLOSED_KEY)) { setClosed(true); return; }
     } catch { /* tryb prywatny: karta po prostu pokaże się znowu */ }
-    const timer = setTimeout(() => setShown(true), 8000);
+    const timer = setTimeout(() => setShown(true), 3000);
     const onScroll = () => { if (window.scrollY > 600) setShown(true); };
     window.addEventListener('scroll', onScroll, { passive: true });
     return () => { clearTimeout(timer); window.removeEventListener('scroll', onScroll); };
