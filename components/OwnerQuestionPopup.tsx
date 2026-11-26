@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useSupabase } from '@/lib/owner-client';
 import { OWNER_CONTACT_EMAIL, OWNER_CONTACT_PHONE } from '@/lib/contact';
 import { inputCls, labelCls } from '@/components/owner/ui';
+import { track } from '@/lib/page-stats';
 
 const CLOSED_KEY = 'spoot-pytanie-zamkniete';
 const TEL = `tel:${OWNER_CONTACT_PHONE.replace(/\s/g, '')}`;
@@ -77,6 +78,7 @@ export default function OwnerQuestionPopup({ lang = 'pl' }: { lang?: keyof typeo
       if (error) { setStep('form'); setFailed(true); return; }
     }
     remember();
+    track('owner_question_sent');
     setStep('sent');
   }
 

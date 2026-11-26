@@ -3,6 +3,7 @@ import type { ReactNode } from 'react';
 import { Manrope, Plus_Jakarta_Sans } from 'next/font/google';
 import { Wordmark } from '@/components/SpootLogo';
 import OwnerQuestionPopup from '@/components/OwnerQuestionPopup';
+import PageStats from '@/components/PageStats';
 import PackageCards, { Bullets } from './PackageCards';
 import { COPY, MAIL, type Lang } from './copy';
 import { WEBSITE_PACKAGES } from '@/lib/website-packages';
@@ -318,6 +319,7 @@ export default function RestaurantsPage({ lang }: { lang: Lang }) {
       </footer>
 
       <OwnerQuestionPopup lang={lang} />
+      <PageStats />
     </div>
   );
 }
