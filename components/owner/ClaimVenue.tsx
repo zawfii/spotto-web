@@ -40,12 +40,10 @@ export default function ClaimVenue({ userId, defaultPhone, nextVenue }: { userId
     if (mode !== 'search' || selected || text.length < 2) { setResults([]); setSearching(false); return; }
     const t = setTimeout(async () => {
       setSearching(true);
-      const pattern = `%${text.replace(/[%_\\]/g, m => `\\${m}`)}%`;
+      // bez polskich znaków, z miastem/dzielnicą („bejbi warszawa”) — funkcja w bazie (repo Spoot, migracja search_places_for_claim)
       const { data } = await supabase
-        .from('places')
-        .select('id, name, category, city, district')
-        .ilike('name', pattern)
-        .limit(10);
+        .rpc('search_places_for_claim', { q: text })
+        .select('id, name, category, city, district');
       if (latest.current !== text) return;
       setResults((data as PlaceResult[]) ?? []);
       setSearching(false);
