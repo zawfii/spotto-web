@@ -6,6 +6,7 @@ import { DAYS, DISH_TYPE_LABELS, discountPercent, dishToTemplateKey, formatDealT
 import type { Deal, DayKey, DayMenu, DealKind, DishTypeKey } from '@/lib/owner-deals';
 import { formatPrice } from '@/lib/format';
 import { Btn, Card, CardTitle, Eyebrow, Loading, PageHeader, inputCls, labelCls } from '@/components/owner/ui';
+import ExclusiveOffers from '@/components/owner/ExclusiveOffers';
 
 type Form = {
   editId: string | null;
@@ -268,6 +269,8 @@ export default function DealsPage() {
               </div>
             )}
           </Card>
+
+          {venue && <ExclusiveOffers supabase={supabase} placeId={venue.place_id} userId={userId} />}
 
           <section className="flex flex-col items-start gap-2 rounded-3xl bg-spoot-green p-6 text-white">
             <span className="rounded-full bg-spoot-orange px-2.5 py-0.5 font-display text-[11px] font-bold tracking-[0.5px] text-spoot-ink">WKRÓTCE</span>
