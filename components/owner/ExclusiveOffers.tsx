@@ -6,7 +6,7 @@ import { DAYS, formatDealTime } from '@/lib/owner-deals';
 import type { DayKey } from '@/lib/owner-deals';
 import { Btn, Card, CardTitle, Eyebrow, inputCls, labelCls } from '@/components/owner/ui';
 
-// Oferty „Tylko w Spoot” (tabela exclusive_offers, migracja w repo Spoot 20261214000000).
+// Oferty „Tylko w Spoot” (tabela exclusive_offers, migracja w repo Spoot 20261216000000).
 // Gość odblokowuje w apce kod ważny 15 minut i pokazuje go przy kasie; lokal niczego nie skanuje.
 
 type Offer = {
