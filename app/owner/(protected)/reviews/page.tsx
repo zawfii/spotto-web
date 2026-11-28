@@ -3,7 +3,7 @@ import { fetchReviews } from '@/lib/owner';
 import type { Review } from '@/lib/owner';
 import { requireVenue } from '@/lib/owner-server';
 import { pluralPl } from '@/lib/format';
-import { Card, Initial, PageHeader, RatingBadge } from '@/components/owner/ui';
+import { btnCls, Card, Initial, PageHeader, RatingBadge } from '@/components/owner/ui';
 import ReviewReply from '@/components/owner/ReviewReply';
 
 const FIRST = 20;
@@ -30,9 +30,39 @@ function ReviewRow({ r, placeId }: { r: Review; placeId: string }) {
             ))}
           </div>
         )}
+        {r.feedback && <Feedback f={r.feedback} />}
         <ReviewReply ratingId={r.id} placeId={placeId} initial={r.reply} />
       </div>
     </li>
+  );
+}
+
+// Prywatny dopisek gościa przy niskiej ocenie — goście w aplikacji go nie widzą.
+function Feedback({ f }: { f: NonNullable<Review['feedback']> }) {
+  const phone = f.contact_phone?.replace(/\s/g, '');
+  return (
+    <div className="flex flex-col gap-2 rounded-2xl bg-spoot-input p-3">
+      <span className="font-display text-[11px] font-bold uppercase tracking-wide text-spoot-ink2">
+        Co nie pasowało · widzisz tylko Ty
+      </span>
+      {f.reasons.length > 0 && (
+        <div className="flex flex-wrap gap-1.5">
+          {f.reasons.map(reason => (
+            <span key={reason} className="rounded-full bg-spoot-chip px-2 py-0.5 text-xs font-semibold">{reason}</span>
+          ))}
+        </div>
+      )}
+      {f.comment && <p className="text-sm text-spoot-ink2">{f.comment}</p>}
+      {(f.contact_email || phone) && (
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-xs text-spoot-ink2">Gość zgodził się na kontakt:</span>
+          {f.contact_email && (
+            <a className={btnCls('primary', 'sm')} href={`mailto:${f.contact_email}`}>Napisz · {f.contact_email}</a>
+          )}
+          {phone && <a className={btnCls('outline', 'sm')} href={`tel:${phone}`}>Zadzwoń · {f.contact_phone}</a>}
+        </div>
+      )}
+    </div>
   );
 }
 

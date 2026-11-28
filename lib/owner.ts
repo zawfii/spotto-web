@@ -76,6 +76,13 @@ export type Review = {
   created_at: string;
   /** Odpowiedź właściciela (rating_replies). */
   reply: string | null;
+  /** „Co nie pasowało?” przy niskiej ocenie (rating_feedback, widzi tylko właściciel); kontakt tylko za zgodą gościa. */
+  feedback: {
+    reasons: string[];
+    comment: string | null;
+    contact_email: string | null;
+    contact_phone: string | null;
+  } | null;
 };
 
 export type MenuSection = {
@@ -267,7 +274,7 @@ export async function fetchReviews(
   supabase: SupabaseClient,
   placeId: string
 ): Promise<Review[]> {
-  const [{ data: ratingRows }, { data: replyRows }] = await Promise.all([
+  const [{ data: ratingRows }, { data: replyRows }, { data: feedbackRows }] = await Promise.all([
     supabase
       .from('ratings')
       .select('id, user_id, rating, opinion, tags, created_at')
@@ -275,6 +282,10 @@ export async function fetchReviews(
       .order('created_at', { ascending: false })
       .limit(500),
     supabase.from('rating_replies').select('rating_id, body').eq('place_id', placeId),
+    supabase
+      .from('rating_feedback')
+      .select('rating_id, reasons, comment, contact_email, contact_phone')
+      .eq('place_id', placeId),
   ]);
 
   if (!ratingRows || ratingRows.length === 0) return [];
@@ -289,17 +300,24 @@ export async function fetchReviews(
     (profiles ?? []).map(p => [p.id, p.display_name])
   );
   const replyMap = Object.fromEntries((replyRows ?? []).map(r => [r.rating_id, r.body as string]));
+  const feedbackMap = Object.fromEntries((feedbackRows ?? []).map(f => [f.rating_id, f]));
 
-  return ratingRows.map(r => ({
-    id: r.id,
-    user_id: r.user_id,
-    display_name: nameMap[r.user_id] ?? 'Użytkownik',
-    rating: Number(r.rating),
-    opinion: r.opinion ?? null,
-    tags: r.tags ?? [],
-    created_at: r.created_at,
-    reply: replyMap[r.id] ?? null,
-  }));
+  return ratingRows.map(r => {
+    const f = feedbackMap[r.id];
+    return {
+      id: r.id,
+      user_id: r.user_id,
+      display_name: nameMap[r.user_id] ?? 'Użytkownik',
+      rating: Number(r.rating),
+      opinion: r.opinion ?? null,
+      tags: r.tags ?? [],
+      created_at: r.created_at,
+      reply: replyMap[r.id] ?? null,
+      feedback: f
+        ? { reasons: f.reasons ?? [], comment: f.comment ?? null, contact_email: f.contact_email ?? null, contact_phone: f.contact_phone ?? null }
+        : null,
+    };
+  });
 }
 
 /** Pobiera sekcje menu z pozycjami dla danego lokalu. */
